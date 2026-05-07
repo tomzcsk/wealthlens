@@ -2,12 +2,14 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { useFinanceStore } from '@/stores';
+import { useGoalsStore } from '@/stores/goalsStore';
 import { selectMonthIncome, selectMonthSummary } from '@/stores/selectors';
 import { IncomeForm } from '@/components/forms/IncomeForm';
 import { ExpenseList } from '@/components/forms/ExpenseList';
 import { SavingsList } from '@/components/forms/SavingsList';
 import { Modal } from '@/components/ui/Modal';
 import {
+  formatNumber,
   formatTHB,
   formatThaiMonthYear,
   THAI_MONTHS_LONG,
@@ -149,6 +151,9 @@ export const MonthlyPage = (): ReactNode => {
             </p>
           </div>
         </header>
+
+        <KeptYearRow year={year} />
+
         <SavingsList year={year} month={month} />
       </section>
 
@@ -255,5 +260,62 @@ const SummaryStat = ({
     </div>
   </div>
 );
+
+/**
+ * Inline editable Kept (Krungsri) balance for the active year.
+ * Yearly snapshot — same value across all 12 months. Click to edit.
+ */
+const KeptYearRow = ({ year }: { year: number }): ReactNode => {
+  const kept = useGoalsStore((s) => s.keptBalances[String(year)] ?? 0);
+  const setKeptBalance = useGoalsStore((s) => s.setKeptBalance);
+  const clearKeptBalance = useGoalsStore((s) => s.clearKeptBalance);
+
+  const handleEdit = (): void => {
+    const raw = window.prompt(
+      `ใส่ยอดบัญชี Kept (กรุงศรี) สำหรับปี ${year} — เว้นว่างเพื่อลบ`,
+      kept > 0 ? formatNumber(kept) : '',
+    );
+    if (raw === null) return;
+    const trimmed = raw.trim();
+    if (trimmed === '') {
+      clearKeptBalance(year);
+      return;
+    }
+    const parsed = Number(trimmed.replace(/,/g, ''));
+    if (Number.isFinite(parsed) && parsed >= 0) {
+      setKeptBalance(year, parsed);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleEdit}
+      className="w-full flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 hover:bg-amber-100 transition-colors text-left"
+      title="ยอดรายปี — คลิกเพื่อแก้"
+    >
+      <div className="flex items-center gap-3">
+        <span aria-hidden="true" className="text-xl">
+          💼
+        </span>
+        <div>
+          <div className="text-sm font-semibold text-amber-900">
+            Kept (กรุงศรี)
+          </div>
+          <div className="text-xs text-amber-700/80">
+            ยอดรายปี — ปลายปี {year}
+          </div>
+        </div>
+      </div>
+      <div
+        className={`tabular-nums text-base font-bold ${
+          kept > 0 ? 'text-amber-900' : 'text-amber-400'
+        }`}
+      >
+        {kept > 0 ? formatTHB(kept) : '+ ใส่ยอด'}
+      </div>
+    </button>
+  );
+};
 
 export default MonthlyPage;
