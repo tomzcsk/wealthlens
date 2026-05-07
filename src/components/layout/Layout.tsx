@@ -20,9 +20,11 @@ import type { ReactNode } from 'react';
 import { Outlet } from 'react-router-dom';
 
 import { SyncCoordinatorProvider } from '@/auth/SyncCoordinatorContext';
+import { useGoogleAuth } from '@/auth/useGoogleAuth';
 import Toaster from '@/components/ui/Toaster';
 import useAnomalyAlertEffect from '@/hooks/useAnomalyAlertEffect';
 import useDriveSyncCoordinator from '@/hooks/useDriveSyncCoordinator';
+import LoginPage from '@/pages/LoginPage';
 
 import Header from './Header';
 import Sidebar from './Sidebar';
@@ -36,17 +38,29 @@ export const Layout = (): ReactNode => {
   // toasted — see useAnomalyAlertEffect for the spam-on-load rationale.
   useAnomalyAlertEffect();
 
+  const { isReady, isSignedIn } = useGoogleAuth();
+  // Auth gate: when Google OAuth is configured but the user hasn't signed
+  // in yet, take over the screen with the login page instead of leaking
+  // the dashboard chrome (and any stale localStorage data) to anyone who
+  // opens the URL. If OAuth isn't configured at all (`!isReady`), fall
+  // through to the dashboard so the app stays usable in local-only mode.
+  const requireSignIn = isReady && !isSignedIn;
+
   return (
     <SyncCoordinatorProvider value={syncHandles}>
-      <div className="min-h-screen bg-slate-50 md:grid md:grid-cols-[240px_1fr]">
-        <Sidebar />
-        <div className="flex flex-col min-w-0">
-          <Header />
-          <main className="flex-1 p-6 md:p-8">
-            <Outlet />
-          </main>
+      {requireSignIn ? (
+        <LoginPage />
+      ) : (
+        <div className="min-h-screen bg-slate-50 md:grid md:grid-cols-[240px_1fr]">
+          <Sidebar />
+          <div className="flex flex-col min-w-0">
+            <Header />
+            <main className="flex-1 p-6 md:p-8">
+              <Outlet />
+            </main>
+          </div>
         </div>
-      </div>
+      )}
       <Toaster />
     </SyncCoordinatorProvider>
   );
