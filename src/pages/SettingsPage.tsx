@@ -15,6 +15,7 @@
  */
 
 import { useState, type ReactNode } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 import { useGoogleAuth } from '@/auth/useGoogleAuth';
 import { useSyncCoordinator } from '@/auth/syncCoordinator';
@@ -51,6 +52,11 @@ const formatTimestamp = (iso: string | null): string => {
 export const SettingsPage = (): ReactNode => {
   const { isReady, isSignedIn, user } = useGoogleAuth();
   const { manualSync, manualReload } = useSyncCoordinator();
+  const [searchParams] = useSearchParams();
+  // Danger Zone is hidden by default — appears only when URL has `?danger=true`.
+  // Lets Tom call it back from prod with a bookmarked URL when needed,
+  // without exposing destructive actions to a partner / casual user.
+  const showDanger = searchParams.get('danger') === 'true';
 
   const status = useSyncStore((s) => s.status);
   const lastSyncedAt = useSyncStore((s) => s.lastSyncedAt);
@@ -177,7 +183,7 @@ export const SettingsPage = (): ReactNode => {
 
       <ReportsSection />
 
-      <DangerZone />
+      {showDanger && <DangerZone />}
     </div>
   );
 };

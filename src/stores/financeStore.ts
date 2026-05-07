@@ -32,7 +32,23 @@ import type {
 
 const STORAGE_KEY = 'wealthlens_data';
 const STORAGE_VERSION = 1;
-const DEFAULT_YEAR = 2026;
+const DEFAULT_YEAR = new Date().getFullYear();
+
+/**
+ * Empty initial dataset — first run for any user gets a blank slate.
+ * Tom's historical seed (`seedData`) is no longer auto-loaded so a brand-new
+ * Google account (e.g. Tom's partner) doesn't accidentally pull Tom's data
+ * onto their Drive. Loading the seed is now opt-in via the Danger Zone
+ * "Reset & Push" button. Existing users on Tom's MacBook are unaffected
+ * because persist middleware hydrates from LocalStorage on every run.
+ */
+const emptyData = (): WealthLensData => ({
+  version: '1.0.0',
+  lastUpdated: nowIso(),
+  years: {
+    [String(DEFAULT_YEAR)]: { income: [], expenses: [], savings: [] },
+  },
+});
 
 /** ISO timestamp helper — extracted for test override. */
 const nowIso = (): string => new Date().toISOString();
@@ -126,12 +142,15 @@ export interface FinanceState {
 const buildInitialState = (): Pick<
   FinanceState,
   'data' | 'selectedYear' | 'selectedMonth' | 'lastUpdated'
-> => ({
-  data: seedData,
-  selectedYear: DEFAULT_YEAR,
-  selectedMonth: null,
-  lastUpdated: seedData.lastUpdated,
-});
+> => {
+  const empty = emptyData();
+  return {
+    data: empty,
+    selectedYear: DEFAULT_YEAR,
+    selectedMonth: null,
+    lastUpdated: empty.lastUpdated,
+  };
+};
 
 export const useFinanceStore = create<FinanceState>()(
   persist(
