@@ -109,9 +109,13 @@ export const ExpenseList = ({
   groupByCategory = true,
   showAddButton = true,
 }: ExpenseListProps): ReactNode => {
-  // Subscribe to the slice we render so the list updates after add/edit/delete.
-  const items = useFinanceStore((state) =>
-    selectMonthExpenses({ data: state.data }, year, month),
+  // Subscribe to the stable `data` ref and derive items via useMemo —
+  // selectMonthExpenses returns a fresh `[]` when the month is empty,
+  // which would break Zustand's Object.is equality and infinite-loop.
+  const data = useFinanceStore((state) => state.data);
+  const items = useMemo(
+    () => selectMonthExpenses({ data }, year, month),
+    [data, year, month],
   );
   const deleteExpense = useFinanceStore((s) => s.deleteExpense);
   const addExpense = useFinanceStore((s) => s.addExpense);

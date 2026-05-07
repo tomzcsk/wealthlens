@@ -102,8 +102,13 @@ export const SavingsList = ({
   groupByCategory = true,
   showAddButton = true,
 }: SavingsListProps): ReactNode => {
-  const items = useFinanceStore((state) =>
-    selectMonthSavings({ data: state.data }, year, month),
+  // Subscribe to the stable `data` ref and derive via useMemo —
+  // selectMonthSavings returns a fresh `[]` when empty, which would
+  // break Zustand's Object.is equality and infinite-loop.
+  const data = useFinanceStore((state) => state.data);
+  const items = useMemo(
+    () => selectMonthSavings({ data }, year, month),
+    [data, year, month],
   );
   const deleteSavings = useFinanceStore((s) => s.deleteSavings);
   const addSavings = useFinanceStore((s) => s.addSavings);
