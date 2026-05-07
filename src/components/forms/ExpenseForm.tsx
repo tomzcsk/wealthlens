@@ -33,8 +33,11 @@ import {
   CATEGORY_ORDER,
   EXPENSE_CATEGORIES,
 } from '@/types/expense-categories';
-import type { ExpenseCategory, ExpenseItem } from '@/types';
+import type { ExpenseCategory, ExpenseItem, Reimbursement } from '@/types';
 import { formatNumber } from '@/utils/formatters';
+
+/** Today's date as ISO yyyy-mm-dd — used when Tom flips status to received. */
+const todayIso = (): string => new Date().toISOString().slice(0, 10);
 
 export interface ExpenseFormProps {
   year: number;
@@ -121,6 +124,12 @@ export const ExpenseForm = ({
   const [isRecurring, setIsRecurring] = useState<boolean>(
     initialValues?.isRecurring ?? false,
   );
+  const [reimbursable, setReimbursable] = useState<boolean>(
+    initialValues?.reimbursement != null,
+  );
+  const [reimbursementStatus, setReimbursementStatus] = useState<
+    'pending' | 'received'
+  >(initialValues?.reimbursement?.status ?? 'pending');
   const [touched, setTouched] = useState<FormTouched>({});
   const [showFlash, setShowFlash] = useState(false);
 
@@ -132,6 +141,7 @@ export const ExpenseForm = ({
   const nameId = useId();
   const amountId = useId();
   const recurringId = useId();
+  const reimbursableId = useId();
 
   // Auto-focus name input on mount — covers both "add" and "edit" modes,
   // and is the field most users want to fill in first.
@@ -172,12 +182,27 @@ export const ExpenseForm = ({
     if (!isValid) return;
 
     const trimmedName = name.trim();
+    // Build reimbursement payload only when checked. Preserve `receivedDate`
+    // from the existing record when status is unchanged so we don't lose
+    // the original reimbursement-day stamp on unrelated edits.
+    const reimbursement: Reimbursement | undefined = reimbursable
+      ? reimbursementStatus === 'received'
+        ? {
+            status: 'received',
+            receivedDate:
+              initialValues?.reimbursement?.status === 'received'
+                ? initialValues.reimbursement.receivedDate
+                : todayIso(),
+          }
+        : { status: 'pending' }
+      : undefined;
     if (isEdit && initialValues != null) {
       updateExpense(year, month, initialValues.id, {
         category,
         name: trimmedName,
         amount,
         isRecurring,
+        reimbursement,
       });
       onSaved?.({
         ...initialValues,
@@ -185,6 +210,7 @@ export const ExpenseForm = ({
         name: trimmedName,
         amount,
         isRecurring,
+        reimbursement,
       });
       return;
     }
@@ -194,6 +220,7 @@ export const ExpenseForm = ({
       name: trimmedName,
       amount,
       isRecurring,
+      reimbursement,
     });
 
     // Best-effort callback — we don't have the new id since addExpense
@@ -205,6 +232,7 @@ export const ExpenseForm = ({
       name: trimmedName,
       amount,
       isRecurring,
+      reimbursement,
     });
 
     if (continueAdding) {
@@ -213,6 +241,8 @@ export const ExpenseForm = ({
       setName('');
       setAmountInput('');
       setIsRecurring(false);
+      setReimbursable(false);
+      setReimbursementStatus('pending');
       setTouched({});
       setShowFlash(true);
       if (flashTimerRef.current != null) {
@@ -367,6 +397,63 @@ export const ExpenseForm = ({
         <label htmlFor={recurringId} className="text-sm text-slate-700 select-none">
           รายการประจำเดือน
         </label>
+      </div>
+
+      {/* Reimbursable toggle — for expenses paid out-of-pocket and claimed
+          back from the company (e.g. Claude AI subscription). */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <input
+            id={reimbursableId}
+            type="checkbox"
+            checked={reimbursable}
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+              setReimbursable(e.target.checked)
+            }
+            className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary focus:ring-2"
+          />
+          <label
+            htmlFor={reimbursableId}
+            className="text-sm text-slate-700 select-none"
+          >
+            เบิกบริษัท (จ่ายก่อนแล้วเบิกคืน)
+          </label>
+        </div>
+        {reimbursable && (
+          <div className="ml-6 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setReimbursementStatus('pending')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md border transition ${
+                reimbursementStatus === 'pending'
+                  ? 'bg-amber-50 border-amber-300 text-amber-800'
+                  : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+              }`}
+              aria-pressed={reimbursementStatus === 'pending'}
+            >
+              🟡 รอเบิก
+            </button>
+            <button
+              type="button"
+              onClick={() => setReimbursementStatus('received')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md border transition ${
+                reimbursementStatus === 'received'
+                  ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                  : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+              }`}
+              aria-pressed={reimbursementStatus === 'received'}
+            >
+              🟢 เบิกแล้ว
+            </button>
+            {reimbursementStatus === 'received' &&
+              initialValues?.reimbursement?.status === 'received' &&
+              initialValues.reimbursement.receivedDate != null && (
+                <span className="text-xs text-slate-500">
+                  ได้คืน {initialValues.reimbursement.receivedDate}
+                </span>
+              )}
+          </div>
+        )}
       </div>
 
       {/* Footer: actions + quick-add flash */}

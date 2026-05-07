@@ -47,6 +47,8 @@ interface ExpenseRowProps {
   item: ExpenseItem;
   onEdit: (item: ExpenseItem) => void;
   onDelete: (item: ExpenseItem) => void;
+  /** Toggle reimbursement.status pending ⇄ received in place. */
+  onToggleReimbursement: (item: ExpenseItem) => void;
   /** Show the leading category icon. Suppressed inside grouped view. */
   showIcon?: boolean;
 }
@@ -55,9 +57,11 @@ const ExpenseRow = ({
   item,
   onEdit,
   onDelete,
+  onToggleReimbursement,
   showIcon = true,
 }: ExpenseRowProps): ReactNode => {
   const meta = EXPENSE_CATEGORIES[item.category];
+  const reimbursement = item.reimbursement;
   return (
     <div className="group flex items-center gap-3 px-3 py-2 rounded-md hover:bg-slate-50 transition">
       {showIcon && (
@@ -75,6 +79,27 @@ const ExpenseRow = ({
             >
               ประจำ
             </span>
+          )}
+          {reimbursement != null && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleReimbursement(item);
+              }}
+              title={
+                reimbursement.status === 'pending'
+                  ? 'รอเบิกคืนจากบริษัท — คลิกเพื่อทำเครื่องหมายว่าได้เงินแล้ว'
+                  : `เบิกแล้ว${reimbursement.receivedDate != null ? ` (${reimbursement.receivedDate})` : ''} — คลิกเพื่อเปลี่ยนกลับเป็นรอเบิก`
+              }
+              className={`ml-2 inline-block px-1.5 py-0.5 text-[10px] font-medium rounded border transition cursor-pointer ${
+                reimbursement.status === 'pending'
+                  ? 'text-amber-800 bg-amber-100 border-amber-200 hover:bg-amber-200'
+                  : 'text-emerald-800 bg-emerald-100 border-emerald-200 hover:bg-emerald-200'
+              }`}
+            >
+              {reimbursement.status === 'pending' ? '🟡 รอเบิก' : '🟢 เบิกแล้ว'}
+            </button>
           )}
         </p>
       </div>
@@ -119,7 +144,37 @@ export const ExpenseList = ({
   );
   const deleteExpense = useFinanceStore((s) => s.deleteExpense);
   const addExpense = useFinanceStore((s) => s.addExpense);
+  const updateExpense = useFinanceStore((s) => s.updateExpense);
   const pushToast = useToastStore((s) => s.push);
+
+  /**
+   * Flip an expense's reimbursement status without opening the full form.
+   * Pending → received stamps today's date; received → pending clears the
+   * date so the field doesn't lie about when it was received.
+   */
+  const handleToggleReimbursement = (item: ExpenseItem): void => {
+    if (item.reimbursement == null) return;
+    if (item.reimbursement.status === 'pending') {
+      updateExpense(year, month, item.id, {
+        reimbursement: {
+          status: 'received',
+          receivedDate: new Date().toISOString().slice(0, 10),
+        },
+      });
+      pushToast({
+        message: `เบิกแล้ว: ${item.name}`,
+        tone: 'success',
+      });
+    } else {
+      updateExpense(year, month, item.id, {
+        reimbursement: { status: 'pending' },
+      });
+      pushToast({
+        message: `กลับเป็นรอเบิก: ${item.name}`,
+        tone: 'info',
+      });
+    }
+  };
 
   const handleFillRecurring = (): void => {
     const data = useFinanceStore.getState().data;
@@ -278,6 +333,7 @@ export const ExpenseList = ({
                       item={item}
                       onEdit={openEdit}
                       onDelete={handleDelete}
+                      onToggleReimbursement={handleToggleReimbursement}
                       showIcon={false}
                     />
                   ))}
@@ -293,6 +349,7 @@ export const ExpenseList = ({
                 item={item}
                 onEdit={openEdit}
                 onDelete={handleDelete}
+                onToggleReimbursement={handleToggleReimbursement}
               />
             ))}
           </div>

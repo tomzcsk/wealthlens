@@ -119,6 +119,26 @@ export interface ExpenseItem {
   name: string;
   amount: number;
   isRecurring: boolean;
+  /**
+   * Out-of-pocket expense awaiting (or already received) company
+   * reimbursement. Absent when the expense is not reimbursable. Tom uses
+   * this for Claude AI subscriptions he pays personally then claims back
+   * from the office. The card on the Overview page sums every `pending`
+   * row so he can see what the company still owes him at a glance.
+   */
+  reimbursement?: Reimbursement;
+}
+
+/**
+ * Tracks whether an expense is awaiting / has received company
+ * reimbursement. `receivedDate` is the ISO 8601 date (yyyy-mm-dd) the
+ * reimbursement actually landed — recorded automatically when the user
+ * flips the status, useful for proving turnaround time later.
+ */
+export interface Reimbursement {
+  status: 'pending' | 'received';
+  /** Filled when status === 'received'. ISO date (yyyy-mm-dd). */
+  receivedDate?: string;
 }
 
 export type ExpenseCategory =
