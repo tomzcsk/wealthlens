@@ -402,7 +402,7 @@ export const useFinanceStore = create<FinanceState>()(
       setSelectedMonth: (month) => set({ selectedMonth: month }),
 
       replaceAllData: (data) =>
-        set(() => {
+        set((state) => {
           const stamp = nowIso();
           // Normalise every year so missing `savings` arrays don't crash
           // downstream selectors.
@@ -410,17 +410,34 @@ export const useFinanceStore = create<FinanceState>()(
           for (const [k, yr] of Object.entries(data.years)) {
             years[k] = normalizeYear(yr);
           }
+          // Preferences policy: prefer the incoming `data.preferences` if
+          // present (Drive payloads written post-refactor carry it). For
+          // older Drive payloads with no `preferences`, preserve whatever
+          // is currently in local state — wholesale wiping the user's
+          // Kept balances on a Drive pull would be the same data-loss bug
+          // we're fixing.
+          const preferences =
+            data.preferences ?? state.data.preferences;
           return {
-            data: { ...data, years, lastUpdated: stamp },
+            data: { ...data, years, preferences, lastUpdated: stamp },
             lastUpdated: stamp,
           };
         }),
 
       resetToSeed: () =>
-        set(() => {
+        set((state) => {
           const stamp = nowIso();
+          // Preserve current preferences across a "Reset to seed" — the
+          // DangerZone flow re-hydrates Kept balances from
+          // SEED_KEPT_BALANCES explicitly after calling this, so wiping
+          // here would just be churn. yearlyGoals, travelSavingsGoal, and
+          // incomeDefaults are intentionally retained.
           return {
-            data: { ...seedData, lastUpdated: stamp },
+            data: {
+              ...seedData,
+              preferences: state.data.preferences,
+              lastUpdated: stamp,
+            },
             lastUpdated: stamp,
           };
         }),

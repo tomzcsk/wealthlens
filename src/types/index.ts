@@ -16,6 +16,43 @@ export interface WealthLensData {
   years: {
     [year: string]: YearData;
   };
+  /**
+   * Per-user UI preferences that need to ride along with the Drive payload
+   * (yearly goals, travel goal, Krungsri Kept balances, income defaults).
+   * Optional — Drive payloads written before the preferences refactor won't
+   * have it. Consumers must default-handle `undefined`.
+   */
+  preferences?: UserPreferences;
+}
+
+/**
+ * Per-user preferences synced via the Drive payload.
+ * Migrated from the standalone `goalsStore` so that signing in on a fresh
+ * device hydrates these alongside the financial ledger.
+ */
+export interface UserPreferences {
+  /** Per-year savings target in raw THB. Indexed by 4-digit year string. */
+  yearlyGoals: { [year: string]: number };
+  /** Standalone "ออมเที่ยว" target — single value, not per-year. */
+  travelSavingsGoal: number;
+  /** Per-year balance of the Krungsri "Kept" account, manually entered. */
+  keptBalances: { [year: string]: number };
+  /** Default income/deduction values — pre-fills new months on demand. */
+  incomeDefaults: IncomeDefaults | null;
+}
+
+/**
+ * Defaults pre-filled when opening the Income form in add mode. Salary and
+ * the stable deduction lines (ปกส, กองทุน, กยศ) tend to be constant — Tom
+ * sets these once and pulls them into each new month with one click.
+ * Variable fields (bonus, commission, monthly tax variance) stay manual.
+ */
+export interface IncomeDefaults {
+  salary: number;
+  tax: number;
+  socialSecurity: number;
+  providentFund: number;
+  gsl: number;
 }
 
 export interface YearData {
