@@ -25,7 +25,8 @@
  */
 
 import { useGoogleLogin, type TokenResponse } from '@react-oauth/google';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
+import { create } from 'zustand';
 
 import { isAuthConfigured } from './config';
 import { TOKEN_EXPIRED_EVENT } from '@/utils/driveSync';
@@ -122,22 +123,43 @@ const useTokenExpiryListener = (onExpire: () => void): void => {
 };
 
 // ---------------------------------------------------------------------------
+// Global auth store — single source of truth across all hook callers.
+// Without this, useState is per-hook-instance, so a sign-in inside the
+// LoginPage's hook never propagates to the Layout's hook → user has to
+// refresh manually before the dashboard appears.
+// ---------------------------------------------------------------------------
+
+interface AuthStoreState {
+  accessToken: string | null;
+  user: GoogleUser | null;
+  setAuth: (accessToken: string, user: GoogleUser) => void;
+  clearAuth: () => void;
+}
+
+const useAuthStore = create<AuthStoreState>((set) => {
+  const persisted = readPersistedAuth();
+  return {
+    accessToken: persisted?.accessToken ?? null,
+    user: persisted?.user ?? null,
+    setAuth: (accessToken, user) => set({ accessToken, user }),
+    clearAuth: () => set({ accessToken: null, user: null }),
+  };
+});
+
+// ---------------------------------------------------------------------------
 // Configured implementation — talks to Google
 // ---------------------------------------------------------------------------
 
 const useConfiguredAuth = (): UseGoogleAuthResult => {
-  const [accessToken, setAccessToken] = useState<string | null>(
-    () => readPersistedAuth()?.accessToken ?? null,
-  );
-  const [user, setUser] = useState<GoogleUser | null>(
-    () => readPersistedAuth()?.user ?? null,
-  );
+  const accessToken = useAuthStore((s) => s.accessToken);
+  const user = useAuthStore((s) => s.user);
+  const setAuth = useAuthStore((s) => s.setAuth);
+  const clearAuth = useAuthStore((s) => s.clearAuth);
 
   const handleExpire = useCallback(() => {
     clearPersistedAuth();
-    setAccessToken(null);
-    setUser(null);
-  }, []);
+    clearAuth();
+  }, [clearAuth]);
   useTokenExpiryListener(handleExpire);
 
   const realLogin = useGoogleLogin({
@@ -154,8 +176,7 @@ const useConfiguredAuth = (): UseGoogleAuthResult => {
           user: profile,
           expiresAt,
         });
-        setAccessToken(tokenResponse.access_token);
-        setUser(profile);
+        setAuth(tokenResponse.access_token, profile);
       } catch (err) {
         console.error('[WealthLens] failed to fetch Google profile', err);
       }
@@ -168,9 +189,8 @@ const useConfiguredAuth = (): UseGoogleAuthResult => {
   const signIn = useCallback(() => realLogin(), [realLogin]);
   const signOut = useCallback(() => {
     clearPersistedAuth();
-    setAccessToken(null);
-    setUser(null);
-  }, []);
+    clearAuth();
+  }, [clearAuth]);
 
   return useMemo<UseGoogleAuthResult>(
     () => ({
