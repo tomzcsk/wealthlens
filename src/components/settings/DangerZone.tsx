@@ -26,14 +26,20 @@ export const DangerZone = (): ReactNode => {
     setBusy(true);
     try {
       resetToSeed();
-      // Sync Kept balances from seed too — clear any not in seed, set those in seed.
-      for (const yearStr of Object.keys(existingKept)) {
-        if (!(yearStr in SEED_KEPT_BALANCES)) {
-          clearKeptBalance(Number(yearStr));
+      // Sync Kept balances from seed too — clear any (year, month) entries
+      // not present in seed, then set the seeded (year, month, amount) tuples.
+      for (const [yearStr, months] of Object.entries(existingKept)) {
+        const seedYear = SEED_KEPT_BALANCES[yearStr];
+        for (const monthStr of Object.keys(months)) {
+          if (!seedYear || !(monthStr in seedYear)) {
+            clearKeptBalance(Number(yearStr), Number(monthStr));
+          }
         }
       }
-      for (const [yearStr, amount] of Object.entries(SEED_KEPT_BALANCES)) {
-        setKeptBalance(Number(yearStr), amount);
+      for (const [yearStr, months] of Object.entries(SEED_KEPT_BALANCES)) {
+        for (const [monthStr, amount] of Object.entries(months)) {
+          setKeptBalance(Number(yearStr), Number(monthStr), amount);
+        }
       }
       if (isSignedIn) {
         await manualSync();

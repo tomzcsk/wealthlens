@@ -2854,17 +2854,61 @@ const seedData: WealthLensData = {
 export default seedData;
 
 /**
- * End-of-year balance of Tom's Krungsri "Kept" savings account, sourced
- * directly from his Sheet's Dashboard tabs (the "Kept" cell at the bottom
- * of each year's summary block). NOT derived from Net.All − จ่าย — this
- * is the actual account balance.
+ * Per-month deposits / withdrawals into Tom's Krungsri "Kept" savings
+ * account, extracted directly from column 15 ("Kept") of the per-month rows
+ * on each Dashboard tab in the source Sheet.
  *
- * 2023 has no Kept entry in the source sheet (column blank), so it's
- * intentionally omitted. The "Reset & Push" button in Settings hydrates
- * these into `goalsStore.keptBalances` on demand.
+ * Negative values = withdrawals (e.g. 2024 Jul = −9,000, 2025 Mar = −18,161,
+ * 2026 May = −107,141). Empty/missing months mean Tom didn't move money that
+ * month — they're omitted rather than stored as 0.
+ *
+ * 2023: blank column in the source sheet — intentionally omitted.
+ *
+ * 2024 reconciliation: Tom's Sheet shows an annual Kept of 695,101 but the
+ * sum of per-month rows is only 610,101.13 — the 85,000 difference is the
+ * 2023→2024 opening balance Tom carries over manually. We park that
+ * carryover into January 2024 so the in-app sum matches Tom's annual cell
+ * exactly. (For 2025 and 2026 the monthly rows already sum to the annual.)
+ *
+ * 2026: Jan–Apr are real income months; May has only an outgoing −107,141
+ * (Tom drew the buffer down). Jun–Dec are blank in the source.
+ *
+ * The "Reset & Push" button in Settings hydrates these into
+ * `goalsStore.keptBalances` on demand (year+month at a time).
  */
-export const SEED_KEPT_BALANCES: Record<string, number> = {
-  '2024': 695_101,
-  '2025': 354_899,
-  '2026': 190_001,
+export const SEED_KEPT_BALANCES: Record<string, Record<string, number>> = {
+  '2024': {
+    // Jan = 85,000 carryover from 2023 (matches Tom's annual Kept cell of
+    // 695,101 = 610,101.13 monthly rows + 85,000 opening balance).
+    '1': 85_000,
+    '5': 315_153.30,
+    '6': 119_846.70,
+    '7': -9_000,
+    '8': 4_000,
+    '9': 100_000,
+    '10': 20_000,
+    '11': 20_000,
+    '12': 40_101.13,
+  },
+  '2025': {
+    '1': 5_000,
+    '2': 20_000,
+    '3': -18_161,
+    '4': 21_030,
+    '5': 77_030.16,
+    '6': 51_158.78,
+    '7': 51_275,
+    '8': 1_379,
+    '9': 41_384,
+    '10': -10_196.30,
+    '11': 51_456.18,
+    '12': 63_543.26,
+  },
+  '2026': {
+    '1': 29_100,
+    '2': 116_765,
+    '3': 141_440,
+    '4': 87_600,
+    '5': -107_141,
+  },
 };

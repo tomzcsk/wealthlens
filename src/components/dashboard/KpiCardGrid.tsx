@@ -30,7 +30,7 @@
 import type { ReactNode } from 'react';
 import { useSelectedYear, useYearSummary, useYoYChange } from '@/hooks/useFinanceData';
 import { useFinanceStore } from '@/stores/financeStore';
-import { useGoalsStore } from '@/stores/goalsStore';
+import { sumAnnualKept, useGoalsStore } from '@/stores/goalsStore';
 import { selectYearSummary } from '@/stores/selectors';
 import { KpiCard } from './KpiCard';
 
@@ -54,12 +54,14 @@ export const KpiCardGrid = (): ReactNode => {
   const expensesDelta = useYoYChange('totalExpenses');
   const netAllDelta = useYoYChange('netAll');
 
-  // Kept = manually-tracked Krungsri savings balance (NOT derived).
+  // Kept = manually-tracked Krungsri savings (per-month deposits/withdrawals).
+  // Annual figure shown on the card is the sum across the year. YoY compares
+  // the two annual sums.
   const keptBalances = useGoalsStore((s) => s.keptBalances);
-  const keptThisYear = keptBalances[String(year)] ?? 0;
-  const keptLastYear = keptBalances[String(year - 1)];
+  const keptThisYear = sumAnnualKept(keptBalances[String(year)]);
+  const keptLastYear = sumAnnualKept(keptBalances[String(year - 1)]);
   const keptDelta =
-    keptLastYear !== undefined && keptLastYear > 0
+    keptLastYear > 0
       ? ((keptThisYear - keptLastYear) / Math.abs(keptLastYear)) * 100
       : null;
 

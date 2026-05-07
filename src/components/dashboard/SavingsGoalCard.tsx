@@ -20,7 +20,7 @@ import {
   useMonthlySummariesForYear,
   useSelectedYear,
 } from '@/hooks/useFinanceData';
-import { useGoalsStore } from '@/stores/goalsStore';
+import { sumAnnualKept, useGoalsStore } from '@/stores/goalsStore';
 import { formatNumber, formatPercent, formatTHB } from '@/utils/formatters';
 import type { MonthlySummaryRow } from '@/stores/selectors';
 
@@ -160,32 +160,16 @@ export const SavingsGoalCard = (): ReactNode => {
   const monthlyRows = useMonthlySummariesForYear(year);
   const goal = useGoalsStore((s) => s.yearlyGoals[String(year)] ?? 0);
   const setYearlyGoal = useGoalsStore((s) => s.setYearlyGoal);
-  // Kept = manually-entered Krungsri balance (NOT derived from Net.All − จ่าย).
-  const kept = useGoalsStore((s) => s.keptBalances[String(year)] ?? 0);
-
-  const setKeptBalance = useGoalsStore((s) => s.setKeptBalance);
-  const clearKeptBalance = useGoalsStore((s) => s.clearKeptBalance);
+  // Kept = manually-entered Krungsri balance, now per-month. Display the
+  // annual sum here. Editing the rolled-up annual figure doesn't make sense
+  // (it's a derived total), so this number is read-only on this card —
+  // per-month edits live on the Monthly page.
+  const keptYearBucket = useGoalsStore((s) => s.keptBalances[String(year)]);
+  const kept = sumAnnualKept(keptYearBucket);
 
   const [editing, setEditing] = useState(false);
 
   const streak = useMemo(() => calculateStreak(monthlyRows), [monthlyRows]);
-
-  const handleEditKept = (): void => {
-    const raw = window.prompt(
-      `ใส่ยอดบัญชี Kept (กรุงศรี) ปี ${year} — เว้นว่างเพื่อลบ`,
-      kept > 0 ? formatNumber(kept) : '',
-    );
-    if (raw === null) return;
-    const trimmed = raw.trim();
-    if (trimmed === '') {
-      clearKeptBalance(year);
-      return;
-    }
-    const parsed = Number(trimmed.replace(/,/g, ''));
-    if (Number.isFinite(parsed) && parsed >= 0) {
-      setKeptBalance(year, parsed);
-    }
-  };
 
   // Progress + shortfall — guard against goal=0 to avoid division by zero
   // and a misleading "100%" or "Infinity%" being rendered.
@@ -224,14 +208,15 @@ export const SavingsGoalCard = (): ReactNode => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <div className="text-xs text-slate-500">Kept (กรุงศรี)</div>
-              <button
-                type="button"
-                onClick={handleEditKept}
-                className="financial-number text-xl font-bold tabular-nums text-slate-900 hover:text-primary text-left cursor-pointer"
-                title="คลิกเพื่อใส่/แก้ยอดบัญชี"
+              <div
+                className="financial-number text-xl font-bold tabular-nums text-slate-900"
+                title="ผลรวมรายเดือนของบัญชี Kept ปีนี้"
               >
-                {kept > 0 ? formatTHB(kept) : '+ ใส่ยอด'}
-              </button>
+                {formatTHB(kept)}
+              </div>
+              <div className="text-[11px] text-slate-400 mt-0.5">
+                แก้ไขรายเดือนที่หน้า Monthly
+              </div>
             </div>
             <div>
               <div className="text-xs text-slate-500">เป้าหมาย</div>

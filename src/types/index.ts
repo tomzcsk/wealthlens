@@ -35,8 +35,20 @@ export interface UserPreferences {
   yearlyGoals: { [year: string]: number };
   /** Standalone "ออมเที่ยว" target — single value, not per-year. */
   travelSavingsGoal: number;
-  /** Per-year balance of the Krungsri "Kept" account, manually entered. */
-  keptBalances: { [year: string]: number };
+  /**
+   * Krungsri "Kept" savings account — monthly transactions.
+   * Indexed by 4-digit year then 1-12 month string.
+   * Annual Kept = sum of values across all 12 months for that year.
+   * Negative values = withdrawals from the account.
+   *
+   * Schema note: this used to be `Record<year, number>` (a single yearly
+   * snapshot). The shift to per-month tracking matches Tom's actual Sheet,
+   * where each row of the Kept column is a deposit/withdrawal. A runtime
+   * normaliser in `goalsStore` (`normalizePreferences`) lifts old-shape
+   * payloads into the new shape so persisted data and Drive backups keep
+   * working without requiring a schema-version bump.
+   */
+  keptBalances: { [year: string]: { [month: string]: number } };
   /** Default income/deduction values — pre-fills new months on demand. */
   incomeDefaults: IncomeDefaults | null;
 }

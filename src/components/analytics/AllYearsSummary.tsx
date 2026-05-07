@@ -1,10 +1,11 @@
 import { useMemo, type ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { useFinanceStore } from '@/stores/financeStore';
-import { useGoalsStore } from '@/stores/goalsStore';
+import { sumAnnualKept, useGoalsStore } from '@/stores/goalsStore';
 import { selectMonthSummary } from '@/stores/selectors';
 import type { WealthLensData } from '@/types';
-import { formatTHB, formatNumber } from '@/utils/formatters';
+import { formatTHB } from '@/utils/formatters';
 
 interface YearRow {
   year: number;
@@ -116,10 +117,10 @@ const MoneyCell = ({
 );
 
 export const AllYearsSummary = (): ReactNode => {
+  const navigate = useNavigate();
   const data = useFinanceStore((s) => s.data);
+  const setSelectedYear = useFinanceStore((s) => s.setSelectedYear);
   const keptBalances = useGoalsStore((s) => s.keptBalances);
-  const setKeptBalance = useGoalsStore((s) => s.setKeptBalance);
-  const clearKeptBalance = useGoalsStore((s) => s.clearKeptBalance);
 
   const { rows, totals, remainingTotal, keptTotal } = useMemo(() => {
     const years = Object.keys(data.years)
@@ -132,9 +133,9 @@ export const AllYearsSummary = (): ReactNode => {
     const remainingOnlyTracked = computed
       .filter((r) => r.totalExpenses > 0)
       .reduce((acc, r) => acc + r.remaining, 0);
-    // Kept rollup = sum of manually-entered Krungsri savings balances.
+    // Kept rollup = sum of every per-month Kept entry, across every year.
     const keptSum = computed.reduce(
-      (acc, r) => acc + (keptBalances[String(r.year)] ?? 0),
+      (acc, r) => acc + sumAnnualKept(keptBalances[String(r.year)]),
       0,
     );
     return {
@@ -145,22 +146,15 @@ export const AllYearsSummary = (): ReactNode => {
     };
   }, [data, keptBalances]);
 
+  /**
+   * Per-month editing lives on the Monthly page now (one row per month is
+   * the natural editor for a sum-of-12-cells field). Clicking a year's
+   * Kept cell selects that year and navigates there with January preselected
+   * — Tom can then arrow through months and edit each one inline.
+   */
   const handleEditKept = (year: number): void => {
-    const current = keptBalances[String(year)];
-    const promptMsg = `ใส่ยอดบัญชี Kept (กรุงศรี) สำหรับปี ${year} — เว้นว่างเพื่อลบ`;
-    const raw = window.prompt(promptMsg, current ? formatNumber(current) : '');
-    if (raw === null) return; // user cancelled
-    const trimmed = raw.trim();
-    if (trimmed === '') {
-      clearKeptBalance(year);
-      return;
-    }
-    const parsed = Number(trimmed.replace(/,/g, ''));
-    if (Number.isFinite(parsed) && parsed >= 0) {
-      setKeptBalance(year, parsed);
-    } else {
-      window.alert('กรอกตัวเลขที่ถูกต้อง');
-    }
+    setSelectedYear(year);
+    navigate('/monthly?month=1');
   };
 
   return (
@@ -282,17 +276,21 @@ export const AllYearsSummary = (): ReactNode => {
                   {r.totalExpenses === 0 ? '—' : formatTHB(r.remaining)}
                 </td>
                 {(() => {
-                  const balance = keptBalances[String(r.year)];
-                  const hasValue = balance !== undefined && balance > 0;
+                  const annual = sumAnnualKept(keptBalances[String(r.year)]);
+                  const hasValue = annual !== 0;
                   return (
                     <td
                       className={`px-3 py-2 text-right tabular-nums font-semibold cursor-pointer hover:bg-amber-100/40 transition ${
-                        hasValue ? 'text-savings' : 'text-slate-300'
+                        hasValue
+                          ? annual > 0
+                            ? 'text-savings'
+                            : 'text-expense'
+                          : 'text-slate-300'
                       }`}
                       onClick={() => handleEditKept(r.year)}
-                      title="คลิกเพื่อใส่/แก้ยอดบัญชี Kept (กรุงศรี)"
+                      title="คลิกเพื่อแก้ไขรายเดือนใน Monthly page"
                     >
-                      {hasValue ? formatTHB(balance) : '+ ใส่ยอด'}
+                      {hasValue ? formatTHB(annual) : '+ ใส่ยอด'}
                     </td>
                   );
                 })()}
@@ -347,8 +345,8 @@ export const AllYearsSummary = (): ReactNode => {
           เหลือจริง = Net. All − จ่าย · ออม/ลงทุน = สะสมทั้งปี
         </div>
         <div>
-          💰 <strong>Kept</strong> = ยอดบัญชี Kept (กรุงศรี) — กรอกเอง
-          คลิกที่ cell เพื่อใส่/แก้
+          💰 <strong>Kept</strong> = ผลรวมยอดรายเดือนของบัญชี Kept (กรุงศรี) —
+          คลิกที่ cell เพื่อไปแก้รายเดือนที่หน้า Monthly
         </div>
       </footer>
     </section>
