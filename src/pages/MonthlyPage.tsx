@@ -2,14 +2,12 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { useFinanceStore } from '@/stores';
-import { useGoalsStore, sumAnnualKept } from '@/stores/goalsStore';
 import { selectMonthIncome, selectMonthSummary } from '@/stores/selectors';
 import { IncomeForm } from '@/components/forms/IncomeForm';
 import { ExpenseList } from '@/components/forms/ExpenseList';
 import { SavingsList } from '@/components/forms/SavingsList';
 import { Modal } from '@/components/ui/Modal';
 import {
-  formatNumber,
   formatTHB,
   formatThaiMonthYear,
   THAI_MONTHS_LONG,
@@ -152,8 +150,6 @@ export const MonthlyPage = (): ReactNode => {
           </div>
         </header>
 
-        <KeptYearRow year={year} month={month} />
-
         <SavingsList year={year} month={month} />
       </section>
 
@@ -260,86 +256,5 @@ const SummaryStat = ({
     </div>
   </div>
 );
-
-/**
- * Inline editable Kept (Krungsri) balance for the active month.
- *
- * Per-month snapshot — each calendar month carries its own deposit /
- * withdrawal value (negatives allowed). The annual Kept figure shown
- * elsewhere is the sum across the year. Click to edit THIS month's value.
- */
-const KeptYearRow = ({
-  year,
-  month,
-}: {
-  year: number;
-  month: number;
-}): ReactNode => {
-  const yearBucket = useGoalsStore((s) => s.keptBalances[String(year)]);
-  const monthly = yearBucket?.[String(month)];
-  const annual = sumAnnualKept(yearBucket);
-  const setKeptBalance = useGoalsStore((s) => s.setKeptBalance);
-  const clearKeptBalance = useGoalsStore((s) => s.clearKeptBalance);
-
-  const monthLabel = THAI_MONTHS_LONG[month - 1];
-
-  const handleEdit = (): void => {
-    const raw = window.prompt(
-      `ใส่ยอด Kept (กรุงศรี) สำหรับ ${monthLabel} ${year} — เว้นว่างเพื่อลบ\n` +
-        `(ค่าติดลบ = ถอนออก)`,
-      monthly !== undefined ? formatNumber(monthly) : '',
-    );
-    if (raw === null) return;
-    const trimmed = raw.trim();
-    if (trimmed === '') {
-      clearKeptBalance(year, month);
-      return;
-    }
-    const parsed = Number(trimmed.replace(/,/g, ''));
-    if (Number.isFinite(parsed)) {
-      setKeptBalance(year, month, parsed);
-    }
-  };
-
-  const hasValue = monthly !== undefined;
-  const isNegative = hasValue && monthly < 0;
-
-  return (
-    <button
-      type="button"
-      onClick={handleEdit}
-      className="w-full flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 hover:bg-amber-100 transition-colors text-left"
-      title="ยอดเดือนนี้ — คลิกเพื่อแก้"
-    >
-      <div className="flex items-center gap-3">
-        <span aria-hidden="true" className="text-xl">
-          💼
-        </span>
-        <div>
-          <div className="text-sm font-semibold text-amber-900">
-            Kept (กรุงศรี) — เดือนนี้
-          </div>
-          <div className="text-xs text-amber-700/80">
-            {monthLabel} {year} · รวมทั้งปี{' '}
-            <span className="tabular-nums font-semibold">
-              {formatTHB(annual)}
-            </span>
-          </div>
-        </div>
-      </div>
-      <div
-        className={`tabular-nums text-base font-bold ${
-          !hasValue
-            ? 'text-amber-400'
-            : isNegative
-              ? 'text-red-700'
-              : 'text-amber-900'
-        }`}
-      >
-        {hasValue ? formatTHB(monthly) : '+ ใส่ยอด'}
-      </div>
-    </button>
-  );
-};
 
 export default MonthlyPage;

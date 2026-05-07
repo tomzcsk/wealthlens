@@ -14,6 +14,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 
 import Modal from '@/components/ui/Modal';
 import { useFinanceStore } from '@/stores/financeStore';
+import { sumAnnualKept, useGoalsStore } from '@/stores/goalsStore';
 import { selectMonthSavings } from '@/stores/selectors';
 import { useToastStore } from '@/stores/toastStore';
 import {
@@ -21,7 +22,12 @@ import {
   SAVINGS_CATEGORY_ORDER,
 } from '@/types/savings-categories';
 import type { SavingsCategory, SavingsItem } from '@/types';
-import { formatTHB, formatThaiMonth } from '@/utils/formatters';
+import {
+  THAI_MONTHS_LONG,
+  formatNumber,
+  formatTHB,
+  formatThaiMonth,
+} from '@/utils/formatters';
 import { findRecurringSavingsTemplate } from '@/utils/recurringTemplate';
 
 import SavingsForm from './SavingsForm';
@@ -96,6 +102,77 @@ const SavingsRow = ({
   );
 };
 
+// ---------------------------------------------------------------------------
+// Kept (Krungsri) row
+// ---------------------------------------------------------------------------
+
+/**
+ * "Kept" lives in `preferences.keptBalances` (not in `MonthlySavings.items`)
+ * but Tom thinks of it as just another savings line, so we render it inside
+ * SavingsList alongside Dime / ออมเที่ยว. The row mirrors `SavingsRow`'s
+ * visuals — same icon column, same right-aligned amount, same hover —
+ * with a click-to-edit prompt instead of pencil/trash buttons because
+ * Kept allows negative values (withdrawals) and there's only one row per
+ * (year, month), so the open-modal pattern would be overkill.
+ */
+interface KeptRowProps {
+  year: number;
+  month: number;
+  monthly: number | undefined;
+  annual: number;
+  onEdit: () => void;
+  showIcon?: boolean;
+}
+
+const KeptRow = ({
+  monthly,
+  annual,
+  onEdit,
+  showIcon = true,
+}: KeptRowProps): ReactNode => {
+  const hasValue = monthly !== undefined;
+  const isNegative = hasValue && monthly < 0;
+  return (
+    <button
+      type="button"
+      onClick={onEdit}
+      title="ยอด Kept (กรุงศรี) เดือนนี้ — คลิกเพื่อแก้"
+      className="group w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-slate-50 transition text-left"
+    >
+      {showIcon && (
+        <span aria-hidden="true" className="text-base w-6 text-center">
+          💼
+        </span>
+      )}
+      <div className="flex-1 min-w-0">
+        <p className="text-sm text-slate-900 truncate">
+          Kept (กรุงศรี)
+          <span className="ml-2 inline-block px-1.5 py-0.5 text-[10px] font-medium text-amber-800 bg-amber-100 rounded">
+            รวมทั้งปี {formatTHB(annual)}
+          </span>
+        </p>
+      </div>
+      <span
+        className={`text-sm financial-number tabular-nums ${
+          !hasValue
+            ? 'text-slate-400 italic'
+            : isNegative
+              ? 'text-red-700'
+              : 'text-slate-900'
+        }`}
+      >
+        {hasValue ? formatTHB(monthly) : '+ ใส่ยอด'}
+      </span>
+      <span
+        aria-hidden="true"
+        className="p-1 text-slate-400 group-hover:text-primary transition"
+      >
+        ✏️
+      </span>
+    </button>
+  );
+};
+
 export const SavingsList = ({
   year,
   month,
@@ -113,6 +190,32 @@ export const SavingsList = ({
   const deleteSavings = useFinanceStore((s) => s.deleteSavings);
   const addSavings = useFinanceStore((s) => s.addSavings);
   const pushToast = useToastStore((s) => s.push);
+
+  // Kept (Krungsri) — manual per-month entry. Treated as a savings line.
+  const keptYearBucket = useGoalsStore((s) => s.keptBalances[String(year)]);
+  const keptMonthly = keptYearBucket?.[String(month)];
+  const keptAnnual = sumAnnualKept(keptYearBucket);
+  const setKeptBalance = useGoalsStore((s) => s.setKeptBalance);
+  const clearKeptBalance = useGoalsStore((s) => s.clearKeptBalance);
+
+  const handleEditKept = (): void => {
+    const monthLabel = THAI_MONTHS_LONG[month - 1];
+    const raw = window.prompt(
+      `ใส่ยอด Kept (กรุงศรี) สำหรับ ${monthLabel} ${year} — เว้นว่างเพื่อลบ\n` +
+        `(ค่าติดลบ = ถอนออก)`,
+      keptMonthly !== undefined ? formatNumber(keptMonthly) : '',
+    );
+    if (raw === null) return;
+    const trimmed = raw.trim();
+    if (trimmed === '') {
+      clearKeptBalance(year, month);
+      return;
+    }
+    const parsed = Number(trimmed.replace(/,/g, ''));
+    if (Number.isFinite(parsed)) {
+      setKeptBalance(year, month, parsed);
+    }
+  };
 
   const handleFillRecurring = (): void => {
     const data = useFinanceStore.getState().data;
@@ -148,9 +251,11 @@ export const SavingsList = ({
     return map;
   }, [items]);
 
+  // Total includes Kept's monthly value. Negative Kept entries net out
+  // (matches Tom's Sheet behaviour — "ออม" column is signed).
   const total = useMemo(
-    () => items.reduce((acc, it) => acc + it.amount, 0),
-    [items],
+    () => items.reduce((acc, it) => acc + it.amount, 0) + (keptMonthly ?? 0),
+    [items, keptMonthly],
   );
 
   const openAdd = (cat?: SavingsCategory): void => {
@@ -177,48 +282,6 @@ export const SavingsList = ({
     setDefaultCategory(undefined);
   };
 
-  if (items.length === 0) {
-    return (
-      <div className="rounded-lg border border-dashed border-slate-200 bg-white p-8 text-center">
-        <p className="text-sm text-slate-500 mb-4">ยังไม่มีรายการออม / ลงทุน</p>
-        <div className="flex items-center justify-center gap-2">
-          <button
-            type="button"
-            onClick={handleFillRecurring}
-            className="px-4 py-2 text-sm font-medium text-primary border border-primary rounded-md hover:bg-primary-light transition"
-          >
-            📋 เติมรายการประจำ
-          </button>
-          <button
-            type="button"
-            onClick={() => openAdd()}
-            className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark transition"
-          >
-            + เพิ่มรายการออม
-          </button>
-        </div>
-        <Modal
-          open={modalOpen}
-          onClose={handleClose}
-          title="เพิ่มรายการออม"
-          size="sm"
-        >
-          <div className="px-6 py-5">
-            <SavingsForm
-              year={year}
-              month={month}
-              defaultCategory={defaultCategory}
-              onSaved={() => {
-                /* keep modal open for quick-add */
-              }}
-              onCancel={handleClose}
-            />
-          </div>
-        </Modal>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-3">
       {showAddButton && (
@@ -242,6 +305,33 @@ export const SavingsList = ({
       )}
 
       <div className="bg-white rounded-lg border border-slate-200 divide-y divide-slate-100">
+        {/* Kept (Krungsri) — always rendered, always editable. Sits as its
+            own pseudo-category above Dime / ออมเที่ยว / etc. so Tom sees one
+            unified savings list per month. */}
+        <div className="py-2">
+          <div className="flex items-center justify-between px-3 py-1.5">
+            <div className="flex items-center gap-2">
+              <span aria-hidden="true">💼</span>
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Kept (กรุงศรี)
+              </h3>
+            </div>
+            <span className="text-xs financial-number text-slate-500 tabular-nums">
+              {keptAnnual !== 0 ? `รวมทั้งปี ${formatTHB(keptAnnual)}` : ''}
+            </span>
+          </div>
+          <div className="px-1">
+            <KeptRow
+              year={year}
+              month={month}
+              monthly={keptMonthly}
+              annual={keptAnnual}
+              onEdit={handleEditKept}
+              showIcon={false}
+            />
+          </div>
+        </div>
+
         {groupByCategory ? (
           [...grouped.entries()].map(([cat, rows]) => {
             const meta = SAVINGS_CATEGORIES[cat];
@@ -283,6 +373,12 @@ export const SavingsList = ({
                 onDelete={handleDelete}
               />
             ))}
+          </div>
+        )}
+
+        {items.length === 0 && (
+          <div className="px-4 py-3 text-center text-xs text-slate-400 italic">
+            ยังไม่มีรายการออม/ลงทุนเพิ่มเติม — กด "+ เพิ่มรายการออม" ด้านบน
           </div>
         )}
 
