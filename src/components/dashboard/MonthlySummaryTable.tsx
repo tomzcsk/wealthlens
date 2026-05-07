@@ -40,10 +40,14 @@ export interface MonthlySummaryTableProps {
 // Internals
 // ---------------------------------------------------------------------------
 
-/** Combined per-month payload — selector summary + raw income + Kept. */
+/** Combined per-month payload — selector summary + raw income + savings breakdown. */
 interface MonthPayload {
   summary: MonthlySummaryRow;
   income: MonthlyIncome | null;
+  /** Sum of savings items for category 'investment-dime' this month. */
+  dime: number;
+  /** Sum of savings items for category 'travel' this month. */
+  travel: number;
   /** Per-month Krungsri Kept entry (signed; negative = withdrawal). */
   kept: number;
 }
@@ -56,7 +60,8 @@ interface RowTotals {
   netSalary: number;
   netAll: number;
   totalExpenses: number;
-  totalSavings: number;
+  dime: number;
+  travel: number;
   kept: number;
   remaining: number;
 }
@@ -70,7 +75,8 @@ const COLUMN_HEADERS = [
   'Net',
   'Net.All',
   'จ่าย',
-  'ออม',
+  'ลงทุน Dime',
+  'ออมเที่ยว',
   'Kept',
   'เหลือ',
 ] as const;
@@ -96,9 +102,26 @@ const buildPayloads = (
 ): MonthPayload[] => {
   const snapshot = { data };
   const summaries = selectMonthlySummariesForYear(snapshot, year);
+  // Pre-bucket savings rows by month so each row builds in O(1) lookups
+  // instead of re-scanning the year's savings array per month.
+  const yr = data.years[String(year)];
+  const dimeByMonth = new Map<number, number>();
+  const travelByMonth = new Map<number, number>();
+  for (const row of yr?.savings ?? []) {
+    let dime = 0;
+    let travel = 0;
+    for (const item of row.items) {
+      if (item.category === 'investment-dime') dime += item.amount;
+      else if (item.category === 'travel') travel += item.amount;
+    }
+    if (dime !== 0) dimeByMonth.set(row.month, dime);
+    if (travel !== 0) travelByMonth.set(row.month, travel);
+  }
   return summaries.map((summary) => ({
     summary,
     income: selectMonthIncome(snapshot, year, summary.month),
+    dime: dimeByMonth.get(summary.month) ?? 0,
+    travel: travelByMonth.get(summary.month) ?? 0,
     kept: keptYearBucket?.[String(summary.month)] ?? 0,
   }));
 };
@@ -207,7 +230,7 @@ interface MonthRowProps {
 }
 
 const MonthRow = ({ payload, year, onSelect }: MonthRowProps) => {
-  const { summary, income, kept } = payload;
+  const { summary, income, dime, travel, kept } = payload;
   const isEmpty = income === null;
 
   const tooltip = useMemo(() => {
@@ -314,11 +337,21 @@ const MonthRow = ({ payload, year, onSelect }: MonthRowProps) => {
         className={clsx(
           BODY_CELL_BASE,
           'text-right',
-          summary.totalSavings === 0 ? 'text-slate-400' : 'text-savings',
+          dime === 0 ? 'text-slate-400' : 'text-savings',
         )}
-        title="รวมออม + ลงทุน เดือนนี้ (Dime, ออมเที่ยว, ฯลฯ)"
+        title="ลงทุน Dime เดือนนี้"
       >
-        {formatNumber(summary.totalSavings)}
+        {formatNumber(dime)}
+      </td>
+      <td
+        className={clsx(
+          BODY_CELL_BASE,
+          'text-right',
+          travel === 0 ? 'text-slate-400' : 'text-savings',
+        )}
+        title="ออมเที่ยว เดือนนี้"
+      >
+        {formatNumber(travel)}
       </td>
       <td
         className={clsx(
@@ -385,10 +418,19 @@ const TotalsRow = ({ totals }: TotalsRowProps) => {
         className={clsx(
           BODY_CELL_BASE,
           'text-right',
-          totals.totalSavings === 0 ? 'text-slate-400' : 'text-savings',
+          totals.dime === 0 ? 'text-slate-400' : 'text-savings',
         )}
       >
-        {formatNumber(totals.totalSavings)}
+        {formatNumber(totals.dime)}
+      </td>
+      <td
+        className={clsx(
+          BODY_CELL_BASE,
+          'text-right',
+          totals.travel === 0 ? 'text-slate-400' : 'text-savings',
+        )}
+      >
+        {formatNumber(totals.travel)}
       </td>
       <td
         className={clsx(
@@ -422,11 +464,18 @@ const computeTotals = (payloads: MonthPayload[]): RowTotals => {
   let netSalary = 0;
   let netAll = 0;
   let totalExpenses = 0;
-  let totalSavings = 0;
+  let dime = 0;
+  let travel = 0;
   let kept = 0;
   let remaining = 0;
 
-  for (const { summary, income, kept: monthKept } of payloads) {
+  for (const {
+    summary,
+    income,
+    dime: monthDime,
+    travel: monthTravel,
+    kept: monthKept,
+  } of payloads) {
     if (income) {
       salary += income.salary;
       bonus += income.bonus;
@@ -436,7 +485,8 @@ const computeTotals = (payloads: MonthPayload[]): RowTotals => {
     netSalary += summary.netSalary;
     netAll += summary.netAll;
     totalExpenses += summary.totalExpenses;
-    totalSavings += summary.totalSavings;
+    dime += monthDime;
+    travel += monthTravel;
     kept += monthKept;
     remaining += summary.remaining;
   }
@@ -449,7 +499,8 @@ const computeTotals = (payloads: MonthPayload[]): RowTotals => {
     netSalary,
     netAll,
     totalExpenses,
-    totalSavings,
+    dime,
+    travel,
     kept,
     remaining,
   };
@@ -471,7 +522,7 @@ const buildCsv = (
 ): string => {
   const headerLine = COLUMN_HEADERS.map(csvCell).join(',');
 
-  const dataLines = payloads.map(({ summary, income, kept }) =>
+  const dataLines = payloads.map(({ summary, income, dime, travel, kept }) =>
     [
       formatThaiMonth(summary.month),
       income?.salary ?? 0,
@@ -481,7 +532,8 @@ const buildCsv = (
       summary.netSalary,
       summary.netAll,
       summary.totalExpenses,
-      summary.totalSavings,
+      dime,
+      travel,
       kept,
       summary.remaining,
     ]
@@ -498,7 +550,8 @@ const buildCsv = (
     totals.netSalary,
     totals.netAll,
     totals.totalExpenses,
-    totals.totalSavings,
+    totals.dime,
+    totals.travel,
     totals.kept,
     totals.remaining,
   ]
