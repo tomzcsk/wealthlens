@@ -11,10 +11,10 @@
  */
 
 import { useMemo, type ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 import { useFinanceStore } from '@/stores/financeStore';
 import { useSelectedYear } from '@/hooks/useFinanceData';
+import { useToastStore } from '@/stores/toastStore';
 import { THAI_MONTHS_SHORT, formatTHB } from '@/utils/formatters';
 import type { ExpenseItem, WealthLensData } from '@/types';
 
@@ -48,8 +48,9 @@ const collectReimbursements = (
 
 export const ReimbursementCard = (): ReactNode => {
   const year = useSelectedYear();
-  const navigate = useNavigate();
   const data = useFinanceStore((s) => s.data);
+  const updateExpense = useFinanceStore((s) => s.updateExpense);
+  const pushToast = useToastStore((s) => s.push);
 
   const { pending, receivedTotal } = useMemo(
     () => collectReimbursements(data, year),
@@ -57,6 +58,24 @@ export const ReimbursementCard = (): ReactNode => {
   );
 
   const pendingTotal = pending.reduce((acc, row) => acc + row.item.amount, 0);
+
+  /**
+   * Quick "เบิกแล้ว" action — flips status to received with today's date
+   * stamped automatically. Lives here so Tom can clear pending claims
+   * without leaving the Overview page.
+   */
+  const handleMarkReceived = (row: PendingRow): void => {
+    updateExpense(year, row.month, row.item.id, {
+      reimbursement: {
+        status: 'received',
+        receivedDate: new Date().toISOString().slice(0, 10),
+      },
+    });
+    pushToast({
+      message: `เบิกแล้ว: ${row.item.name}`,
+      tone: 'success',
+    });
+  };
 
   // Hide the card when this year has no reimbursable activity at all.
   if (pending.length === 0 && receivedTotal === 0) return null;
@@ -98,23 +117,27 @@ export const ReimbursementCard = (): ReactNode => {
 
       {pending.length > 0 && (
         <ul className="divide-y divide-slate-100 border-t border-slate-100 pt-2">
-          {pending.slice(0, 5).map(({ item, month }) => (
-            <li key={`${month}-${item.id}`}>
+          {pending.slice(0, 5).map((row) => (
+            <li
+              key={`${row.month}-${row.item.id}`}
+              className="flex items-center gap-3 py-2 px-1"
+            >
+              <span className="flex-1 min-w-0 text-sm text-slate-900 truncate">
+                <span className="text-xs text-slate-400 mr-2 tabular-nums">
+                  {THAI_MONTHS_SHORT[row.month - 1]}
+                </span>
+                {row.item.name}
+              </span>
+              <span className="text-sm tabular-nums font-medium text-amber-800">
+                {formatTHB(row.item.amount)}
+              </span>
               <button
                 type="button"
-                onClick={() => navigate(`/monthly?month=${month}`)}
-                className="w-full flex items-center justify-between gap-3 py-2 px-1 hover:bg-slate-50 rounded-md transition text-left"
-                title={`ไปที่ ${THAI_MONTHS_SHORT[month - 1]} ${year}`}
+                onClick={() => handleMarkReceived(row)}
+                title="ทำเครื่องหมายว่าได้คืนเงินแล้ว"
+                className="px-2.5 py-1 text-xs font-medium rounded-md border border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 transition whitespace-nowrap"
               >
-                <span className="text-sm text-slate-900 truncate">
-                  <span className="text-xs text-slate-400 mr-2 tabular-nums">
-                    {THAI_MONTHS_SHORT[month - 1]}
-                  </span>
-                  {item.name}
-                </span>
-                <span className="text-sm tabular-nums font-medium text-amber-800">
-                  {formatTHB(item.amount)}
-                </span>
+                🟢 เบิกแล้ว
               </button>
             </li>
           ))}
