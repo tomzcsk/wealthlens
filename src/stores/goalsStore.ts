@@ -91,6 +91,9 @@ const EMPTY_PREFS: UserPreferences = Object.freeze({
  * allocating a fresh object — important because `useGoalsStore` runs the
  * normaliser on every selector call, and returning a new reference every
  * time would break `useShallow` and trigger render loops.
+ *
+ * Edge case: an empty object `{}` is treated as already-normalized so the
+ * caller can pass it through as a stable reference.
  */
 const isAlreadyNormalized = (
   raw: unknown,
@@ -145,17 +148,31 @@ const normalizeKeptBalances = (
  * Always read preferences through this normaliser so callers see the new
  * nested keptBalances shape regardless of how old the persisted blob is.
  *
- * Reference-stable: returns the SAME `prefs` object when nothing needs
- * lifting. Critical for `useShallow` in `useGoalsStore`.
+ * Reference-stable across multiple reads of the SAME `prefs` input — backed
+ * by a WeakMap so the normalised output is computed once per unique prefs
+ * object, then handed out unchanged. Without this cache, every render would
+ * see a fresh `{...prefs, keptBalances: ...}` object, which `useShallow`
+ * inside `useGoalsStore` rejects as "changed" → infinite re-render loop.
+ *
+ * (Why: `normalizeKeptBalances` returns `{}` for `undefined` input and a
+ * brand-new lifted object for legacy `Record<year, number>` shapes. Both
+ * cases are deterministic for the same input but allocate fresh refs each
+ * call. The cache pins one ref per input.)
  */
+const normalizationCache = new WeakMap<UserPreferences, UserPreferences>();
+
 const normalizePreferences = (
   prefs: UserPreferences | undefined,
 ): UserPreferences => {
   if (!prefs) return EMPTY_PREFS;
+  const cached = normalizationCache.get(prefs);
+  if (cached) return cached;
   const rawKept: unknown = prefs.keptBalances;
   const normalized = normalizeKeptBalances(rawKept);
-  if (normalized === rawKept) return prefs;
-  return { ...prefs, keptBalances: normalized };
+  const out =
+    normalized === rawKept ? prefs : { ...prefs, keptBalances: normalized };
+  normalizationCache.set(prefs, out);
+  return out;
 };
 
 const readPrefs = (data: WealthLensData): UserPreferences =>
