@@ -1,0 +1,793 @@
+{
+  "project": {
+    "name": "WealthLens",
+    "description": "Personal Finance Dashboard สำหรับติดตามรายรับ-รายจ่ายส่วนตัว",
+    "version": "1.1.0",
+    "created": "2026-05-06",
+    "lastUpdated": "2026-05-06",
+    "owner": "Tom",
+    "status": "shipped",
+    "storageStrategy": "LocalStorage (primary) + Google Drive Sync (cloud backup) + JSON Export (emergency)"
+  },
+  "phases": [
+    {
+      "id": "phase_0",
+      "name": "Phase 0 — Project Setup & Foundation",
+      "status": "completed",
+      "completionPercent": 100,
+      "features": [
+        {
+          "id": "F00_01",
+          "name": "Project Initialization",
+          "description": "สร้าง Vite + React project, ติดตั้ง dependencies ทั้งหมด",
+          "status": "completed",
+          "priority": "P0",
+          "phase": "phase_0",
+          "techRef": "techstack.md#2-frontend-framework",
+          "acceptanceCriteria": [
+            "npm run dev รันได้โดยไม่มี error",
+            "Tailwind CSS ทำงานได้",
+            "shadcn/ui init สำเร็จ",
+            "Recharts import ได้",
+            "Zustand import ได้",
+            "@react-oauth/google import ได้"
+          ],
+          "estimatedHours": 2,
+          "dependencies": [],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-06",
+            "notes": "Implemented during Phase 0–3 build sprint"
+          }
+        },
+        {
+          "id": "F00_02",
+          "name": "Project Structure Setup",
+          "description": "สร้าง folder structure ตาม techstack.md spec",
+          "status": "completed",
+          "priority": "P0",
+          "phase": "phase_0",
+          "techRef": "techstack.md#10-project-structure",
+          "acceptanceCriteria": [
+            "Folder structure ตรงตาม techstack.md",
+            "Import paths ทำงานถูกต้อง",
+            "ESLint + Prettier config ครบ"
+          ],
+          "estimatedHours": 1,
+          "dependencies": [
+            "F00_01"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-06",
+            "notes": "Implemented during Phase 0–3 build sprint"
+          }
+        },
+        {
+          "id": "F00_03",
+          "name": "Design Tokens & Theme Setup",
+          "description": "ตั้งค่า Tailwind theme ตาม UXUI.md color system, typography, spacing",
+          "status": "completed",
+          "priority": "P0",
+          "phase": "phase_0",
+          "uxRef": "UXUI.md#2-color-system",
+          "acceptanceCriteria": [
+            "CSS variables ทั้งหมดใน UXUI.md#2 ถูก implement",
+            "Inter + Noto Sans Thai fonts โหลดได้",
+            "Color palette ใช้ได้ผ่าน Tailwind class",
+            "Number formatting ด้วย tabular-nums"
+          ],
+          "estimatedHours": 2,
+          "dependencies": [
+            "F00_01"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-06",
+            "notes": "Implemented during Phase 0–3 build sprint"
+          }
+        },
+        {
+          "id": "F00_04",
+          "name": "Data Schema & TypeScript Types",
+          "description": "สร้าง TypeScript interfaces ตาม data schema ใน techstack.md",
+          "status": "completed",
+          "priority": "P0",
+          "phase": "phase_0",
+          "techRef": "techstack.md#6-data-persistence",
+          "acceptanceCriteria": [
+            "WealthLensData interface ครบถ้วน",
+            "YearData interface ครบถ้วน",
+            "MonthlyIncome interface รองรับ ลงทุน Dime (2026+)",
+            "ExpenseCategory enum ครบ 8 categories",
+            "Types ไม่มี any หรือ unknown"
+          ],
+          "estimatedHours": 2,
+          "dependencies": [
+            "F00_02"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-06",
+            "notes": "Implemented during Phase 0–3 build sprint"
+          }
+        },
+        {
+          "id": "F00_05",
+          "name": "Seed Data Import (2023-2026)",
+          "description": "แปลงข้อมูลจาก Dashboard HTML files ทั้งหมดเป็น seedData.js",
+          "status": "completed",
+          "priority": "P0",
+          "phase": "phase_0",
+          "dataRef": "prd.md#3-core-data-model",
+          "acceptanceCriteria": [
+            "ข้อมูลปี 2023 ครบ 12 เดือน",
+            "ข้อมูลปี 2024 ครบ 12 เดือน (income + expenses)",
+            "ข้อมูลปี 2025 ครบ 12 เดือน (income + expenses, มี ChatGPT)",
+            "ข้อมูลปี 2026 ครบ 4 เดือน (income + expenses, มี Claude AI + ออมเที่ยว)",
+            "ยอดรวม Net All แต่ละปีตรงกับ Dashboard.html",
+            "2023: Net All = 1,695,936",
+            "2024: Net All = 2,222,922",
+            "2025: Net All = 2,598,100",
+            "2026 YTD: Net All = 924,000"
+          ],
+          "estimatedHours": 4,
+          "dependencies": [
+            "F00_04"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-06",
+            "notes": "Implemented during Phase 0–3 build sprint"
+          }
+        },
+        {
+          "id": "F00_06",
+          "name": "Google OAuth 2.0 Setup",
+          "description": "ตั้งค่า Google Cloud Project, OAuth credentials, และ @react-oauth/google provider",
+          "status": "completed",
+          "priority": "P0",
+          "phase": "phase_0",
+          "techRef": "techstack.md#6-data-persistence",
+          "acceptanceCriteria": [
+            "Google Cloud Project สร้างแล้ว",
+            "OAuth 2.0 Client ID สร้างแล้ว (Web application type)",
+            "Authorized origins + redirect URIs ตั้งค่าถูกต้อง",
+            "Drive API scope: drive.file เท่านั้น (ไม่ใช่ drive ทั้งหมด)",
+            "GoogleOAuthProvider ครอบ App component แล้ว",
+            "useGoogleLogin hook ทำงานได้ — ได้ accessToken กลับมา",
+            "Token refresh ทำงานได้ (token อายุ 1 ชั่วโมง)"
+          ],
+          "estimatedHours": 2,
+          "dependencies": [
+            "F00_01"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-06",
+            "notes": "Implemented during Phase 0–3 build sprint"
+          }
+        },
+        {
+          "id": "F00_07",
+          "name": "Drive Sync Utility (driveSync.js)",
+          "description": "สร้าง utility module สำหรับ read/write ไฟล์ใน Google Drive",
+          "status": "completed",
+          "priority": "P0",
+          "phase": "phase_0",
+          "techRef": "techstack.md#6-data-persistence",
+          "acceptanceCriteria": [
+            "syncToDrive(data, accessToken) — upload/update wealthlens_data.json ใน folder WealthLens/",
+            "loadFromDrive(accessToken) — download และ parse JSON กลับมา",
+            "findOrCreateFolder() — สร้าง folder ถ้ายังไม่มี",
+            "getSyncStatus() — return 'synced' | 'syncing' | 'offline' | 'error'",
+            "Debounce 2 วินาที ก่อน sync (ไม่ call API ทุก keystroke)",
+            "Retry logic: retry 3 ครั้งถ้า network error",
+            "Conflict resolution: เปรียบเทียบ lastUpdated timestamp ใช้ค่าที่ใหม่กว่า",
+            "Unit test ครอบทุก function"
+          ],
+          "estimatedHours": 5,
+          "dependencies": [
+            "F00_06"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-06",
+            "notes": "Implemented during Phase 0–3 build sprint"
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase_1",
+      "name": "Phase 1 — MVP Core Dashboard",
+      "status": "completed",
+      "completionPercent": 100,
+      "features": [
+        {
+          "id": "F01",
+          "name": "Layout Shell (Sidebar + Header)",
+          "description": "สร้าง layout หลักของแอป: sidebar navigation, header ที่มี year selector",
+          "status": "completed",
+          "priority": "P0",
+          "phase": "phase_1",
+          "uxRef": "UXUI.md#5-screen-layouts#51-layout-shell",
+          "prdRef": "prd.md#4-features--scope",
+          "acceptanceCriteria": [
+            "Sidebar แสดง: Overview, Monthly, Analytics, Settings",
+            "Header แสดง: App name + Year Dropdown + Add Entry button",
+            "Year dropdown มีตัวเลือก 2023, 2024, 2025, 2026",
+            "Navigation ทำงานได้ (route switching)",
+            "Responsive: Sidebar collapse บน mobile",
+            "Active nav item highlighted"
+          ],
+          "estimatedHours": 4,
+          "dependencies": [
+            "F00_03"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-06",
+            "notes": "Implemented during Phase 0–3 build sprint"
+          }
+        },
+        {
+          "id": "F02",
+          "name": "Zustand Store Setup",
+          "description": "สร้าง global state store สำหรับ finance data ทั้งหมด พร้อม LocalStorage persistence",
+          "status": "completed",
+          "priority": "P0",
+          "phase": "phase_1",
+          "techRef": "techstack.md#5-state-management",
+          "acceptanceCriteria": [
+            "Store structure ตาม techstack.md spec",
+            "Persist middleware ทำงาน (refresh ไม่หายข้อมูล)",
+            "Actions: addIncome, updateIncome, deleteIncome",
+            "Actions: addExpense, updateExpense, deleteExpense",
+            "Actions: setSelectedYear, setSelectedMonth",
+            "Computed selectors: getYearSummary, getMonthSummary",
+            "Seed data โหลดได้ใน dev mode"
+          ],
+          "estimatedHours": 4,
+          "dependencies": [
+            "F00_04",
+            "F00_05"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-06",
+            "notes": "Implemented during Phase 0–3 build sprint"
+          }
+        },
+        {
+          "id": "F03",
+          "name": "KPI Summary Cards (Overview)",
+          "description": "4 cards หลัก: รายรับรวม, ค่าใช้จ่าย, Net Income, Kept — พร้อม YoY comparison",
+          "status": "completed",
+          "priority": "P0",
+          "phase": "phase_1",
+          "uxRef": "UXUI.md#5-screen-layouts#52-overview-dashboard",
+          "prdRef": "prd.md#4-features--scope#f01",
+          "acceptanceCriteria": [
+            "แสดง 4 KPI cards: รายรับรวม, ค่าใช้จ่าย, Net Income, Kept",
+            "แต่ละ card มี % change vs ปีก่อน",
+            "สีเขียวถ้าบวก สีแดงถ้าลบ",
+            "ตัวเลข format ด้วย comma separator",
+            "Loading state ขณะ calculate",
+            "Responsive: 2x2 grid บน mobile"
+          ],
+          "estimatedHours": 3,
+          "dependencies": [
+            "F01",
+            "F02"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-06",
+            "notes": "Implemented during Phase 0–3 build sprint"
+          }
+        },
+        {
+          "id": "F04",
+          "name": "Income vs Expense Bar/Area Chart",
+          "description": "Chart เปรียบเทียบ Income vs Expense รายเดือน สำหรับปีที่เลือก",
+          "status": "completed",
+          "priority": "P0",
+          "phase": "phase_1",
+          "uxRef": "UXUI.md#5-screen-layouts#52-overview-dashboard",
+          "techRef": "techstack.md#4-data-visualization",
+          "acceptanceCriteria": [
+            "แสดง Bar Chart: Income (เขียว) vs Expense (แดง) รายเดือน",
+            "มี Line overlay สำหรับ Net Income (ม่วง)",
+            "Tooltip แสดงตัวเลขละเอียดเมื่อ hover",
+            "Legend คลิกได้เพื่อ toggle",
+            "X-axis: ชื่อเดือนภาษาไทย (ม.ค., ก.พ., ...)",
+            "Y-axis: format เป็น ฿xxk",
+            "Responsive ตาม container width"
+          ],
+          "estimatedHours": 4,
+          "dependencies": [
+            "F02"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-06",
+            "notes": "Implemented during Phase 0–3 build sprint"
+          }
+        },
+        {
+          "id": "F05",
+          "name": "Expense Pie/Donut Chart",
+          "description": "Donut chart แสดงสัดส่วนค่าใช้จ่ายตาม category",
+          "status": "completed",
+          "priority": "P0",
+          "phase": "phase_1",
+          "uxRef": "UXUI.md#6-component-library#61-kpi-card",
+          "acceptanceCriteria": [
+            "แสดงสัดส่วน 8 categories ตาม UXUI.md color spec",
+            "Legend แสดงชื่อ + ยอดเงิน + %",
+            "Hover แสดง tooltip",
+            "Center label แสดง 'รวมจ่าย' + ยอด",
+            "Animate on mount"
+          ],
+          "estimatedHours": 3,
+          "dependencies": [
+            "F02"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-06",
+            "notes": "Implemented during Phase 0–3 build sprint"
+          }
+        },
+        {
+          "id": "F06",
+          "name": "Monthly Summary Table",
+          "description": "ตารางสรุปรายเดือนทั้ง 12 เดือน แสดงทุก column ตาม Dashboard เดิม",
+          "status": "completed",
+          "priority": "P0",
+          "phase": "phase_1",
+          "uxRef": "UXUI.md#5-screen-layouts#52-overview-dashboard",
+          "acceptanceCriteria": [
+            "Columns: เดือน, เงินเดือน, โบนัส, คอม, หัก, Net, Net.All, จ่าย, เหลือ, Kept",
+            "Row สุดท้ายเป็น 'รวม' (totals)",
+            "Color coding: เหลือบวก=เขียว, ลบ=แดง",
+            "Click row → navigate to monthly detail",
+            "Sticky header ขณะ scroll",
+            "Export CSV button"
+          ],
+          "estimatedHours": 4,
+          "dependencies": [
+            "F02"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-06",
+            "notes": "Implemented during Phase 0–3 build sprint"
+          }
+        },
+        {
+          "id": "F07",
+          "name": "Income Entry Form",
+          "description": "Form กรอกรายได้และการหักประจำเดือน",
+          "status": "completed",
+          "priority": "P0",
+          "phase": "phase_1",
+          "uxRef": "UXUI.md#6-component-library#64-data-entry-form--income",
+          "prdRef": "prd.md#4-features--scope#f02",
+          "acceptanceCriteria": [
+            "Fields: เดือน, เงินเดือน, โบนัส, คอม",
+            "Fields deductions: ภาษี, ประกันสังคม, กองทุน, กยศ, ลงทุน (optional)",
+            "Auto-calculate รวมหัก และ Net",
+            "Number input: comma format ขณะพิมพ์",
+            "Validation: required fields, ตัวเลขบวกเท่านั้น",
+            "Tab navigation ระหว่าง fields",
+            "Ctrl+S / Cmd+S save",
+            "Edit mode สำหรับข้อมูลที่มีอยู่แล้ว"
+          ],
+          "estimatedHours": 5,
+          "dependencies": [
+            "F01",
+            "F02"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-06",
+            "notes": "Implemented during Phase 0–3 build sprint"
+          }
+        },
+        {
+          "id": "F08",
+          "name": "Expense Entry Form",
+          "description": "Form เพิ่ม/แก้ไขค่าใช้จ่ายรายการ",
+          "status": "completed",
+          "priority": "P0",
+          "phase": "phase_1",
+          "prdRef": "prd.md#4-features--scope#f03",
+          "acceptanceCriteria": [
+            "Fields: เดือน, หมวดหมู่ (dropdown), ชื่อรายการ, จำนวนเงิน",
+            "Category dropdown: 8 categories พร้อม icon",
+            "isRecurring toggle",
+            "Edit/Delete inline บน expense list",
+            "Confirm dialog ก่อน delete",
+            "Quick add: กรอกแล้ว Enter เพิ่มรายการต่อได้เลย"
+          ],
+          "estimatedHours": 4,
+          "dependencies": [
+            "F01",
+            "F02"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-06",
+            "notes": "Implemented during Phase 0–3 build sprint"
+          }
+        },
+        {
+          "id": "F09",
+          "name": "Monthly Detail Page",
+          "description": "หน้า detail ของแต่ละเดือน แสดง income section + expense list + summary",
+          "status": "completed",
+          "priority": "P0",
+          "phase": "phase_1",
+          "uxRef": "UXUI.md#5-screen-layouts#53-monthly-detail-page",
+          "acceptanceCriteria": [
+            "Income section: แสดง salary/bonus/comm + deductions breakdown",
+            "Expense section: list ตาม category",
+            "Summary bar ด้านล่าง: Net All, จ่าย, เหลือ",
+            "Prev/Next month navigation",
+            "Edit income button → เปิด F07",
+            "Add expense button → เปิด F08",
+            "Empty state เมื่อยังไม่มีข้อมูล"
+          ],
+          "estimatedHours": 5,
+          "dependencies": [
+            "F07",
+            "F08"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-06",
+            "notes": "Implemented during Phase 0–3 build sprint"
+          }
+        },
+        {
+          "id": "F10_SYNC",
+          "name": "Google Drive Sync UI Integration",
+          "description": "เชื่อม driveSync.js เข้ากับ UI: Google login button, sync status indicator, และ auto-sync หลัง save",
+          "status": "completed",
+          "priority": "P0",
+          "phase": "phase_1",
+          "techRef": "techstack.md#6-data-persistence",
+          "acceptanceCriteria": [
+            "Google Sign-in button แสดงใน Header มุมขวาบน",
+            "เมื่อ sign in แล้ว: แสดงรูป avatar + ชื่อ + sync status",
+            "Sync status indicator: ✅ Synced | 🔄 Syncing... | 📴 Offline | ⚠️ Error",
+            "Auto-sync ทุกครั้งที่ข้อมูลเปลี่ยน (debounce 2 วินาที)",
+            "First load: ถ้า LocalStorage ว่าง → ดึงข้อมูลจาก Drive อัตโนมัติ",
+            "Toast notification: 'Loaded data from Google Drive' เมื่อดึงข้อมูลสำเร็จ",
+            "Toast notification: 'Sync error — tap to retry' เมื่อ sync ล้มเหลว",
+            "Settings page: แสดงข้อมูล last synced timestamp",
+            "Sign out ล้าง token แต่ไม่ล้าง LocalStorage"
+          ],
+          "estimatedHours": 4,
+          "dependencies": [
+            "F00_07",
+            "F01"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-06",
+            "notes": "Implemented during Phase 0–3 build sprint"
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase_2",
+      "name": "Phase 2 — Enhanced Analytics",
+      "status": "completed",
+      "completionPercent": 100,
+      "features": [
+        {
+          "id": "F10",
+          "name": "Multi-year Comparison Dashboard",
+          "description": "หน้าเปรียบเทียบข้ามปี 2023–2026 ทั้ง table และ chart",
+          "status": "completed",
+          "priority": "P1",
+          "phase": "phase_2",
+          "uxRef": "UXUI.md#5-screen-layouts#54-multi-year-comparison-page",
+          "prdRef": "prd.md#4-features--scope#f06",
+          "acceptanceCriteria": [
+            "Toggle checkbox เพื่อเลือกปีที่จะเปรียบเทียบ",
+            "Multi-line chart: Net Income trend แต่ละปี",
+            "Summary table: ทุก metric เปรียบเทียบข้ามปี",
+            "Highlight: ปีที่ net income สูงสุด",
+            "Growth rate % YoY ทุก metric"
+          ],
+          "estimatedHours": 6,
+          "dependencies": [
+            "F02"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-06",
+            "notes": "Implemented during Phase 0–3 build sprint"
+          }
+        },
+        {
+          "id": "F11",
+          "name": "Savings Goal Tracker",
+          "description": "ติดตาม Kept vs G (goal) รายเดือนและรายปี",
+          "status": "completed",
+          "priority": "P1",
+          "phase": "phase_2",
+          "prdRef": "prd.md#4-features--scope#f08",
+          "acceptanceCriteria": [
+            "Progress bar: Kept vs Goal",
+            "แสดง streak: กี่เดือนต่อกันที่ Kept > 0",
+            "YTD savings total",
+            "ออมเที่ยว: separate tracker"
+          ],
+          "estimatedHours": 4,
+          "dependencies": [
+            "F03"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-06",
+            "notes": "Implemented during Phase 0–3 build sprint"
+          }
+        },
+        {
+          "id": "F12",
+          "name": "Subscription Manager",
+          "description": "รวม subscription ทั้งหมด: Netflix, ChatGPT, Claude AI, AIS, 3BB",
+          "status": "completed",
+          "priority": "P1",
+          "phase": "phase_2",
+          "prdRef": "prd.md#4-features--scope#f13",
+          "acceptanceCriteria": [
+            "List subscriptions ทั้งหมดพร้อม monthly cost",
+            "Total monthly subscription cost",
+            "% ของรายจ่ายทั้งหมด",
+            "Tag: Active / Inactive"
+          ],
+          "estimatedHours": 3,
+          "dependencies": [
+            "F08"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-06",
+            "notes": "Implemented during Phase 0–3 build sprint"
+          }
+        },
+        {
+          "id": "F13",
+          "name": "Export / Import JSON Backup",
+          "description": "Export ข้อมูลทั้งหมดเป็น JSON และ Import กลับได้",
+          "status": "completed",
+          "priority": "P1",
+          "phase": "phase_2",
+          "techRef": "techstack.md#6-data-persistence",
+          "acceptanceCriteria": [
+            "Export: Download wealthlens_backup_YYYY-MM-DD.json",
+            "Import: Drag & drop หรือ file picker",
+            "Validate schema ก่อน import",
+            "Merge หรือ Replace option",
+            "Success/Error notification"
+          ],
+          "estimatedHours": 4,
+          "dependencies": [
+            "F02"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-06",
+            "notes": "Implemented during Phase 0–3 build sprint"
+          }
+        },
+        {
+          "id": "F14",
+          "name": "Trend Analysis Page",
+          "description": "หน้า analytics: แนวโน้ม income, expense, savings ตลอด 4 ปี",
+          "status": "completed",
+          "priority": "P1",
+          "phase": "phase_2",
+          "prdRef": "prd.md#4-features--scope#f09",
+          "acceptanceCriteria": [
+            "Area chart: Net Income 48 เดือน (2023–2026)",
+            "Stacked bar: expense breakdown ตาม category over time",
+            "Average monthly values",
+            "Best/Worst month highlight"
+          ],
+          "estimatedHours": 5,
+          "dependencies": [
+            "F10"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-06",
+            "notes": "Implemented during Phase 0–3 build sprint"
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase_3",
+      "name": "Phase 3 — Intelligence Layer",
+      "status": "completed",
+      "completionPercent": 100,
+      "features": [
+        {
+          "id": "F15",
+          "name": "Expense Anomaly Detection",
+          "description": "แจ้งเตือนเมื่อค่าใช้จ่ายผิดปกติ (เกิน avg + 2σ)",
+          "status": "completed",
+          "priority": "P2",
+          "phase": "phase_3",
+          "prdRef": "prd.md#4-features--scope#f11",
+          "acceptanceCriteria": [
+            "คำนวณ baseline จาก 12 เดือนก่อนหน้า",
+            "Alert เมื่อ category ใดเกิน threshold",
+            "Toast notification + in-app badge",
+            "Dismiss/Acknowledge alert"
+          ],
+          "estimatedHours": 6,
+          "dependencies": [
+            "F14"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-06",
+            "notes": "Implemented during Phase 0–3 build sprint"
+          }
+        },
+        {
+          "id": "F16",
+          "name": "Monthly Budget Forecast",
+          "description": "คาดการณ์ค่าใช้จ่ายเดือนหน้าจาก pattern ที่ผ่านมา",
+          "status": "completed",
+          "priority": "P2",
+          "phase": "phase_3",
+          "prdRef": "prd.md#4-features--scope#f12",
+          "acceptanceCriteria": [
+            "Forecast ค่าใช้จ่ายแต่ละ category เดือนหน้า",
+            "Based on rolling 3-month average",
+            "Confidence range (min–max)",
+            "Compare vs actual เมื่อเดือนสิ้นสุด"
+          ],
+          "estimatedHours": 8,
+          "dependencies": [
+            "F14"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-06",
+            "notes": "Implemented during Phase 0–3 build sprint"
+          }
+        },
+        {
+          "id": "F17",
+          "name": "PDF Report Export",
+          "description": "Export รายงานสรุปการเงินรายปีเป็น PDF",
+          "status": "completed",
+          "priority": "P2",
+          "phase": "phase_3",
+          "prdRef": "prd.md#4-features--scope#f14",
+          "acceptanceCriteria": [
+            "Report มี: KPI summary, charts, monthly table",
+            "Header: WealthLens + ปี + วันที่ export",
+            "Thai font รองรับ",
+            "Print-friendly layout"
+          ],
+          "estimatedHours": 6,
+          "dependencies": [
+            "F03",
+            "F04",
+            "F06"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-06",
+            "notes": "Implemented during Phase 0–3 build sprint"
+          }
+        }
+      ]
+    }
+  ],
+  "dataInventory": {
+    "description": "ข้อมูลจริงที่มีอยู่จาก Dashboard files",
+    "years": {
+      "2023": {
+        "source": "Dashboard_2023.html",
+        "incomeData": "complete",
+        "expenseData": "summary only (no itemized)",
+        "netAll": 1695936,
+        "salary": 885000,
+        "bonus": 445000,
+        "commission": 512000
+      },
+      "2024": {
+        "source": "Dashboard_2024.html",
+        "incomeData": "complete (12 months)",
+        "expenseData": "complete itemized",
+        "netAll": 2222922,
+        "salary": 950000,
+        "bonus": 475000,
+        "commission": 1041800,
+        "notableExpenses": [
+          "บ้าน",
+          "รถยนต์",
+          "Net AIS",
+          "Net 3BB",
+          "netflix",
+          "apple watch",
+          "iphone 15pm",
+          "เครื่องซักผ้า",
+          "keychron/dyson",
+          "หอพัก",
+          "ค่าไฟบ้าน",
+          "หวย",
+          "บัตรเครดิต",
+          "ภาษีรถ",
+          "ทำฟัน"
+        ]
+      },
+      "2025": {
+        "source": "Dashboard_2025.html",
+        "incomeData": "complete (12 months)",
+        "expenseData": "complete itemized",
+        "netAll": 2598100,
+        "salary": 960000,
+        "bonus": 480000,
+        "commission": 1158100,
+        "notableExpenses": [
+          "บ้าน",
+          "รถยนต์",
+          "Net 3BB",
+          "netflix",
+          "Net AIS",
+          "ค่าไฟบ้าน",
+          "หวย",
+          "บัตรเครดิต",
+          "อื่นๆ",
+          "หอพัก",
+          "Chat GPT (new!)"
+        ]
+      },
+      "2026": {
+        "source": "Dashboard_2026.html",
+        "incomeData": "4 months (Jan-Apr)",
+        "expenseData": "4 months itemized",
+        "netAllYTD": 924000,
+        "salary": 320000,
+        "bonus": 80000,
+        "commission": 524000,
+        "notableExpenses": [
+          "บ้าน",
+          "รถยนต์",
+          "Net AIS",
+          "netflix",
+          "ค่าไฟบ้าน",
+          "หวย",
+          "บัตรเครดิต",
+          "อื่นๆ",
+          "ออมเที่ยว (new!)",
+          "Claude AI (new!)",
+          "ลงทุน Dime (new!)"
+        ]
+      }
+    }
+  },
+  "progressSummary": {
+    "totalFeatures": 25,
+    "completed": 25,
+    "inProgress": 0,
+    "pending": 0,
+    "overallProgress": "100%",
+    "currentPhase": "shipped",
+    "nextMilestone": "Phase 4 (optional): dark mode, mobile UX polish, additional analytics"
+  }
+}

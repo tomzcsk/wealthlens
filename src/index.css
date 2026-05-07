@@ -1,0 +1,95 @@
+/*
+ * WealthLens — global stylesheet
+ * Design tokens follow UXUI.md sections 2-4.
+ * Fonts: Inter for UI + numbers, Noto Sans Thai for Thai script fallback.
+ */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Brand */
+  --color-primary: #2563eb;
+  --color-primary-light: #eff6ff;
+  --color-primary-dark: #1d4ed8;
+
+  /* Income (positive) */
+  --color-income: #059669;
+  --color-income-light: #ecfdf5;
+  --color-income-bar: #34d399;
+
+  /* Expense (negative) */
+  --color-expense: #dc2626;
+  --color-expense-light: #fef2f2;
+  --color-expense-bar: #f87171;
+
+  /* Neutral roles */
+  --color-net: #7c3aed;
+  --color-savings: #d97706;
+
+  /* Semantic */
+  --color-success: #059669;
+  --color-warning: #d97706;
+  --color-danger: #dc2626;
+  --color-info: #2563eb;
+
+  /* Surfaces (light mode) */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-card: #ffffff;
+  --border: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+
+  /* Expense category palette */
+  --cat-housing: #6366f1;
+  --cat-vehicle: #8b5cf6;
+  --cat-utilities: #06b6d4;
+  --cat-subscription: #f59e0b;
+  --cat-finance: #ef4444;
+  --cat-entertainment: #ec4899;
+  --cat-savings: #10b981;
+  --cat-other: #6b7280;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Future-ready: dark surfaces (UXUI.md section 11) */
+@media (prefers-color-scheme: dark) {
+  :root.dark {
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-card: #1e293b;
+    --border: #334155;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+  }
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+body {
+  font-family: 'Inter', 'Noto Sans Thai', system-ui, sans-serif;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+/* Financial figures: tabular numerals + lining digits for tidy column alignment. */
+.financial-number {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+}
