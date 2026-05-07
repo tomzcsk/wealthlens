@@ -57,6 +57,22 @@ import {
 } from '@/utils/driveSync';
 import type { WealthLensData } from '@/types';
 
+/**
+ * "Empty" data = no user-entered content anywhere. Initial state from a
+ * fresh browser load. We need this to break a tie in conflict resolution:
+ * never push an empty local payload over remote data, even if local has a
+ * newer `lastUpdated` (the timestamp came from `nowIso()` at module load,
+ * not from a real edit).
+ */
+const isDataEmpty = (data: WealthLensData): boolean => {
+  for (const yr of Object.values(data.years)) {
+    if (yr.income.length > 0) return false;
+    if (yr.expenses.some((m) => m.items.length > 0)) return false;
+    if ((yr.savings ?? []).some((m) => m.items.length > 0)) return false;
+  }
+  return true;
+};
+
 export interface UseDriveSyncCoordinatorResult {
   /** Force-push the current local snapshot to Drive immediately. */
   manualSync: () => Promise<void>;
@@ -131,19 +147,29 @@ export const useDriveSyncCoordinator = (): UseDriveSyncCoordinatorResult => {
         const local = useFinanceStore.getState().data;
 
         if (!remote) {
-          // Brand-new account — seed the Drive file with current local data.
-          await syncToDrive(local, accessToken);
+          // Brand-new account on Drive — but only push if local actually
+          // has content. Pushing an empty initial state would seed an
+          // empty file that future syncs read back as canonical "nothing".
+          if (!isDataEmpty(local)) {
+            await syncToDrive(local, accessToken);
+          }
           setLastSynced(new Date().toISOString());
         } else {
-          const winner = resolveConflict(local, remote);
+          // CRITICAL safety net: never overwrite remote with an empty local
+          // payload, even if local's `lastUpdated` looks newer. Local
+          // timestamps come from `nowIso()` at store init, not real edits —
+          // a fresh browser session would otherwise wipe the user's Drive
+          // data before they even sign in.
+          const localIsEmpty = isDataEmpty(local);
+          const winner = localIsEmpty ? remote : resolveConflict(local, remote);
           if (winner === remote) {
-            // Remote is newer; pull it down.
+            // Remote is newer (or local is empty); pull it down.
             skipNextChangeRef.current = true;
             useFinanceStore.getState().replaceAllData(remote);
             setLastSynced(new Date().toISOString());
             toast('ดึงข้อมูลจาก Google Drive แล้ว', 'info');
           } else {
-            // Local is newer; push it up to bring Drive into sync.
+            // Local is newer AND has content; push it up.
             await syncToDrive(local, accessToken);
             setLastSynced(new Date().toISOString());
           }
