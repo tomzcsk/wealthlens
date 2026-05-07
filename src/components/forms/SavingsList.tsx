@@ -10,7 +10,14 @@
  *   - 🗑️ confirms via `window.confirm` then calls `deleteSavings`.
  */
 
-import { useMemo, useState, type ReactNode } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from 'react';
 
 import Modal from '@/components/ui/Modal';
 import { useFinanceStore } from '@/stores/financeStore';
@@ -99,6 +106,144 @@ const SavingsRow = ({
         </button>
       </div>
     </div>
+  );
+};
+
+// ---------------------------------------------------------------------------
+// Kept edit form — styled twin of SavingsForm for one number field
+// ---------------------------------------------------------------------------
+
+interface KeptEditFormProps {
+  year: number;
+  month: number;
+  /** Current persisted value, or `undefined` if no entry yet for this month. */
+  initialAmount: number | undefined;
+  onSave: (amount: number) => void;
+  onClear: () => void;
+  onCancel: () => void;
+}
+
+/**
+ * Single-field editor for the (year, month) Kept entry. Visual parity with
+ * SavingsForm — same input borders, same comma-formatted typing, same button
+ * row (ยกเลิก + บันทึก + ลบ if existing). Replaces the previous
+ * `window.prompt` UX so the experience matches "+ เพิ่มรายการออม" forms.
+ */
+const KeptEditForm = ({
+  year,
+  month,
+  initialAmount,
+  onSave,
+  onClear,
+  onCancel,
+}: KeptEditFormProps): ReactNode => {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [text, setText] = useState<string>(
+    initialAmount !== undefined ? formatNumber(initialAmount) : '',
+  );
+
+  useEffect(() => {
+    inputRef.current?.focus();
+    inputRef.current?.select();
+  }, []);
+
+  const parsed = useMemo<number | null>(() => {
+    const trimmed = text.trim();
+    if (trimmed === '') return null;
+    const n = Number(trimmed.replace(/,/g, ''));
+    return Number.isFinite(n) ? n : null;
+  }, [text]);
+
+  const canSubmit = parsed !== null;
+  const isEdit = initialAmount !== undefined;
+  const monthLabel = THAI_MONTHS_LONG[month - 1];
+
+  const handleChange = (raw: string): void => {
+    // Allow optional leading minus, digits, single decimal, and commas
+    // during typing. Re-format with commas every keystroke so the field
+    // reads like real money — matches IncomeForm/ExpenseForm.
+    const cleaned = raw.replace(/[^\d.,-]/g, '');
+    const trimmed = cleaned.trim();
+    if (trimmed === '' || trimmed === '-') {
+      setText(trimmed);
+      return;
+    }
+    const negative = trimmed.startsWith('-');
+    const digits = trimmed.replace(/[^\d.]/g, '');
+    if (digits === '') {
+      setText(negative ? '-' : '');
+      return;
+    }
+    const [intPart, decPart] = digits.split('.');
+    const intNum = Number(intPart);
+    const intFormatted = Number.isFinite(intNum) ? formatNumber(intNum) : '';
+    const display =
+      decPart !== undefined
+        ? `${negative ? '-' : ''}${intFormatted}.${decPart}`
+        : `${negative ? '-' : ''}${intFormatted}`;
+    setText(display);
+  };
+
+  const handleSubmit = (e?: FormEvent): void => {
+    if (e) e.preventDefault();
+    if (parsed === null) return;
+    onSave(parsed);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label
+          htmlFor="kept-amount-input"
+          className="block text-sm font-medium text-slate-700 mb-1.5"
+        >
+          ยอด Kept (กรุงศรี) — {monthLabel} {year}
+        </label>
+        <input
+          id="kept-amount-input"
+          ref={inputRef}
+          type="text"
+          inputMode="decimal"
+          value={text}
+          onChange={(e) => handleChange(e.target.value)}
+          placeholder="เช่น 45,000 หรือ -9,000"
+          className="w-full px-3 py-2 text-base tabular-nums border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+        />
+        <p className="mt-1.5 text-xs text-slate-500">
+          ค่าติดลบ = ถอนออกจากบัญชี · เว้นว่างแล้วกดลบเพื่อล้างค่าเดือนนี้
+        </p>
+      </div>
+
+      <div className="flex items-center justify-between pt-2">
+        <div>
+          {isEdit && (
+            <button
+              type="button"
+              onClick={onClear}
+              className="px-3 py-2 text-sm font-medium text-expense bg-white border border-red-200 rounded-md hover:bg-red-50 transition"
+            >
+              🗑️ ลบยอดเดือนนี้
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition"
+          >
+            ยกเลิก
+          </button>
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            บันทึก
+          </button>
+        </div>
+      </div>
+    </form>
   );
 };
 
@@ -198,24 +343,9 @@ export const SavingsList = ({
   const setKeptBalance = useGoalsStore((s) => s.setKeptBalance);
   const clearKeptBalance = useGoalsStore((s) => s.clearKeptBalance);
 
-  const handleEditKept = (): void => {
-    const monthLabel = THAI_MONTHS_LONG[month - 1];
-    const raw = window.prompt(
-      `ใส่ยอด Kept (กรุงศรี) สำหรับ ${monthLabel} ${year} — เว้นว่างเพื่อลบ\n` +
-        `(ค่าติดลบ = ถอนออก)`,
-      keptMonthly !== undefined ? formatNumber(keptMonthly) : '',
-    );
-    if (raw === null) return;
-    const trimmed = raw.trim();
-    if (trimmed === '') {
-      clearKeptBalance(year, month);
-      return;
-    }
-    const parsed = Number(trimmed.replace(/,/g, ''));
-    if (Number.isFinite(parsed)) {
-      setKeptBalance(year, month, parsed);
-    }
-  };
+  const [keptModalOpen, setKeptModalOpen] = useState(false);
+  const handleEditKept = (): void => setKeptModalOpen(true);
+  const handleCloseKept = (): void => setKeptModalOpen(false);
 
   const handleFillRecurring = (): void => {
     const data = useFinanceStore.getState().data;
@@ -406,6 +536,30 @@ export const SavingsList = ({
               if (editing != null) handleClose();
             }}
             onCancel={handleClose}
+          />
+        </div>
+      </Modal>
+
+      <Modal
+        open={keptModalOpen}
+        onClose={handleCloseKept}
+        title="แก้ไข Kept (กรุงศรี)"
+        size="sm"
+      >
+        <div className="px-6 py-5">
+          <KeptEditForm
+            year={year}
+            month={month}
+            initialAmount={keptMonthly}
+            onSave={(amount) => {
+              setKeptBalance(year, month, amount);
+              handleCloseKept();
+            }}
+            onClear={() => {
+              clearKeptBalance(year, month);
+              handleCloseKept();
+            }}
+            onCancel={handleCloseKept}
           />
         </div>
       </Modal>
