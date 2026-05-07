@@ -62,15 +62,28 @@ export const DangerZone = (): ReactNode => {
   };
 
   /**
-   * Non-destructive Kept import — replaces every (year, month) entry that
-   * appears in `SEED_KEPT_BALANCES` and leaves the rest of the ledger
-   * (income, expenses, savings, goals, defaults) untouched. Use this when
-   * Tom's per-month Kept data is missing or stuck in the legacy "December
-   * only" shape from the pre-refactor migration, but his ledger is fine.
+   * Replace Kept-from-seed — for every year present in SEED_KEPT_BALANCES,
+   * the existing per-month entries are wiped and replaced by the seed's
+   * exact (month → amount) tuples. This is what Tom usually wants: "make
+   * Kept match the Sheet". Years NOT in seed are left alone, and the rest
+   * of the ledger (income, expenses, savings, goals, defaults) is untouched.
+   *
+   * (Why we wipe first: a previous run could have written wrong months
+   * that no longer appear in the new seed. A pure "set" loop would leave
+   * those orphans behind. Clearing the per-year bucket first guarantees
+   * the resulting state mirrors SEED_KEPT_BALANCES verbatim.)
    */
   const handleImportKept = async (): Promise<void> => {
     setBusy('kept');
     try {
+      for (const yearStr of Object.keys(SEED_KEPT_BALANCES)) {
+        const existingYear = existingKept[yearStr];
+        if (existingYear) {
+          for (const monthStr of Object.keys(existingYear)) {
+            clearKeptBalance(Number(yearStr), Number(monthStr));
+          }
+        }
+      }
       for (const [yearStr, months] of Object.entries(SEED_KEPT_BALANCES)) {
         for (const [monthStr, amount] of Object.entries(months)) {
           setKeptBalance(Number(yearStr), Number(monthStr), amount);
