@@ -45,11 +45,14 @@ export type { IncomeDefaults } from '@/types';
 export interface GoalsState {
   yearlyGoals: { [year: string]: number };
   travelSavingsGoal: number;
+  /** Annual ลงทุน Dime target. 0 means "no goal set". */
+  dimeInvestmentGoal: number;
   keptBalances: { [year: string]: { [month: string]: number } };
   incomeDefaults: IncomeDefaults | null;
 
   setYearlyGoal: (year: number, amount: number) => void;
   setTravelSavingsGoal: (amount: number) => void;
+  setDimeInvestmentGoal: (amount: number) => void;
   /** Set one specific (year, month) Kept value. Replaces the existing entry. */
   setKeptBalance: (year: number, month: number, amount: number) => void;
   /** Clear one specific (year, month) Kept entry. */
@@ -81,6 +84,7 @@ export const sumAnnualKept = (
 const EMPTY_PREFS: UserPreferences = Object.freeze({
   yearlyGoals: Object.freeze({}) as Record<string, number>,
   travelSavingsGoal: 0,
+  dimeInvestmentGoal: 0,
   keptBalances: Object.freeze({}) as Record<string, Record<string, number>>,
   incomeDefaults: null,
 }) as UserPreferences;
@@ -209,6 +213,7 @@ const ACTIONS: Pick<
   GoalsState,
   | 'setYearlyGoal'
   | 'setTravelSavingsGoal'
+  | 'setDimeInvestmentGoal'
   | 'setKeptBalance'
   | 'clearKeptBalance'
   | 'setIncomeDefaults'
@@ -227,6 +232,12 @@ const ACTIONS: Pick<
     mutatePrefs((p) => ({
       ...p,
       travelSavingsGoal: Math.max(0, amount),
+    })),
+
+  setDimeInvestmentGoal: (amount) =>
+    mutatePrefs((p) => ({
+      ...p,
+      dimeInvestmentGoal: Math.max(0, amount),
     })),
 
   setKeptBalance: (year, month, amount) =>
@@ -421,6 +432,7 @@ export const useGoalsStore = <T,>(selector: (s: GoalsState) => T): T =>
       const goalsState: GoalsState = {
         yearlyGoals: prefs.yearlyGoals,
         travelSavingsGoal: prefs.travelSavingsGoal,
+        dimeInvestmentGoal: prefs.dimeInvestmentGoal ?? 0,
         keptBalances: prefs.keptBalances,
         incomeDefaults: prefs.incomeDefaults,
         ...ACTIONS,

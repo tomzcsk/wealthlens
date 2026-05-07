@@ -197,6 +197,29 @@ export const useTravelSavingsTotal = (year?: number): number => {
   }, [data, target]);
 };
 
+/**
+ * Sum of every "ลงทุน Dime" savings item for a given year (defaults to
+ * `selectedYear`). Mirrors `useTravelSavingsTotal` — same `s.data` +
+ * `useMemo` safety pattern, just a different category filter.
+ */
+export const useDimeInvestmentTotal = (year?: number): number => {
+  const { data, selectedYear } = useSnapshot();
+  const target = year ?? selectedYear;
+  return useMemo(() => {
+    const yr = data.years[String(target)];
+    if (!yr) return 0;
+    let total = 0;
+    for (const row of yr.savings ?? []) {
+      for (const item of row.items) {
+        if (item.category === 'investment-dime') {
+          total += item.amount;
+        }
+      }
+    }
+    return total;
+  }, [data, target]);
+};
+
 // ---------------------------------------------------------------------------
 // F12 — Subscriptions
 // ---------------------------------------------------------------------------

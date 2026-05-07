@@ -17,6 +17,7 @@ import { useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 
 import { useFinanceStore } from '@/stores/financeStore';
+import { useGoalsStore } from '@/stores/goalsStore';
 import {
   selectMonthIncome,
   selectMonthlySummariesForYear,
@@ -39,10 +40,12 @@ export interface MonthlySummaryTableProps {
 // Internals
 // ---------------------------------------------------------------------------
 
-/** Combined per-month payload — selector summary + raw income. */
+/** Combined per-month payload — selector summary + raw income + Kept. */
 interface MonthPayload {
   summary: MonthlySummaryRow;
   income: MonthlyIncome | null;
+  /** Per-month Krungsri Kept entry (signed; negative = withdrawal). */
+  kept: number;
 }
 
 interface RowTotals {
@@ -54,6 +57,7 @@ interface RowTotals {
   netAll: number;
   totalExpenses: number;
   totalSavings: number;
+  kept: number;
   remaining: number;
 }
 
@@ -67,6 +71,7 @@ const COLUMN_HEADERS = [
   'Net.All',
   'จ่าย',
   'ออม',
+  'Kept',
   'เหลือ',
 ] as const;
 
@@ -87,12 +92,14 @@ const UTF8_BOM = '﻿';
 const buildPayloads = (
   data: WealthLensData,
   year: number,
+  keptYearBucket: { [month: string]: number } | undefined,
 ): MonthPayload[] => {
   const snapshot = { data };
   const summaries = selectMonthlySummariesForYear(snapshot, year);
   return summaries.map((summary) => ({
     summary,
     income: selectMonthIncome(snapshot, year, summary.month),
+    kept: keptYearBucket?.[String(summary.month)] ?? 0,
   }));
 };
 
@@ -109,9 +116,12 @@ export const MonthlySummaryTable = ({ year }: MonthlySummaryTableProps) => {
   // changes when state.data mutates. Then derive payloads lazily so we
   // avoid creating new arrays on unrelated re-renders.
   const data = useFinanceStore((s) => s.data);
+  const keptYearBucket = useGoalsStore(
+    (s) => s.keptBalances[String(activeYear)],
+  );
   const payloads = useMemo(
-    () => buildPayloads(data, activeYear),
-    [data, activeYear],
+    () => buildPayloads(data, activeYear, keptYearBucket),
+    [data, activeYear, keptYearBucket],
   );
 
   const totals: RowTotals = useMemo(() => computeTotals(payloads), [payloads]);
@@ -197,7 +207,7 @@ interface MonthRowProps {
 }
 
 const MonthRow = ({ payload, year, onSelect }: MonthRowProps) => {
-  const { summary, income } = payload;
+  const { summary, income, kept } = payload;
   const isEmpty = income === null;
 
   const tooltip = useMemo(() => {
@@ -310,6 +320,20 @@ const MonthRow = ({ payload, year, onSelect }: MonthRowProps) => {
       >
         {formatNumber(summary.totalSavings)}
       </td>
+      <td
+        className={clsx(
+          BODY_CELL_BASE,
+          'text-right',
+          kept === 0
+            ? 'text-slate-400'
+            : kept < 0
+              ? 'text-expense'
+              : 'text-savings',
+        )}
+        title="ยอด Kept (กรุงศรี) เดือนนี้ — ติดลบ = ถอนออก"
+      >
+        {formatNumber(kept)}
+      </td>
       <td className={clsx(BODY_CELL_BASE, 'text-right font-medium', remainingTone)}>
         {formatNumber(summary.remaining)}
       </td>
@@ -366,6 +390,19 @@ const TotalsRow = ({ totals }: TotalsRowProps) => {
       >
         {formatNumber(totals.totalSavings)}
       </td>
+      <td
+        className={clsx(
+          BODY_CELL_BASE,
+          'text-right',
+          totals.kept === 0
+            ? 'text-slate-400'
+            : totals.kept < 0
+              ? 'text-expense'
+              : 'text-savings',
+        )}
+      >
+        {formatNumber(totals.kept)}
+      </td>
       <td className={clsx(BODY_CELL_BASE, 'text-right', remainingTone)}>
         {formatNumber(totals.remaining)}
       </td>
@@ -386,9 +423,10 @@ const computeTotals = (payloads: MonthPayload[]): RowTotals => {
   let netAll = 0;
   let totalExpenses = 0;
   let totalSavings = 0;
+  let kept = 0;
   let remaining = 0;
 
-  for (const { summary, income } of payloads) {
+  for (const { summary, income, kept: monthKept } of payloads) {
     if (income) {
       salary += income.salary;
       bonus += income.bonus;
@@ -399,6 +437,7 @@ const computeTotals = (payloads: MonthPayload[]): RowTotals => {
     netAll += summary.netAll;
     totalExpenses += summary.totalExpenses;
     totalSavings += summary.totalSavings;
+    kept += monthKept;
     remaining += summary.remaining;
   }
 
@@ -411,6 +450,7 @@ const computeTotals = (payloads: MonthPayload[]): RowTotals => {
     netAll,
     totalExpenses,
     totalSavings,
+    kept,
     remaining,
   };
 };
@@ -431,7 +471,7 @@ const buildCsv = (
 ): string => {
   const headerLine = COLUMN_HEADERS.map(csvCell).join(',');
 
-  const dataLines = payloads.map(({ summary, income }) =>
+  const dataLines = payloads.map(({ summary, income, kept }) =>
     [
       formatThaiMonth(summary.month),
       income?.salary ?? 0,
@@ -442,6 +482,7 @@ const buildCsv = (
       summary.netAll,
       summary.totalExpenses,
       summary.totalSavings,
+      kept,
       summary.remaining,
     ]
       .map(csvCell)
@@ -458,6 +499,7 @@ const buildCsv = (
     totals.netAll,
     totals.totalExpenses,
     totals.totalSavings,
+    totals.kept,
     totals.remaining,
   ]
     .map(csvCell)

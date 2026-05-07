@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 
+import { DimeInvestmentCard } from '@/components/dashboard/DimeInvestmentCard';
 import { KpiCardGrid } from '@/components/dashboard/KpiCardGrid';
 import { IncomeExpenseChart } from '@/components/dashboard/IncomeExpenseChart';
 import { ExpensePieChart } from '@/components/dashboard/ExpensePieChart';
@@ -12,8 +13,9 @@ export const OverviewPage = (): ReactNode => {
     <div className="space-y-6">
       <KpiCardGrid />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <SavingsGoalCard />
+        <DimeInvestmentCard />
         <TravelSavingsCard />
       </div>
 

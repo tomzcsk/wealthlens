@@ -36,6 +36,12 @@ export interface UserPreferences {
   /** Standalone "ออมเที่ยว" target — single value, not per-year. */
   travelSavingsGoal: number;
   /**
+   * Annual "ลงทุน Dime" investment target. Single value (not per-year)
+   * because Dime is an auto-DCA stream Tom configures once. Optional so
+   * older Drive payloads written before the field was added still hydrate.
+   */
+  dimeInvestmentGoal?: number;
+  /**
    * Krungsri "Kept" savings account — monthly transactions.
    * Indexed by 4-digit year then 1-12 month string.
    * Annual Kept = sum of values across all 12 months for that year.
