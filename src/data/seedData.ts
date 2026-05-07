@@ -2878,9 +2878,10 @@ export default seedData;
  */
 export const SEED_KEPT_BALANCES: Record<string, Record<string, number>> = {
   '2024': {
-    // Jan = 85,000 carryover from 2023 (matches Tom's annual Kept cell of
-    // 695,101 = 610,101.13 monthly rows + 85,000 opening balance).
-    '1': 85_000,
+    // Per Sheet's Kept column — Jan–Apr blank, monthly entries from May.
+    // Annual sum of THESE rows = 610,101.13. Tom's annual cell shows 695,101
+    // because his Sheet adds an 85,000 carryover from 2023's ending balance
+    // outside the visible monthly column; we mirror what's actually entered.
     '5': 315_153.30,
     '6': 119_846.70,
     '7': -9_000,
@@ -2905,10 +2906,9 @@ export const SEED_KEPT_BALANCES: Record<string, Record<string, number>> = {
     '12': 63_543.26,
   },
   '2026': {
-    '1': 29_100,
-    '2': 116_765,
-    '3': 141_440,
-    '4': 87_600,
-    '5': -107_141,
+    '1': 45_000,
+    '2': 50_000,
+    '3': 51_568,
+    '4': 43_433,
   },
 };
