@@ -1410,12 +1410,13 @@ export const useFinanceStore = create<FinanceState>()(
         for (const [k, yr] of Object.entries(data.years)) {
           years[k] = normalizeYear(yr);
         }
-        // One-shot migration for seed values that Claude made up before the
-        // กยศ portal confirmed reality (2026-05-19). We only overwrite cells
-        // that still hold the EXACT wrong values — if the user has manually
-        // edited them since, leave them alone. Matched values are unique
-        // enough (e.g. ss=1125 in 2026-04) that false positives are unlikely.
-        const fixGslSs = (
+        // One-shot migrations for seed values Claude made up before the
+        // actual paycheck slips arrived (2026-05-19). Each migration only
+        // overwrites cells that still hold a *known wrong* value — if a
+        // user manually corrected something to a different value, we leave
+        // it alone. Multiple predicates cover the various intermediate
+        // states older Claude commits may have written.
+        const fixDeductions = (
           yearKey: string,
           monthNum: number,
           predicate: (d: MonthlyIncome['deductions']) => boolean,
@@ -1428,16 +1429,45 @@ export const useFinanceStore = create<FinanceState>()(
           if (!predicate(inc.deductions)) return;
           inc.deductions = { ...inc.deductions, ...patch };
         };
-        fixGslSs('2024', 10, (d) => d.gsl === 994, { gsl: 0 });
-        fixGslSs('2025', 3, (d) => d.gsl === 0, { gsl: 994 });
-        fixGslSs('2025', 4, (d) => d.gsl === 1988, { gsl: 994 });
-        fixGslSs('2026', 2, (d) => d.gsl === 1281, { gsl: 0 });
-        fixGslSs('2026', 3, (d) => d.gsl === 125, { gsl: 0 });
-        fixGslSs(
+
+        // 2024 Oct — paycheck pattern (confirmed by Q1 2026 slips) is that
+        // the company auto-debits every month even when the lender portal
+        // doesn't post a credit. An earlier Claude commit zeroed this; now
+        // revert to the original seed/sheet value.
+        fixDeductions('2024', 10, (d) => d.gsl === 0, { gsl: 994 });
+
+        // 2025 Mar/Apr — portal confirms two separate 994 entries. Earlier
+        // seed lumped them as Apr=1988, Mar=0.
+        fixDeductions('2025', 3, (d) => d.gsl === 0, { gsl: 994 });
+        fixDeductions('2025', 4, (d) => d.gsl === 1988, { gsl: 994 });
+
+        // 2026 Feb — slip: ss 875, gsl 1,156. Catch every stale intermediate.
+        fixDeductions(
+          '2026',
+          2,
+          (d) =>
+            (d.gsl === 1281 || d.gsl === 0) &&
+            (d.socialSecurity === 750 || d.socialSecurity === 1125),
+          { gsl: 1156, socialSecurity: 875 },
+        );
+
+        // 2026 Mar — slip: ss 875, gsl 0 (paycheck skipped this month).
+        fixDeductions(
+          '2026',
+          3,
+          (d) =>
+            (d.gsl === 125 || d.gsl === 0) && d.socialSecurity === 750,
+          { gsl: 0, socialSecurity: 875 },
+        );
+
+        // 2026 Apr — slip: ss 875, gsl 1,156.
+        fixDeductions(
           '2026',
           4,
-          (d) => d.gsl === 906 || d.socialSecurity === 1125,
-          { gsl: 0, socialSecurity: 750 },
+          (d) =>
+            (d.gsl === 906 || d.gsl === 0) &&
+            (d.socialSecurity === 1125 || d.socialSecurity === 750),
+          { gsl: 1156, socialSecurity: 875 },
         );
 
         // Loans written before scheduledPayments existed lack the field;

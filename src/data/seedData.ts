@@ -232,7 +232,7 @@ const year2024: YearData = {
       salary: 80000,
       bonus: 0,
       commission: 111500,
-      deductions: { tax: 522, socialSecurity: 750, providentFund: 2400, gsl: 0 },
+      deductions: { tax: 522, socialSecurity: 750, providentFund: 2400, gsl: 994 },
     },
     {
       month: 11,
@@ -2382,21 +2382,23 @@ const year2026: YearData = {
       salary: 80000,
       bonus: 0,
       commission: 146000,
-      deductions: { tax: 4261, socialSecurity: 750, providentFund: 2400, gsl: 0 },
+      deductions: { tax: 4261, socialSecurity: 875, providentFund: 2400, gsl: 1156 },
     },
     {
+      // Slip 25/03/2569 ไม่มี bonus — bonus 80,000 น่าจะจ่ายผ่าน slip คนละใบ
+      // ปล่อยไว้ตามเดิมตามที่ Tom ยืนยัน (ไม่ต้องสน bonus ใน slip ปกติ)
       month: 3,
       salary: 80000,
       bonus: 80000,
       commission: 137000,
-      deductions: { tax: 4261, socialSecurity: 750, providentFund: 2400, gsl: 0 },
+      deductions: { tax: 4261, socialSecurity: 875, providentFund: 2400, gsl: 0 },
     },
     {
       month: 4,
       salary: 80000,
       bonus: 0,
       commission: 128000,
-      deductions: { tax: 4261, socialSecurity: 750, providentFund: 2400, gsl: 0 },
+      deductions: { tax: 4261, socialSecurity: 875, providentFund: 2400, gsl: 1156 },
     },
     {
       month: 5,
