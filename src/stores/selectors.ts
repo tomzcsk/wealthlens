@@ -16,6 +16,7 @@
 import type {
   ExpenseCategory,
   ExpenseItem,
+  InstallmentMeta,
   MonthlyDeductions,
   MonthlyIncome,
   MonthlySavings,
@@ -366,6 +367,148 @@ export const selectSavingsByCategory = (
 export interface MonthlySummaryRow extends MonthSummary {
   month: number;
 }
+
+// ---------------------------------------------------------------------------
+// Installment plan selectors
+// ---------------------------------------------------------------------------
+
+/**
+ * One งวด of an installment plan, annotated with the year/month it lands
+ * in. The InstallmentsPage uses these to render timelines and the
+ * Manager's progress bars.
+ */
+export interface InstallmentInstance {
+  year: number;
+  month: number;
+  /** The actual ExpenseItem.id — for "edit this งวด" callbacks. */
+  itemId: string;
+  amount: number;
+  sequence: number;
+  category: ExpenseCategory;
+  name: string;
+}
+
+/**
+ * Aggregated view of an installment plan — all งวด rolled up with progress
+ * stats. `paidMonths` counts งวด whose calendar date is in the past
+ * relative to `referenceDate` (defaults to today).
+ */
+export interface InstallmentPlanSummary {
+  planId: string;
+  /** Plan name (taken from the first งวด's ExpenseItem.name). */
+  name: string;
+  category: ExpenseCategory;
+  totalAmount: number;
+  totalMonths: number;
+  startYear: number;
+  startMonth: number;
+  /** All งวด found in the data, sorted by sequence. */
+  instances: InstallmentInstance[];
+  /** Sum of งวด amounts up to and including `referenceDate`. */
+  paidAmount: number;
+  /** Count of งวด already due (sequence-wise). */
+  paidMonths: number;
+  /** Remaining balance = totalAmount - paidAmount. */
+  remainingAmount: number;
+  /** Next งวด due (the first งวด with month > referenceDate), if any. */
+  nextDue: InstallmentInstance | null;
+  /** True when every งวด of the plan is in the past. */
+  isCompleted: boolean;
+}
+
+/**
+ * Returns "year-month" as an integer key (e.g. 202605 for May 2026) — used
+ * for cheap chronological comparisons.
+ */
+const ymKey = (year: number, month: number): number => year * 100 + month;
+
+/**
+ * Collect every ExpenseItem tagged with an installment plan, grouped by
+ * planId. Walks every year/month so cross-year plans are caught.
+ */
+export const selectInstallmentPlans = (
+  state: Snapshot,
+  referenceDate: Date = new Date(),
+): InstallmentPlanSummary[] => {
+  const plans = new Map<string, InstallmentInstance[]>();
+  // Track metadata separately — we want the FIRST installment's metadata
+  // as the authoritative copy for the plan summary (in case งวด carry
+  // diverging metadata from manual edits).
+  const planMeta = new Map<
+    string,
+    { meta: InstallmentMeta; name: string; category: ExpenseCategory }
+  >();
+
+  for (const [yearKey, yr] of Object.entries(state.data.years)) {
+    const year = Number(yearKey);
+    for (const row of yr.expenses) {
+      for (const item of row.items) {
+        const inst = item.installment;
+        if (!inst) continue;
+        const list = plans.get(inst.planId) ?? [];
+        list.push({
+          year,
+          month: row.month,
+          itemId: item.id,
+          amount: item.amount,
+          sequence: inst.sequence,
+          category: item.category,
+          name: item.name,
+        });
+        plans.set(inst.planId, list);
+        const existing = planMeta.get(inst.planId);
+        if (!existing || inst.sequence < existing.meta.sequence) {
+          planMeta.set(inst.planId, {
+            meta: inst,
+            name: item.name,
+            category: item.category,
+          });
+        }
+      }
+    }
+  }
+
+  const refYm = ymKey(
+    referenceDate.getFullYear(),
+    referenceDate.getMonth() + 1,
+  );
+
+  const summaries: InstallmentPlanSummary[] = [];
+  for (const [planId, instances] of plans) {
+    const sorted = [...instances].sort((a, b) => a.sequence - b.sequence);
+    const meta = planMeta.get(planId);
+    if (!meta) continue;
+    const paid = sorted.filter((i) => ymKey(i.year, i.month) <= refYm);
+    const paidAmount = paid.reduce((acc, i) => acc + i.amount, 0);
+    const nextDue =
+      sorted.find((i) => ymKey(i.year, i.month) > refYm) ?? null;
+    summaries.push({
+      planId,
+      name: meta.name,
+      category: meta.category,
+      totalAmount: meta.meta.totalAmount,
+      totalMonths: meta.meta.totalMonths,
+      startYear: meta.meta.startYear,
+      startMonth: meta.meta.startMonth,
+      instances: sorted,
+      paidAmount,
+      paidMonths: paid.length,
+      remainingAmount: Math.max(0, meta.meta.totalAmount - paidAmount),
+      nextDue,
+      isCompleted: nextDue === null,
+    });
+  }
+
+  // Sort: active plans first (by start date desc → newest at top),
+  // completed plans after.
+  summaries.sort((a, b) => {
+    if (a.isCompleted !== b.isCompleted) return a.isCompleted ? 1 : -1;
+    return (
+      ymKey(b.startYear, b.startMonth) - ymKey(a.startYear, a.startMonth)
+    );
+  });
+  return summaries;
+};
 
 /**
  * All 12 calendar months (1-12) for the given year, each with its computed

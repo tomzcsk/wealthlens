@@ -24,6 +24,7 @@ import RouteLoader from '@/components/ui/RouteLoader';
 const OverviewPage = lazy(() => import('@/pages/OverviewPage'));
 const MonthlyPage = lazy(() => import('@/pages/MonthlyPage'));
 const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage'));
+const InstallmentsPage = lazy(() => import('@/pages/InstallmentsPage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 const TaxCalculatorPage = lazy(() => import('@/pages/TaxCalculatorPage'));
 const PrintReportPage = lazy(() => import('@/pages/PrintReportPage'));
@@ -50,6 +51,7 @@ function App(): ReactNode {
             <Route index element={<OverviewPage />} />
             <Route path="monthly" element={<MonthlyPage />} />
             <Route path="analytics" element={<AnalyticsPage />} />
+            <Route path="installments" element={<InstallmentsPage />} />
             <Route path="tax" element={<TaxCalculatorPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="*" element={<NotFound />} />

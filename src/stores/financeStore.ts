@@ -21,10 +21,13 @@ import { v4 as uuidv4 } from 'uuid';
 
 import seedData from '@/data/seedData';
 import type {
+  ExpenseCategory,
   ExpenseItem,
+  InstallmentMeta,
   MonthlyExpense,
   MonthlyIncome,
   MonthlySavings,
+  Reimbursement,
   SavingsItem,
   WealthLensData,
   YearData,
@@ -76,6 +79,45 @@ const ensureYear = (
   return { ...years, [key]: emptyYear() };
 };
 
+/**
+ * Inputs for creating a new installment plan. The store derives `planId`,
+ * per-งวด amount, and the year/month walk from these.
+ */
+export interface InstallmentPlanInput {
+  name: string;
+  category: ExpenseCategory;
+  /** Full price the plan is for — split across `totalMonths` งวด. */
+  totalAmount: number;
+  totalMonths: number;
+  startYear: number;
+  /** 1-12. */
+  startMonth: number;
+  isRecurring?: boolean;
+  reimbursement?: Reimbursement;
+}
+
+/**
+ * Round to 2 decimals. Uses `Math.round` rather than `toFixed` to keep the
+ * result as a number (avoids string→number churn downstream).
+ */
+const round2 = (n: number): number => Math.round(n * 100) / 100;
+
+/**
+ * Walk (year, month) forward by `offset` months. month overflow rolls into
+ * the next calendar year, e.g. (2026, 11) + 3 → (2027, 2).
+ */
+const advanceMonth = (
+  year: number,
+  month: number,
+  offset: number,
+): { year: number; month: number } => {
+  const zeroBased = month - 1 + offset;
+  return {
+    year: year + Math.floor(zeroBased / 12),
+    month: (zeroBased % 12) + 1,
+  };
+};
+
 export interface FinanceState {
   /** Persisted finance data — everything Drive cares about. */
   data: WealthLensData;
@@ -108,6 +150,16 @@ export interface FinanceState {
     patch: Partial<ExpenseItem>,
   ) => void;
   deleteExpense: (year: number, month: number, itemId: string) => void;
+
+  // --- Installment plan mutations ---------------------------------------
+  /**
+   * Create N expense items (1 per งวด) across consecutive months, all
+   * tagged with the same generated `planId`. Spans years naturally —
+   * month overflow rolls into the next calendar year.
+   */
+  addInstallmentPlan: (input: InstallmentPlanInput) => string;
+  /** Remove every ExpenseItem tagged with the given `planId`. */
+  deleteInstallmentPlan: (planId: string) => void;
 
   // --- Savings mutations --------------------------------------------------
   addSavings: (
@@ -310,6 +362,107 @@ export const useFinanceStore = create<FinanceState>()(
                 [key]: { ...current, expenses: nextExpenses },
               },
             },
+            lastUpdated: stamp,
+          };
+        }),
+
+      addInstallmentPlan: (input) => {
+        const planId = uuidv4();
+        const {
+          name,
+          category,
+          totalAmount,
+          totalMonths,
+          startYear,
+          startMonth,
+          isRecurring,
+          reimbursement,
+        } = input;
+
+        // Per-งวด amount with the last งวด absorbing the rounding remainder
+        // so the rows sum back to `totalAmount` exactly.
+        const perInstallment = round2(totalAmount / totalMonths);
+        const lastInstallment = round2(
+          totalAmount - perInstallment * (totalMonths - 1),
+        );
+
+        set((state) => {
+          // Work on a single mutable years map so all งวด land in one
+          // state update — atomic and only bumps `lastUpdated` once.
+          let years: WealthLensData['years'] = state.data.years;
+
+          for (let seq = 1; seq <= totalMonths; seq++) {
+            const { year, month } = advanceMonth(startYear, startMonth, seq - 1);
+            years = ensureYear(years, year);
+            const key = String(year);
+            const current = years[key];
+            const amount = seq === totalMonths ? lastInstallment : perInstallment;
+            const installment: InstallmentMeta = {
+              planId,
+              sequence: seq,
+              totalMonths,
+              totalAmount,
+              startYear,
+              startMonth,
+            };
+            const newItem: ExpenseItem = {
+              id: uuidv4(),
+              category,
+              name,
+              amount,
+              isRecurring: isRecurring ?? false,
+              installment,
+              ...(reimbursement ? { reimbursement } : {}),
+            };
+            const monthRow = current.expenses.find((e) => e.month === month);
+            const nextExpenses: MonthlyExpense[] = monthRow
+              ? current.expenses.map((e) =>
+                  e.month === month
+                    ? { ...e, items: [...e.items, newItem] }
+                    : e,
+                )
+              : [...current.expenses, { month, items: [newItem] }];
+            years = {
+              ...years,
+              [key]: { ...current, expenses: nextExpenses },
+            };
+          }
+
+          const stamp = nowIso();
+          return {
+            data: { ...state.data, lastUpdated: stamp, years },
+            lastUpdated: stamp,
+          };
+        });
+
+        return planId;
+      },
+
+      deleteInstallmentPlan: (planId) =>
+        set((state) => {
+          let touched = false;
+          const nextYears: WealthLensData['years'] = {};
+          for (const [yearKey, yr] of Object.entries(state.data.years)) {
+            let yearTouched = false;
+            const nextExpenses = yr.expenses.map((row) => {
+              const filtered = row.items.filter(
+                (it) => it.installment?.planId !== planId,
+              );
+              if (filtered.length === row.items.length) return row;
+              yearTouched = true;
+              return { ...row, items: filtered };
+            });
+            if (yearTouched) {
+              touched = true;
+              nextYears[yearKey] = { ...yr, expenses: nextExpenses };
+            } else {
+              nextYears[yearKey] = yr;
+            }
+          }
+          if (!touched) return state;
+          const stamp = nowIso();
+          return {
+            data: { ...state.data, lastUpdated: stamp, years: nextYears },
             lastUpdated: stamp,
           };
         }),

@@ -127,6 +127,36 @@ export interface ExpenseItem {
    * row so he can see what the company still owes him at a glance.
    */
   reimbursement?: Reimbursement;
+  /**
+   * Installment metadata — present when this row is one งวด of an ผ่อน 0%
+   * (or similar) multi-month plan. Each ExpenseItem in a plan carries the
+   * same `planId` so the Installment Manager can join them, and a unique
+   * `sequence` (1..totalMonths). Absent on regular one-shot expenses.
+   */
+  installment?: InstallmentMeta;
+}
+
+/**
+ * Marks an `ExpenseItem` as one งวด of a multi-month installment plan.
+ * The plan itself is not a separate entity — it's the set of all
+ * ExpenseItems sharing the same `planId`. This keeps the existing
+ * sum-from-items pipelines (charts, KPIs, exports) working without
+ * special-casing installments while still letting the UI present
+ * "ผ่อน 3/10" badges and a manager view.
+ */
+export interface InstallmentMeta {
+  /** UUID shared by every งวด of this plan. */
+  planId: string;
+  /** 1-based งวด number. */
+  sequence: number;
+  /** Total number of งวด in the plan. */
+  totalMonths: number;
+  /** Original full price the plan was created for (display only). */
+  totalAmount: number;
+  /** Calendar year the first งวด lands in. */
+  startYear: number;
+  /** Calendar month (1-12) the first งวด lands in. */
+  startMonth: number;
 }
 
 /**

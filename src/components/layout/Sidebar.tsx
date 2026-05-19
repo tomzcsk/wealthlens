@@ -21,6 +21,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/', label: 'ภาพรวม', icon: '🏠', end: true },
   { to: '/monthly', label: 'รายเดือน', icon: '📊' },
   { to: '/analytics', label: 'วิเคราะห์', icon: '📈' },
+  { to: '/installments', label: 'แผนผ่อน', icon: '💳' },
   { to: '/tax', label: 'ภาษี', icon: '🧮' },
   { to: '/settings', label: 'ตั้งค่า', icon: '⚙️' },
 ];

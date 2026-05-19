@@ -32,6 +32,7 @@ import { formatTHB, formatThaiMonth } from '@/utils/formatters';
 import { findRecurringTemplate } from '@/utils/recurringTemplate';
 
 import ExpenseForm from './ExpenseForm';
+import InstallmentForm from './InstallmentForm';
 
 export interface ExpenseListProps {
   year: number;
@@ -62,6 +63,7 @@ const ExpenseRow = ({
 }: ExpenseRowProps): ReactNode => {
   const meta = EXPENSE_CATEGORIES[item.category];
   const reimbursement = item.reimbursement;
+  const installment = item.installment;
   return (
     <div className="group flex items-center gap-3 px-3 py-2 rounded-md hover:bg-slate-50 transition">
       {showIcon && (
@@ -72,6 +74,14 @@ const ExpenseRow = ({
       <div className="flex-1 min-w-0">
         <p className="text-sm text-slate-900 truncate">
           {item.name}
+          {installment != null && (
+            <span
+              title={`ผ่อนทั้งหมด ${formatTHB(installment.totalAmount)} ÷ ${installment.totalMonths} งวด`}
+              className="ml-2 inline-block px-1.5 py-0.5 text-[10px] font-medium text-slate-700 bg-slate-100 border border-slate-200 rounded-full"
+            >
+              ผ่อน {installment.sequence}/{installment.totalMonths}
+            </span>
+          )}
           {item.isRecurring && (
             <span
               title="รายการประจำเดือน"
@@ -143,6 +153,7 @@ export const ExpenseList = ({
     [data, year, month],
   );
   const deleteExpense = useFinanceStore((s) => s.deleteExpense);
+  const deleteInstallmentPlan = useFinanceStore((s) => s.deleteInstallmentPlan);
   const addExpense = useFinanceStore((s) => s.addExpense);
   const updateExpense = useFinanceStore((s) => s.updateExpense);
   const pushToast = useToastStore((s) => s.push);
@@ -200,6 +211,10 @@ export const ExpenseList = ({
   const [defaultCategory, setDefaultCategory] = useState<
     ExpenseCategory | undefined
   >(undefined);
+  const [installmentModalOpen, setInstallmentModalOpen] = useState(false);
+  /** Item pending an installment-aware delete decision (only set for งวด rows). */
+  const [pendingInstallmentDelete, setPendingInstallmentDelete] =
+    useState<ExpenseItem | null>(null);
 
   // Group items in stable category order. Empty categories are dropped from
   // the rendered list so the grouped view doesn't spam empty headers.
@@ -230,11 +245,37 @@ export const ExpenseList = ({
   };
 
   const handleDelete = (item: ExpenseItem): void => {
-    // Native confirm keeps the dependency footprint zero. If we ever want a
-    // designed dialog, swap in <Modal> + a small <ConfirmDialog> wrapper.
+    // Installment row → defer to the 3-option dialog (this งวด vs whole plan).
+    if (item.installment != null) {
+      setPendingInstallmentDelete(item);
+      return;
+    }
     if (window.confirm(`ลบรายการ '${item.name}'?`)) {
       deleteExpense(year, month, item.id);
     }
+  };
+
+  const confirmDeleteSingleInstallment = (): void => {
+    const item = pendingInstallmentDelete;
+    if (!item) return;
+    deleteExpense(year, month, item.id);
+    setPendingInstallmentDelete(null);
+    pushToast({
+      message: `ลบงวดนี้ของ '${item.name}' แล้ว`,
+      tone: 'info',
+    });
+  };
+
+  const confirmDeleteEntirePlan = (): void => {
+    const item = pendingInstallmentDelete;
+    if (!item?.installment) return;
+    const planId = item.installment.planId;
+    deleteInstallmentPlan(planId);
+    setPendingInstallmentDelete(null);
+    pushToast({
+      message: `ลบแผนผ่อน '${item.name}' (${item.installment.totalMonths} งวด) แล้ว`,
+      tone: 'info',
+    });
   };
 
   const handleClose = (): void => {
@@ -248,13 +289,20 @@ export const ExpenseList = ({
     return (
       <div className="rounded-lg border border-dashed border-slate-200 bg-white p-8 text-center">
         <p className="text-sm text-slate-500 mb-4">ยังไม่มีรายการค่าใช้จ่าย</p>
-        <div className="flex items-center justify-center gap-2">
+        <div className="flex items-center justify-center gap-2 flex-wrap">
           <button
             type="button"
             onClick={handleFillRecurring}
             className="px-4 py-2 text-sm font-medium text-primary border border-primary rounded-md hover:bg-primary-light transition"
           >
             📋 เติมรายการประจำ
+          </button>
+          <button
+            type="button"
+            onClick={() => setInstallmentModalOpen(true)}
+            className="px-4 py-2 text-sm font-medium text-slate-700 border border-slate-300 rounded-md hover:bg-slate-50 transition"
+          >
+            💳 ผ่อนของ
           </button>
           <button
             type="button"
@@ -282,6 +330,27 @@ export const ExpenseList = ({
             />
           </div>
         </Modal>
+        <Modal
+          open={installmentModalOpen}
+          onClose={() => setInstallmentModalOpen(false)}
+          title="สร้างแผนผ่อน"
+          size="md"
+        >
+          <div className="px-6 py-5">
+            <InstallmentForm
+              defaultYear={year}
+              defaultMonth={month}
+              onSaved={() => {
+                setInstallmentModalOpen(false);
+                pushToast({
+                  message: 'สร้างแผนผ่อนแล้ว ✓',
+                  tone: 'success',
+                });
+              }}
+              onCancel={() => setInstallmentModalOpen(false)}
+            />
+          </div>
+        </Modal>
       </div>
     );
   }
@@ -289,7 +358,7 @@ export const ExpenseList = ({
   return (
     <div className="space-y-3">
       {showAddButton && (
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center justify-end gap-2 flex-wrap">
           <button
             type="button"
             onClick={handleFillRecurring}
@@ -297,6 +366,14 @@ export const ExpenseList = ({
             className="px-3 py-1.5 text-sm font-medium text-slate-600 border border-slate-200 rounded-md hover:bg-slate-50 transition"
           >
             📋 เติมรายการประจำ
+          </button>
+          <button
+            type="button"
+            onClick={() => setInstallmentModalOpen(true)}
+            title="ผ่อน 0% หรือผ่อนหลายงวด — ระบบจะกระจายงวดให้ในเดือนต่อๆ ไปอัตโนมัติ"
+            className="px-3 py-1.5 text-sm font-medium text-slate-700 border border-slate-300 rounded-md hover:bg-slate-50 transition"
+          >
+            💳 ผ่อนของ
           </button>
           <button
             type="button"
@@ -384,6 +461,81 @@ export const ExpenseList = ({
             onCancel={handleClose}
           />
         </div>
+      </Modal>
+
+      <Modal
+        open={installmentModalOpen}
+        onClose={() => setInstallmentModalOpen(false)}
+        title="สร้างแผนผ่อน"
+        size="md"
+      >
+        <div className="px-6 py-5">
+          <InstallmentForm
+            defaultYear={year}
+            defaultMonth={month}
+            onSaved={() => {
+              setInstallmentModalOpen(false);
+              pushToast({
+                message: 'สร้างแผนผ่อนแล้ว ✓',
+                tone: 'success',
+              });
+            }}
+            onCancel={() => setInstallmentModalOpen(false)}
+          />
+        </div>
+      </Modal>
+
+      <Modal
+        open={pendingInstallmentDelete != null}
+        onClose={() => setPendingInstallmentDelete(null)}
+        title="ลบรายการผ่อน"
+        size="sm"
+      >
+        {pendingInstallmentDelete?.installment != null && (
+          <div className="px-6 py-5 space-y-4">
+            <div>
+              <p className="text-sm text-slate-700">
+                <span className="font-semibold">{pendingInstallmentDelete.name}</span>{' '}
+                — งวด {pendingInstallmentDelete.installment.sequence}/
+                {pendingInstallmentDelete.installment.totalMonths}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                ยอดรวมแผน {formatTHB(pendingInstallmentDelete.installment.totalAmount)}
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={confirmDeleteSingleInstallment}
+                className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 text-left transition"
+              >
+                <span className="block">ลบเฉพาะเดือนนี้</span>
+                <span className="block text-xs text-slate-500 mt-0.5">
+                  คงเหลืออีก {pendingInstallmentDelete.installment.totalMonths - 1} งวดในเดือนอื่น
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteEntirePlan}
+                className="px-4 py-2 text-sm font-medium text-white bg-expense rounded-md hover:bg-red-700 text-left transition"
+              >
+                <span className="block">
+                  ลบทั้งแผน ({pendingInstallmentDelete.installment.totalMonths} งวด)
+                </span>
+                <span className="block text-xs text-red-100 mt-0.5">
+                  ลบทุกงวดของ '{pendingInstallmentDelete.name}' ออกจากทุกเดือน
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPendingInstallmentDelete(null)}
+                className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-md transition"
+              >
+                ยกเลิก
+              </button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );
