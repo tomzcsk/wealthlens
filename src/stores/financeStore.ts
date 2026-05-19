@@ -1410,6 +1410,36 @@ export const useFinanceStore = create<FinanceState>()(
         for (const [k, yr] of Object.entries(data.years)) {
           years[k] = normalizeYear(yr);
         }
+        // One-shot migration for seed values that Claude made up before the
+        // กยศ portal confirmed reality (2026-05-19). We only overwrite cells
+        // that still hold the EXACT wrong values — if the user has manually
+        // edited them since, leave them alone. Matched values are unique
+        // enough (e.g. ss=1125 in 2026-04) that false positives are unlikely.
+        const fixGslSs = (
+          yearKey: string,
+          monthNum: number,
+          predicate: (d: MonthlyIncome['deductions']) => boolean,
+          patch: Partial<MonthlyIncome['deductions']>,
+        ): void => {
+          const yr = years[yearKey];
+          if (!yr) return;
+          const inc = yr.income.find((i) => i.month === monthNum);
+          if (!inc) return;
+          if (!predicate(inc.deductions)) return;
+          inc.deductions = { ...inc.deductions, ...patch };
+        };
+        fixGslSs('2024', 10, (d) => d.gsl === 994, { gsl: 0 });
+        fixGslSs('2025', 3, (d) => d.gsl === 0, { gsl: 994 });
+        fixGslSs('2025', 4, (d) => d.gsl === 1988, { gsl: 994 });
+        fixGslSs('2026', 2, (d) => d.gsl === 1281, { gsl: 0 });
+        fixGslSs('2026', 3, (d) => d.gsl === 125, { gsl: 0 });
+        fixGslSs(
+          '2026',
+          4,
+          (d) => d.gsl === 906 || d.socialSecurity === 1125,
+          { gsl: 0, socialSecurity: 750 },
+        );
+
         // Loans written before scheduledPayments existed lack the field;
         // backfill an empty array so selectors can iterate without guards.
         // For the seed กยศ loan specifically, restore the portal-derived

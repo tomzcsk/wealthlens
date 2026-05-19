@@ -2396,7 +2396,7 @@ const year2026: YearData = {
       salary: 80000,
       bonus: 0,
       commission: 128000,
-      deductions: { tax: 4261, socialSecurity: 1125, providentFund: 2400, gsl: 0 },
+      deductions: { tax: 4261, socialSecurity: 750, providentFund: 2400, gsl: 0 },
     },
     {
       month: 5,
