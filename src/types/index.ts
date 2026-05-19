@@ -39,6 +39,16 @@ export interface WealthLensData {
    * payload bounded. Optional — older payloads have no history yet.
    */
   goldPriceHistory?: GoldPriceSnapshot[];
+  /**
+   * Long-running debts (กยศ today; mortgage/auto loans tomorrow). Each
+   * entry carries its own annual amortization schedule plus a log of
+   * out-of-band lump-sum payments ("โปะ"). Monthly recurring payments
+   * are NOT stored here — they live in `years[*].income[*].deductions.gsl`
+   * and are pulled into the payment log via `getMergedPaymentLog`. This
+   * keeps a single source of truth and avoids dual-entry. Optional so
+   * older Drive payloads without the field still hydrate.
+   */
+  loans?: Loan[];
 }
 
 /**
@@ -369,4 +379,86 @@ export interface GoldHolding {
   sideEffects?: GoldSideEffectRefs;
   /** Present iff the holding has been sold. */
   sold?: GoldSaleRecord;
+}
+
+// ---------------------------------------------------------------------------
+// Loans — long-running debts with an amortization schedule (กยศ, mortgage, …)
+// ---------------------------------------------------------------------------
+
+/**
+ * Source field on `MonthlyDeductions` that the loan tracker should treat as
+ * the monthly payment for THIS loan. `gsl` for the student loan; other types
+ * have no auto-link today (set `null` or omit).
+ */
+export type LoanDeductionField = 'gsl';
+
+export type LoanType = 'gsl' | 'mortgage' | 'auto' | 'other';
+
+/**
+ * One row of the lender-issued amortization table. Stored verbatim — we
+ * do NOT recompute the schedule from a (principal, rate, term) tuple
+ * because real loan tables include rounding adjustments the lender owns.
+ */
+export interface LoanInstallment {
+  /** 1-based installment number. */
+  installmentNumber: number;
+  /** ISO yyyy-mm-dd date this installment is due. */
+  dueDate: string;
+  /** Principal fraction allocated to this installment (e.g. 0.06 = 6%). */
+  principalRatio: number;
+  /** Baht of principal repaid by this installment. */
+  principalAmount: number;
+  /** Baht of interest charged on this installment. */
+  interestAmount: number;
+  /** principalAmount + interestAmount (denormalised for display). */
+  totalAmount: number;
+}
+
+/**
+ * A lump-sum payment ("โปะ") made outside the recurring monthly debit.
+ * When `createExpenseEntry` is true, the store dual-writes an
+ * `ExpenseItem` (category 'finance') in the matching month so the
+ * cashflow ledger reflects the outflow — same pattern as gold purchases.
+ */
+export interface ExtraPayment {
+  /** UUID v4 generated client-side. */
+  id: string;
+  /** ISO yyyy-mm-dd date the payment was made. */
+  date: string;
+  amount: number;
+  /** Optional lender reference number (เลขอ้างอิงรายการ). */
+  reference?: string;
+  notes?: string;
+  /** Whether this payment was mirrored to the expense ledger. */
+  createExpenseEntry: boolean;
+  /**
+   * Id of the auto-created `ExpenseItem`. Stored so a later delete can
+   * cleanly revert the dual write — without it, the expense row would
+   * orphan. Absent when `createExpenseEntry === false`.
+   */
+  linkedExpenseItemId?: string;
+  /** Year/month the linked expense lives in (for clean revert). */
+  linkedExpenseYear?: number;
+  linkedExpenseMonth?: number;
+}
+
+export interface Loan {
+  /** UUID v4 generated client-side. */
+  id: string;
+  /** Free-form label shown in UI (e.g. "กยศ"). */
+  name: string;
+  type: LoanType;
+  /** ISO yyyy-mm-dd of the loan's first installment date. */
+  startDate: string;
+  /** Lender-issued amortization rows. Order = `installmentNumber`. */
+  schedule: LoanInstallment[];
+  /** Out-of-band lump-sum payments. */
+  extraPayments: ExtraPayment[];
+  /**
+   * Deduction field whose monthly value counts as a payment to this loan.
+   * When set, `getMergedPaymentLog` walks every month of `years[*]` and
+   * surfaces non-zero deduction values as auto-payments. Omit for loans
+   * paid out-of-pocket only.
+   */
+  linkedDeductionField?: LoanDeductionField;
 }

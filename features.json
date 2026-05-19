@@ -2,7 +2,7 @@
   "project": {
     "name": "WealthLens",
     "description": "Personal Finance Dashboard สำหรับติดตามรายรับ-รายจ่ายส่วนตัว",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "created": "2026-05-06",
     "lastUpdated": "2026-05-19",
     "owner": "Tom",
@@ -865,6 +865,39 @@
           }
         },
         {
+          "id": "F26",
+          "name": "Loan Tracker (กยศ ledger)",
+          "description": "หน้า 'หนี้สิน' รวมตารางผ่อน + ประวัติชำระ — auto-derive monthly payments จาก deductions.gsl + กรอกโปะพิเศษได้",
+          "status": "completed",
+          "priority": "P1",
+          "phase": "phase_4",
+          "acceptanceCriteria": [
+            "Sidebar nav '💰 หนี้สิน' + route /loans",
+            "Schema: WealthLensData.loans?: Loan[] (backward-compat optional)",
+            "Loan model: schedule + extraPayments + linkedDeductionField",
+            "LoanScheduleTable: 15 งวด, highlight งวดปัจจุบันสีเขียว (อิงจากวันที่จริง)",
+            "PaymentLogTable: merge auto-payments (deductions.gsl) + manual extras, sorted newest-first",
+            "LoanHero: ยอดคงเหลือ, % paid, ปีที่เหลือ, progress bar",
+            "ThisYearCard: งวดปัจจุบัน — ต้องจ่าย/จ่ายแล้ว/เหลือ + progress fraction",
+            "ExtraPaymentForm: date, amount, reference, notes + toggle 'createExpenseEntry'",
+            "Auto-link cashflow: เพิ่มโปะ + createExpenseEntry: true → สร้าง ExpenseItem หมวด 'finance' ใน month นั้น (pattern เดียวกับ Gold F25)",
+            "Delete extra: revert option ลบ linked expense ด้วย",
+            "Seed กยศ 15 งวด (2562-2576 / 2019-2033) + 8 extras จากภาพ กยศ portal",
+            "LoanSummaryCard บน Overview Dashboard (hidden เมื่อไม่มี loans)",
+            "Empty state: 'โหลด กยศ ตัวอย่าง' button ผ่าน seedLoan action (idempotent)",
+            "Drive sync: loans field รวมใน wealthlens_data.json"
+          ],
+          "estimatedHours": 12,
+          "dependencies": [
+            "F25"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-19",
+            "notes": "Files: types/index.ts, utils/loanCalculations.ts, data/seedData.ts, stores/financeStore.ts, components/loans/{LoanScheduleTable,PaymentLogTable,ExtraPaymentForm}.tsx, components/dashboard/LoanSummaryCard.tsx, pages/LoansPage.tsx, App.tsx, components/layout/Sidebar.tsx, pages/OverviewPage.tsx"
+          }
+        },
+        {
           "id": "F25",
           "name": "Gold Holdings Ledger",
           "description": "Ledger สำหรับ track ทองคำ — ซื้อ/ขาย auto สร้าง cashflow entries",
@@ -975,12 +1008,12 @@
     }
   },
   "progressSummary": {
-    "totalFeatures": 33,
-    "completed": 33,
+    "totalFeatures": 34,
+    "completed": 34,
     "inProgress": 0,
     "pending": 0,
     "overallProgress": "100%",
     "currentPhase": "shipped",
-    "nextMilestone": "Phase 5 (optional): dark mode, mobile UX polish, additional analytics"
+    "nextMilestone": "Phase 5 (optional): dark mode, mobile UX polish, additional analytics, multi-loan UI (mortgage/auto)"
   }
 }

@@ -78,7 +78,7 @@ npm run lint       # ESLint check
 | Phase 1 — MVP | ✅ Completed | Core dashboard, forms, monthly detail, Drive sync UI |
 | Phase 2 — Analytics | ✅ Completed | Multi-year, savings, subscriptions, 48-month trends, JSON backup |
 | Phase 3 — Intelligence | ✅ Completed | Anomaly detection, budget forecast, PDF report |
-| Phase 4 — Post-Ship | ✅ Completed | Multi-user login, per-month Kept, Dime/ออมเที่ยว split, reimbursements, ผ่อน 0%, gold ledger |
+| Phase 4 — Post-Ship | ✅ Completed | Multi-user login, per-month Kept, Dime/ออมเที่ยว split, reimbursements, ผ่อน 0%, gold ledger, loan tracker (กยศ) |
 
 **เมื่อ complete feature ใด:** อัปเดต `features.json` → เปลี่ยน `status` เป็น `"completed"` และกรอก `completedAt`
 

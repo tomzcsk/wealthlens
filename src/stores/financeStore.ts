@@ -23,6 +23,7 @@ import seedData from '@/data/seedData';
 import type {
   ExpenseCategory,
   ExpenseItem,
+  ExtraPayment,
   GoldHolding,
   GoldPaymentMethod,
   GoldPriceSnapshot,
@@ -30,6 +31,9 @@ import type {
   GoldSaleRecord,
   GoldType,
   InstallmentMeta,
+  Loan,
+  LoanInstallment,
+  LoanType,
   MonthlyExpense,
   MonthlyIncome,
   MonthlySavings,
@@ -123,6 +127,41 @@ export interface GoldHoldingInput {
   spotPriceAtPurchase?: number;
   notes?: string;
   paymentMethod: GoldPaymentMethod;
+}
+
+/**
+ * Inputs for creating a new Loan. The store generates `id` and accepts the
+ * lender-issued schedule + extras as-given (they're authoritative).
+ */
+export interface LoanInput {
+  name: string;
+  type: LoanType;
+  startDate: string;
+  schedule: LoanInstallment[];
+  linkedDeductionField?: Loan['linkedDeductionField'];
+}
+
+/** Editable subset of a Loan, mirroring the GoldHoldingPatch pattern. */
+export interface LoanPatch {
+  name?: string;
+  type?: LoanType;
+  startDate?: string;
+  schedule?: LoanInstallment[];
+  linkedDeductionField?: Loan['linkedDeductionField'] | null;
+}
+
+/** Inputs for a lump-sum extra payment ("โปะ"). */
+export interface ExtraPaymentInput {
+  date: string;
+  amount: number;
+  reference?: string;
+  notes?: string;
+  /**
+   * When true, the store dual-writes a matching ExpenseItem (category
+   * 'finance') into the month derived from `date`. The new item's id is
+   * stamped onto the ExtraPayment so a later delete can revert cleanly.
+   */
+  createExpenseEntry: boolean;
 }
 
 /** Subset of GoldHolding fields editable post-create — see action docs. */
@@ -242,6 +281,47 @@ export interface FinanceState {
   bulkImportGoldPriceHistory: (
     snapshots: GoldPriceSnapshot[],
     mode: 'merge' | 'replace',
+  ) => void;
+
+  // --- Loans --------------------------------------------------------------
+  /**
+   * Create a new long-running debt with its lender-issued amortization
+   * schedule. Returns the new loan's id.
+   */
+  addLoan: (input: LoanInput) => string;
+  /**
+   * Push an already-shaped Loan onto `data.loans` verbatim — used by the
+   * "Load demo" button to seed Tom's กยศ ledger without going through the
+   * input/uuid path. No-op when a loan with the same id already exists,
+   * so the button is idempotent if the user clicks it twice.
+   */
+  seedLoan: (loan: Loan) => void;
+  /** Patch a loan's metadata or replace its schedule wholesale. */
+  updateLoan: (id: string, patch: LoanPatch) => void;
+  /**
+   * Remove a loan and ALL of its `extraPayments`. When
+   * `revertExpenseSideEffects` is true, also delete every linked
+   * ExpenseItem the dual-write created (the mirror of
+   * `deleteGoldHolding`).
+   */
+  deleteLoan: (
+    id: string,
+    options: { revertExpenseSideEffects: boolean },
+  ) => void;
+  /**
+   * Add a lump-sum payment to a loan. When `createExpenseEntry` is true,
+   * dual-writes an ExpenseItem (category 'finance') in the matching
+   * month. Returns the new ExtraPayment id.
+   */
+  addExtraPayment: (loanId: string, input: ExtraPaymentInput) => string;
+  /**
+   * Remove an extra payment. When `revertExpenseSideEffect` is true,
+   * also delete the linked ExpenseItem.
+   */
+  deleteExtraPayment: (
+    loanId: string,
+    extraId: string,
+    options: { revertExpenseSideEffect: boolean },
   ) => void;
 
   // --- Savings mutations --------------------------------------------------
@@ -899,6 +979,272 @@ export const useFinanceStore = create<FinanceState>()(
             data: {
               ...state.data,
               goldPriceHistory: next,
+              lastUpdated: stamp,
+            },
+            lastUpdated: stamp,
+          };
+        }),
+
+      addLoan: (input) => {
+        const id = uuidv4();
+        set((state) => {
+          const loan: Loan = {
+            id,
+            name: input.name,
+            type: input.type,
+            startDate: input.startDate,
+            schedule: input.schedule,
+            extraPayments: [],
+            ...(input.linkedDeductionField
+              ? { linkedDeductionField: input.linkedDeductionField }
+              : {}),
+          };
+          const stamp = nowIso();
+          return {
+            data: {
+              ...state.data,
+              loans: [...(state.data.loans ?? []), loan],
+              lastUpdated: stamp,
+            },
+            lastUpdated: stamp,
+          };
+        });
+        return id;
+      },
+
+      seedLoan: (loan) =>
+        set((state) => {
+          const loans = state.data.loans ?? [];
+          if (loans.some((l) => l.id === loan.id)) return state;
+          const stamp = nowIso();
+          return {
+            data: {
+              ...state.data,
+              loans: [...loans, loan],
+              lastUpdated: stamp,
+            },
+            lastUpdated: stamp,
+          };
+        }),
+
+      updateLoan: (id, patch) =>
+        set((state) => {
+          const loans = state.data.loans ?? [];
+          let touched = false;
+          const next = loans.map((l) => {
+            if (l.id !== id) return l;
+            touched = true;
+            // Re-build the loan field-by-field so undefined patch values
+            // don't accidentally clobber existing data (a `{}` spread
+            // would leave them, but explicit is safer).
+            const merged: Loan = {
+              ...l,
+              ...(patch.name !== undefined ? { name: patch.name } : {}),
+              ...(patch.type !== undefined ? { type: patch.type } : {}),
+              ...(patch.startDate !== undefined
+                ? { startDate: patch.startDate }
+                : {}),
+              ...(patch.schedule !== undefined
+                ? { schedule: patch.schedule }
+                : {}),
+            };
+            // `linkedDeductionField: null` is the explicit "clear it" signal.
+            if (patch.linkedDeductionField === null) {
+              delete (merged as { linkedDeductionField?: unknown })
+                .linkedDeductionField;
+            } else if (patch.linkedDeductionField !== undefined) {
+              merged.linkedDeductionField = patch.linkedDeductionField;
+            }
+            return merged;
+          });
+          if (!touched) return state;
+          const stamp = nowIso();
+          return {
+            data: { ...state.data, loans: next, lastUpdated: stamp },
+            lastUpdated: stamp,
+          };
+        }),
+
+      deleteLoan: (id, { revertExpenseSideEffects }) =>
+        set((state) => {
+          const loans = state.data.loans ?? [];
+          const target = loans.find((l) => l.id === id);
+          if (!target) return state;
+
+          const nextLoans = loans.filter((l) => l.id !== id);
+          let nextYears = state.data.years;
+
+          if (revertExpenseSideEffects) {
+            // Sweep every linked expense — keep month rows intact (mirror
+            // of deleteExpense semantics).
+            for (const ep of target.extraPayments) {
+              if (
+                !ep.linkedExpenseItemId ||
+                ep.linkedExpenseYear == null ||
+                ep.linkedExpenseMonth == null
+              ) {
+                continue;
+              }
+              const yearKey = String(ep.linkedExpenseYear);
+              const yr = nextYears[yearKey];
+              if (!yr) continue;
+              const nextExpenses = yr.expenses.map((row) =>
+                row.month === ep.linkedExpenseMonth
+                  ? {
+                      ...row,
+                      items: row.items.filter(
+                        (it) => it.id !== ep.linkedExpenseItemId,
+                      ),
+                    }
+                  : row,
+              );
+              nextYears = {
+                ...nextYears,
+                [yearKey]: { ...yr, expenses: nextExpenses },
+              };
+            }
+          }
+
+          const stamp = nowIso();
+          return {
+            data: {
+              ...state.data,
+              loans: nextLoans,
+              years: nextYears,
+              lastUpdated: stamp,
+            },
+            lastUpdated: stamp,
+          };
+        }),
+
+      addExtraPayment: (loanId, input) => {
+        const extraId = uuidv4();
+        set((state) => {
+          const loans = state.data.loans ?? [];
+          if (!loans.some((l) => l.id === loanId)) return state;
+
+          // Anchor date for the optional expense side-effect.
+          const dt = new Date(`${input.date}T00:00:00`);
+          const year = dt.getFullYear();
+          const month = dt.getMonth() + 1;
+
+          let nextYears = state.data.years;
+          let linkedExpenseItemId: string | undefined;
+
+          if (input.createExpenseEntry) {
+            nextYears = ensureYear(nextYears, year);
+            const yearKey = String(year);
+            const yr = normalizeYear(nextYears[yearKey]);
+            linkedExpenseItemId = uuidv4();
+            const newExpense: ExpenseItem = {
+              id: linkedExpenseItemId,
+              category: 'finance',
+              name: `โปะ${loans.find((l) => l.id === loanId)?.name ?? 'loan'}`,
+              amount: input.amount,
+              isRecurring: false,
+            };
+            const monthRow = yr.expenses.find((e) => e.month === month);
+            const nextExpenses: MonthlyExpense[] = monthRow
+              ? yr.expenses.map((e) =>
+                  e.month === month
+                    ? { ...e, items: [...e.items, newExpense] }
+                    : e,
+                )
+              : [...yr.expenses, { month, items: [newExpense] }];
+            nextYears = {
+              ...nextYears,
+              [yearKey]: { ...yr, expenses: nextExpenses },
+            };
+          }
+
+          const newExtra: ExtraPayment = {
+            id: extraId,
+            date: input.date,
+            amount: input.amount,
+            createExpenseEntry: input.createExpenseEntry,
+            ...(input.reference ? { reference: input.reference } : {}),
+            ...(input.notes ? { notes: input.notes } : {}),
+            ...(linkedExpenseItemId
+              ? {
+                  linkedExpenseItemId,
+                  linkedExpenseYear: year,
+                  linkedExpenseMonth: month,
+                }
+              : {}),
+          };
+
+          const nextLoans = loans.map((l) =>
+            l.id === loanId
+              ? { ...l, extraPayments: [...l.extraPayments, newExtra] }
+              : l,
+          );
+
+          const stamp = nowIso();
+          return {
+            data: {
+              ...state.data,
+              loans: nextLoans,
+              years: nextYears,
+              lastUpdated: stamp,
+            },
+            lastUpdated: stamp,
+          };
+        });
+        return extraId;
+      },
+
+      deleteExtraPayment: (loanId, extraId, { revertExpenseSideEffect }) =>
+        set((state) => {
+          const loans = state.data.loans ?? [];
+          const loan = loans.find((l) => l.id === loanId);
+          if (!loan) return state;
+          const extra = loan.extraPayments.find((e) => e.id === extraId);
+          if (!extra) return state;
+
+          let nextYears = state.data.years;
+          if (
+            revertExpenseSideEffect &&
+            extra.linkedExpenseItemId &&
+            extra.linkedExpenseYear != null &&
+            extra.linkedExpenseMonth != null
+          ) {
+            const yearKey = String(extra.linkedExpenseYear);
+            const yr = nextYears[yearKey];
+            if (yr) {
+              const nextExpenses = yr.expenses.map((row) =>
+                row.month === extra.linkedExpenseMonth
+                  ? {
+                      ...row,
+                      items: row.items.filter(
+                        (it) => it.id !== extra.linkedExpenseItemId,
+                      ),
+                    }
+                  : row,
+              );
+              nextYears = {
+                ...nextYears,
+                [yearKey]: { ...yr, expenses: nextExpenses },
+              };
+            }
+          }
+
+          const nextLoans = loans.map((l) =>
+            l.id === loanId
+              ? {
+                  ...l,
+                  extraPayments: l.extraPayments.filter(
+                    (e) => e.id !== extraId,
+                  ),
+                }
+              : l,
+          );
+
+          const stamp = nowIso();
+          return {
+            data: {
+              ...state.data,
+              loans: nextLoans,
+              years: nextYears,
               lastUpdated: stamp,
             },
             lastUpdated: stamp,

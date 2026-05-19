@@ -4,6 +4,7 @@ import { DimeInvestmentCard } from '@/components/dashboard/DimeInvestmentCard';
 import { KpiCardGrid } from '@/components/dashboard/KpiCardGrid';
 import { IncomeExpenseChart } from '@/components/dashboard/IncomeExpenseChart';
 import { ExpensePieChart } from '@/components/dashboard/ExpensePieChart';
+import { LoanSummaryCard } from '@/components/dashboard/LoanSummaryCard';
 import { MonthlySummaryTable } from '@/components/dashboard/MonthlySummaryTable';
 import { ReimbursementCard } from '@/components/dashboard/ReimbursementCard';
 import { SavingsGoalCard } from '@/components/dashboard/SavingsGoalCard';
@@ -19,6 +20,8 @@ export const OverviewPage = (): ReactNode => {
         <DimeInvestmentCard />
         <TravelSavingsCard />
       </div>
+
+      <LoanSummaryCard />
 
       <ReimbursementCard />
 

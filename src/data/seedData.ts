@@ -43,7 +43,7 @@
  * (iPhone, ทำฟัน, keychron) come out false; everyday items come out true.
  */
 
-import type { WealthLensData, YearData } from '@/types';
+import type { Loan, WealthLensData, YearData } from '@/types';
 
 const year2023: YearData = {
   income: [
@@ -2840,6 +2840,59 @@ const year2026: YearData = {
   ],
 };
 
+/**
+ * Tom's กยศ (Student Loan Fund) — 15-year amortization issued by ธ.กรุงไทย.
+ * Schedule rows pulled verbatim from the กยศ portal table. Annual due date
+ * is 5 ก.ค. of each calendar year (พ.ศ. 2562 → 2576 = ค.ศ. 2019 → 2033).
+ *
+ * Monthly recurring payments are NOT seeded here — those values live in
+ * each year's `deductions.gsl` line (matching Tom's monthly statement) and
+ * are surfaced into the payment log by `getMergedPaymentLog`. We only seed
+ * the schedule + the lump-sum โปะ entries Tom made outside the monthly debit.
+ *
+ * Schedule totals (cross-check): principal 205,200 + interest 19,033.04 =
+ * 224,233.04 total obligation.
+ */
+export const gslLoan: Loan = {
+  id: 'seed-loan-gsl',
+  name: 'กยศ',
+  type: 'gsl',
+  startDate: '2019-07-05',
+  linkedDeductionField: 'gsl',
+  schedule: [
+    { installmentNumber: 1, dueDate: '2019-07-05', principalRatio: 0.015, principalAmount: 3078, interestAmount: 0, totalAmount: 3078 },
+    { installmentNumber: 2, dueDate: '2020-07-05', principalRatio: 0.025, principalAmount: 5130, interestAmount: 2023.94, totalAmount: 7153.94 },
+    { installmentNumber: 3, dueDate: '2021-07-05', principalRatio: 0.030, principalAmount: 6156, interestAmount: 1967.27, totalAmount: 8123.27 },
+    { installmentNumber: 4, dueDate: '2022-07-05', principalRatio: 0.035, principalAmount: 7182, interestAmount: 1908.36, totalAmount: 9090.36 },
+    { installmentNumber: 5, dueDate: '2023-07-05', principalRatio: 0.040, principalAmount: 8208, interestAmount: 1836.54, totalAmount: 10044.54 },
+    { installmentNumber: 6, dueDate: '2024-07-05', principalRatio: 0.045, principalAmount: 9234, interestAmount: 1756.82, totalAmount: 10990.82 },
+    { installmentNumber: 7, dueDate: '2025-07-05', principalRatio: 0.050, principalAmount: 10260, interestAmount: 1659.88, totalAmount: 11919.88 },
+    { installmentNumber: 8, dueDate: '2026-07-05', principalRatio: 0.060, principalAmount: 12312, interestAmount: 1559.52, totalAmount: 13871.52 },
+    { installmentNumber: 9, dueDate: '2027-07-05', principalRatio: 0.070, principalAmount: 14364, interestAmount: 1436.40, totalAmount: 15800.40 },
+    { installmentNumber: 10, dueDate: '2028-07-05', principalRatio: 0.080, principalAmount: 16416, interestAmount: 1294.50, totalAmount: 17710.50 },
+    { installmentNumber: 11, dueDate: '2029-07-05', principalRatio: 0.090, principalAmount: 18468, interestAmount: 1127.08, totalAmount: 19595.08 },
+    { installmentNumber: 12, dueDate: '2030-07-05', principalRatio: 0.100, principalAmount: 20520, interestAmount: 943.92, totalAmount: 21463.92 },
+    { installmentNumber: 13, dueDate: '2031-07-05', principalRatio: 0.110, principalAmount: 22572, interestAmount: 738.72, totalAmount: 23310.72 },
+    { installmentNumber: 14, dueDate: '2032-07-05', principalRatio: 0.120, principalAmount: 24624, interestAmount: 513.69, totalAmount: 25137.69 },
+    { installmentNumber: 15, dueDate: '2033-07-05', principalRatio: 0.130, principalAmount: 26676, interestAmount: 266.40, totalAmount: 26942.40 },
+  ],
+  // Lump-sum payments outside the monthly debit, transcribed from the
+  // กยศ portal "ตาราง3" history. `createExpenseEntry: false` because these
+  // sums predate WealthLens and weren't tracked as expenses in the source
+  // sheet — flipping the flag would back-date phantom expense rows into
+  // months whose totals are already final.
+  extraPayments: [
+    { id: 'seed-gsl-extra-1', date: '2019-07-04', amount: 3500, reference: '62070400000000105969', createExpenseEntry: false },
+    { id: 'seed-gsl-extra-2', date: '2020-05-26', amount: 7000, reference: '63052600000000021598', createExpenseEntry: false },
+    { id: 'seed-gsl-extra-3', date: '2021-07-05', amount: 10000, reference: '64070500000000042123', createExpenseEntry: false },
+    { id: 'seed-gsl-extra-4', date: '2022-07-05', amount: 10000, reference: '65070500000000028509', createExpenseEntry: false },
+    { id: 'seed-gsl-extra-5', date: '2022-07-12', amount: 0.34, reference: '65071200000000061445', notes: 'ปรับยอดเศษ', createExpenseEntry: false },
+    { id: 'seed-gsl-extra-6', date: '2023-02-23', amount: 11.03, reference: '66022300000000019686', notes: 'ปรับยอดเศษ', createExpenseEntry: false },
+    { id: 'seed-gsl-extra-7', date: '2024-06-28', amount: 5000, reference: '67070400000000002182', createExpenseEntry: false },
+    { id: 'seed-gsl-extra-8', date: '2025-06-25', amount: 10000, reference: '68062600000000073388', createExpenseEntry: false },
+  ],
+};
+
 const seedData: WealthLensData = {
   version: '1.0.0',
   lastUpdated: '2026-05-06T00:00:00.000Z',
@@ -2849,6 +2902,7 @@ const seedData: WealthLensData = {
     '2025': year2025,
     '2026': year2026,
   },
+  loans: [gslLoan],
 };
 
 export default seedData;
