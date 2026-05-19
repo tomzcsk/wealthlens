@@ -19,7 +19,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
 
-import seedData from '@/data/seedData';
+import seedData, { gslLoan as seedGslLoan } from '@/data/seedData';
 import type {
   ExpenseCategory,
   ExpenseItem,
@@ -994,6 +994,7 @@ export const useFinanceStore = create<FinanceState>()(
             type: input.type,
             startDate: input.startDate,
             schedule: input.schedule,
+            scheduledPayments: [],
             extraPayments: [],
             ...(input.linkedDeductionField
               ? { linkedDeductionField: input.linkedDeductionField }
@@ -1409,10 +1410,22 @@ export const useFinanceStore = create<FinanceState>()(
         for (const [k, yr] of Object.entries(data.years)) {
           years[k] = normalizeYear(yr);
         }
+        // Loans written before scheduledPayments existed lack the field;
+        // backfill an empty array so selectors can iterate without guards.
+        // For the seed กยศ loan specifically, restore the portal-derived
+        // scheduledPayments from the bundled seed so existing users pick
+        // up the 22-row monthly history without having to re-seed.
+        const loans = data.loans?.map((l) => {
+          if (l.scheduledPayments && l.scheduledPayments.length > 0) return l;
+          if (l.id === seedGslLoan.id) {
+            return { ...l, scheduledPayments: seedGslLoan.scheduledPayments };
+          }
+          return { ...l, scheduledPayments: l.scheduledPayments ?? [] };
+        });
         return {
           ...currentState,
           ...persisted,
-          data: { ...data, years },
+          data: { ...data, years, ...(loans ? { loans } : {}) },
         };
       },
     },

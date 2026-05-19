@@ -1,25 +1,19 @@
 /**
  * WealthLens — pure loan-tracker selectors.
  *
- * The Loan model stores the lender's schedule verbatim plus a log of
- * out-of-band lump-sum payments. Monthly recurring payments are NOT
- * duplicated here — they live in `years[*].income[*].deductions.gsl`,
- * keeping a single source of truth. This module rolls those two
- * sources together so the UI can paint progress without knowing the
- * split.
+ * The Loan model stores the lender's schedule verbatim plus two payment
+ * ledgers — `scheduledPayments` (monthly auto-debits confirmed by the
+ * lender's portal) and `extraPayments` (voluntary โปะ on top). Both are
+ * the source of truth; the salary slip's `deductions.gsl` is no longer
+ * consulted for the loan log because the paycheck line and the amount
+ * that actually reached the lender can diverge.
  *
  * All functions are pure and total: no throws, no side effects, no
  * date-now dependence (callers pass `referenceDate`). Selectors degrade
  * to safe defaults rather than throwing on missing data.
  */
 
-import type {
-  ExtraPayment,
-  Loan,
-  LoanInstallment,
-  MonthlyDeductions,
-  WealthLensData,
-} from '@/types';
+import type { ExtraPayment, Loan, LoanInstallment } from '@/types';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -33,8 +27,6 @@ const toMs = (iso: string): number => {
   const ms = d.getTime();
   return Number.isFinite(ms) ? ms : 0;
 };
-
-const monthlyGslFor = (d: MonthlyDeductions, field: 'gsl'): number => d[field];
 
 // ---------------------------------------------------------------------------
 // Schedule selectors
@@ -87,33 +79,21 @@ export interface PaymentLogEntry {
 }
 
 /**
- * Merge the monthly deduction stream (auto-payments) with `extraPayments`
- * into a single date-sorted log. The auto-payment date is synthesised as
- * the 25th of the month, matching the typical กยศ debit day — purely a
- * presentation choice; the underlying number is what matters.
+ * Merge `scheduledPayments` (auto-debits) with `extraPayments` (โปะ) into
+ * one date-sorted log.
  */
-export const getMergedPaymentLog = (
-  loan: Loan,
-  data: WealthLensData,
-): PaymentLogEntry[] => {
+export const getMergedPaymentLog = (loan: Loan): PaymentLogEntry[] => {
   const out: PaymentLogEntry[] = [];
 
-  if (loan.linkedDeductionField) {
-    const field = loan.linkedDeductionField;
-    for (const [yearKey, yr] of Object.entries(data.years)) {
-      for (const inc of yr.income) {
-        const amount = monthlyGslFor(inc.deductions, field);
-        if (amount <= 0) continue;
-        const yyyy = yearKey.padStart(4, '0');
-        const mm = String(inc.month).padStart(2, '0');
-        out.push({
-          date: `${yyyy}-${mm}-25`,
-          amount,
-          source: 'auto',
-          label: 'งวดเดือน',
-        });
-      }
-    }
+  for (const sp of loan.scheduledPayments) {
+    out.push({
+      date: sp.date,
+      amount: sp.amount,
+      source: 'auto',
+      label: 'งวดเดือน',
+      ...(sp.reference ? { reference: sp.reference } : {}),
+      ...(sp.notes ? { notes: sp.notes } : {}),
+    });
   }
 
   for (const ep of loan.extraPayments) {
@@ -137,24 +117,15 @@ export const getMergedPaymentLog = (
  * `getMergedPaymentLog().reduce(...)` but avoids building the intermediate
  * array for callers that only need the number.
  */
-export const getTotalPaid = (loan: Loan, data: WealthLensData): number => {
+export const getTotalPaid = (loan: Loan): number => {
   let total = 0;
-  if (loan.linkedDeductionField) {
-    const field = loan.linkedDeductionField;
-    for (const yr of Object.values(data.years)) {
-      for (const inc of yr.income) {
-        total += monthlyGslFor(inc.deductions, field);
-      }
-    }
-  }
+  for (const sp of loan.scheduledPayments) total += sp.amount;
   for (const ep of loan.extraPayments) total += ep.amount;
   return total;
 };
 
-export const getRemainingBalance = (
-  loan: Loan,
-  data: WealthLensData,
-): number => Math.max(0, getScheduleTotal(loan) - getTotalPaid(loan, data));
+export const getRemainingBalance = (loan: Loan): number =>
+  Math.max(0, getScheduleTotal(loan) - getTotalPaid(loan));
 
 // ---------------------------------------------------------------------------
 // Progress selectors — relative to "today"
@@ -175,7 +146,6 @@ export interface ThisYearProgress {
 
 export const getThisYearProgress = (
   loan: Loan,
-  data: WealthLensData,
   referenceDate: Date = new Date(),
 ): ThisYearProgress => {
   const installment = getCurrentInstallment(loan, referenceDate);
@@ -191,13 +161,9 @@ export const getThisYearProgress = (
   const calendarYear = parseIso(installment.dueDate).getFullYear();
 
   let paidThisYear = 0;
-  if (loan.linkedDeductionField) {
-    const yr = data.years[String(calendarYear)];
-    if (yr) {
-      const field = loan.linkedDeductionField;
-      for (const inc of yr.income) {
-        paidThisYear += monthlyGslFor(inc.deductions, field);
-      }
+  for (const sp of loan.scheduledPayments) {
+    if (parseIso(sp.date).getFullYear() === calendarYear) {
+      paidThisYear += sp.amount;
     }
   }
   for (const ep of loan.extraPayments) {
@@ -255,11 +221,10 @@ export interface LoanSummary {
 
 export const getLoanSummary = (
   loan: Loan,
-  data: WealthLensData,
   referenceDate: Date = new Date(),
 ): LoanSummary => {
   const scheduleTotal = getScheduleTotal(loan);
-  const totalPaid = getTotalPaid(loan, data);
+  const totalPaid = getTotalPaid(loan);
   const remaining = Math.max(0, scheduleTotal - totalPaid);
   const progressFraction =
     scheduleTotal > 0 ? Math.min(1, totalPaid / scheduleTotal) : 0;
@@ -274,7 +239,7 @@ export const getLoanSummary = (
     progressFraction,
     yearsRemaining: getYearsRemaining(loan, referenceDate),
     endYear,
-    thisYear: getThisYearProgress(loan, data, referenceDate),
+    thisYear: getThisYearProgress(loan, referenceDate),
   };
 };
 

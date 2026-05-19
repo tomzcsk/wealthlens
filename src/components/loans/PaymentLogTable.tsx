@@ -14,7 +14,7 @@
 
 import { useMemo, useState, type ReactNode } from 'react';
 
-import type { Loan, WealthLensData } from '@/types';
+import type { Loan } from '@/types';
 import {
   getMergedPaymentLog,
   type PaymentLogEntry,
@@ -23,7 +23,6 @@ import { formatNumber, formatThaiDate } from '@/utils/formatters';
 
 interface PaymentLogTableProps {
   loan: Loan;
-  data: WealthLensData;
   onDeleteExtra: (extraId: string) => void;
 }
 
@@ -31,10 +30,9 @@ const VISIBLE_DEFAULT = 20;
 
 export const PaymentLogTable = ({
   loan,
-  data,
   onDeleteExtra,
 }: PaymentLogTableProps): ReactNode => {
-  const log = useMemo(() => getMergedPaymentLog(loan, data), [loan, data]);
+  const log = useMemo(() => getMergedPaymentLog(loan), [loan]);
   const [expanded, setExpanded] = useState(false);
   const visible = expanded ? log : log.slice(0, VISIBLE_DEFAULT);
   const total = useMemo(

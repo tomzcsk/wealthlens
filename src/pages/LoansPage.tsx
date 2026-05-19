@@ -199,8 +199,8 @@ export const LoansPage = (): ReactNode => {
   const loans = data.loans ?? [];
   const loan = loans[0] ?? null;
   const summary = useMemo(
-    () => (loan ? getLoanSummary(loan, data) : null),
-    [loan, data],
+    () => (loan ? getLoanSummary(loan) : null),
+    [loan],
   );
 
   const [addOpen, setAddOpen] = useState(false);
@@ -281,7 +281,6 @@ export const LoansPage = (): ReactNode => {
 
       <PaymentLogTable
         loan={loan}
-        data={data}
         onDeleteExtra={(id) => setPendingDeleteExtra(id)}
       />
 

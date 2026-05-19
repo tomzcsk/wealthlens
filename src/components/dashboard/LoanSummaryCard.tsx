@@ -19,7 +19,7 @@ export const LoanSummaryCard = (): ReactNode => {
   const loan = data.loans?.[0] ?? null;
   if (!loan) return null;
 
-  const summary = getLoanSummary(loan, data);
+  const summary = getLoanSummary(loan);
 
   return (
     <Link

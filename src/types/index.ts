@@ -442,6 +442,27 @@ export interface ExtraPayment {
   linkedExpenseMonth?: number;
 }
 
+/**
+ * One recurring monthly debit confirmed by the lender's portal. Distinct
+ * from `ExtraPayment` only by intent (and the badge it draws in the UI):
+ * "งวดเดือน" rows come from the auto-debit cycle; "โปะ" rows are voluntary
+ * lump-sums Tom made on top. Both ledgers are the source of truth for the
+ * loan log — we no longer derive monthly entries from `deductions.gsl`
+ * because the salary slip's deducted amount and the amount that actually
+ * reached the lender can differ (timing, partial credits, derivation
+ * errors when reconstructing historical sheets).
+ */
+export interface ScheduledPayment {
+  /** UUID v4 generated client-side. */
+  id: string;
+  /** ISO yyyy-mm-dd date the payment posted at the lender. */
+  date: string;
+  amount: number;
+  /** Lender reference number (เลขอ้างอิงรายการ). Always present in real data. */
+  reference?: string;
+  notes?: string;
+}
+
 export interface Loan {
   /** UUID v4 generated client-side. */
   id: string;
@@ -452,13 +473,15 @@ export interface Loan {
   startDate: string;
   /** Lender-issued amortization rows. Order = `installmentNumber`. */
   schedule: LoanInstallment[];
-  /** Out-of-band lump-sum payments. */
+  /** Recurring monthly auto-debits confirmed by the lender's portal. */
+  scheduledPayments: ScheduledPayment[];
+  /** Out-of-band lump-sum payments ("โปะ"). */
   extraPayments: ExtraPayment[];
   /**
-   * Deduction field whose monthly value counts as a payment to this loan.
-   * When set, `getMergedPaymentLog` walks every month of `years[*]` and
-   * surfaces non-zero deduction values as auto-payments. Omit for loans
-   * paid out-of-pocket only.
+   * Legacy hint pointing at a `MonthlyDeductions` field that *also* tracks
+   * this loan's debit on the salary slip. Kept for forms that prefill from
+   * a paycheck line, but the loan log no longer derives from it — see
+   * `scheduledPayments` above.
    */
   linkedDeductionField?: LoanDeductionField;
 }

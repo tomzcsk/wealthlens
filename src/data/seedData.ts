@@ -2845,13 +2845,17 @@ const year2026: YearData = {
  * Schedule rows pulled verbatim from the กยศ portal table. Annual due date
  * is 5 ก.ค. of each calendar year (พ.ศ. 2562 → 2576 = ค.ศ. 2019 → 2033).
  *
- * Monthly recurring payments are NOT seeded here — those values live in
- * each year's `deductions.gsl` line (matching Tom's monthly statement) and
- * are surfaced into the payment log by `getMergedPaymentLog`. We only seed
- * the schedule + the lump-sum โปะ entries Tom made outside the monthly debit.
+ * Both `scheduledPayments` (monthly auto-debits) and `extraPayments`
+ * (lump-sum โปะ) are transcribed verbatim from the กยศ portal "ตาราง3"
+ * payment history. The salary slip's `deductions.gsl` is NOT consulted
+ * for the loan log — it tracks what the employer deducted from the
+ * paycheck, which can disagree with the amount that posted at the lender
+ * (timing, partial credits, historical reconstruction drift).
  *
  * Schedule totals (cross-check): principal 205,200 + interest 19,033.04 =
  * 224,233.04 total obligation.
+ * Payment totals (cross-check vs portal): 22 monthly entries summing to
+ * 21,430 + 8 lump sums summing to 45,511.37 = 66,941.37 paid → 30 rows.
  */
 export const gslLoan: Loan = {
   id: 'seed-loan-gsl',
@@ -2875,6 +2879,39 @@ export const gslLoan: Loan = {
     { installmentNumber: 13, dueDate: '2031-07-05', principalRatio: 0.110, principalAmount: 22572, interestAmount: 738.72, totalAmount: 23310.72 },
     { installmentNumber: 14, dueDate: '2032-07-05', principalRatio: 0.120, principalAmount: 24624, interestAmount: 513.69, totalAmount: 25137.69 },
     { installmentNumber: 15, dueDate: '2033-07-05', principalRatio: 0.130, principalAmount: 26676, interestAmount: 266.40, totalAmount: 26942.40 },
+  ],
+  // Monthly auto-debits, transcribed verbatim from the กยศ portal —
+  // 22 rows across 2023-03 → 2026-01. Reference numbers come straight
+  // from "เลขอ้างอิงรายการ". Dates preserve the lender's actual posting
+  // day (mostly the 25th but occasionally the 27th when the 25th was a
+  // bank holiday).
+  scheduledPayments: [
+    // 2026 — 1 row
+    { id: 'seed-gsl-sp-2026-01', date: '2026-01-25', amount: 1156, reference: '69021600000000018906' },
+    // 2025 — 8 rows
+    { id: 'seed-gsl-sp-2025-11', date: '2025-11-25', amount: 1156, reference: '68121600000000111410' },
+    { id: 'seed-gsl-sp-2025-10', date: '2025-10-25', amount: 1156, reference: '68110700000000015443' },
+    { id: 'seed-gsl-sp-2025-09', date: '2025-09-25', amount: 1156, reference: '68100700000000037311' },
+    { id: 'seed-gsl-sp-2025-07', date: '2025-07-25', amount: 1156, reference: '68080800000000019348' },
+    { id: 'seed-gsl-sp-2025-05', date: '2025-05-25', amount: 994, reference: '68061100000000011082' },
+    { id: 'seed-gsl-sp-2025-04', date: '2025-04-25', amount: 994, reference: '68051400000000055423' },
+    { id: 'seed-gsl-sp-2025-03', date: '2025-03-25', amount: 994, reference: '68041600000000092632' },
+    { id: 'seed-gsl-sp-2025-02', date: '2025-02-25', amount: 994, reference: '68030500000000027223' },
+    // 2024 — 6 rows
+    { id: 'seed-gsl-sp-2024-08', date: '2024-08-25', amount: 994, reference: '67091100000000033542' },
+    { id: 'seed-gsl-sp-2024-06', date: '2024-06-25', amount: 916, reference: '67070400000000001915' },
+    { id: 'seed-gsl-sp-2024-04', date: '2024-04-25', amount: 916, reference: '67050700000000041024' },
+    { id: 'seed-gsl-sp-2024-03', date: '2024-03-25', amount: 916, reference: '67040500000000018860' },
+    { id: 'seed-gsl-sp-2024-02', date: '2024-02-25', amount: 916, reference: '67030500000000020719' },
+    { id: 'seed-gsl-sp-2024-01', date: '2024-01-25', amount: 916, reference: '67020600000000008643' },
+    // 2023 — 7 rows
+    { id: 'seed-gsl-sp-2023-12', date: '2023-12-27', amount: 916, reference: '67010200000000018673' },
+    { id: 'seed-gsl-sp-2023-11', date: '2023-11-25', amount: 916, reference: '66120600000000009156' },
+    { id: 'seed-gsl-sp-2023-08', date: '2023-08-25', amount: 916, reference: '66090100000000246816' },
+    { id: 'seed-gsl-sp-2023-06', date: '2023-06-25', amount: 838, reference: '66071000000000052796' },
+    { id: 'seed-gsl-sp-2023-05', date: '2023-05-25', amount: 838, reference: '66060200000000027595' },
+    { id: 'seed-gsl-sp-2023-04', date: '2023-04-27', amount: 838, reference: '66042800000000040547' },
+    { id: 'seed-gsl-sp-2023-03', date: '2023-03-25', amount: 838, reference: '66032800000000007969' },
   ],
   // Lump-sum payments outside the monthly debit, transcribed from the
   // กยศ portal "ตาราง3" history. `createExpenseEntry: false` because these
