@@ -231,6 +231,8 @@ export interface FinanceState {
   unsellGoldHolding: (id: string) => void;
   /** Update the manually-entered spot price for one purity grade. */
   setGoldSpotPrice: (purity: GoldPurity, price: number | null) => void;
+  /** Stamp 96.5% spot from a successful auto-fetch (preserves round meta). */
+  applyFetchedGoldPrice: (price: number, round: string) => void;
 
   // --- Savings mutations --------------------------------------------------
   addSavings: (
@@ -795,6 +797,38 @@ export const useFinanceStore = create<FinanceState>()(
             nextSpot[purity] = price;
           }
           nextSpot.updatedAt = new Date().toISOString();
+          if (purity === '96.5') {
+            delete nextSpot.autoFetchedAt;
+            delete nextSpot.autoFetchedRound;
+          }
+          const nextPrefs: UserPreferences = {
+            ...prefs,
+            goldSpotPrice: nextSpot,
+          };
+          const stamp = nowIso();
+          return {
+            data: {
+              ...state.data,
+              preferences: nextPrefs,
+              lastUpdated: stamp,
+            },
+            lastUpdated: stamp,
+          };
+        }),
+
+      applyFetchedGoldPrice: (price, round) =>
+        set((state) => {
+          if (!Number.isFinite(price) || price <= 0) return state;
+          const prefs = ensurePreferences(state.data.preferences);
+          const existing = prefs.goldSpotPrice ?? {};
+          const stampIso = new Date().toISOString();
+          const nextSpot = {
+            ...existing,
+            '96.5': price,
+            updatedAt: stampIso,
+            autoFetchedAt: stampIso,
+            autoFetchedRound: round || undefined,
+          };
           const nextPrefs: UserPreferences = {
             ...prefs,
             goldSpotPrice: nextSpot,

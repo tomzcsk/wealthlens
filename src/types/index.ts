@@ -84,6 +84,14 @@ export interface GoldSpotPrice {
   '99.99'?: number;
   /** ISO date the user last updated the spot — shows staleness in UI. */
   updatedAt?: string;
+  /**
+   * ISO date when 96.5% was auto-fetched from สมาคมค้าทองคำ. Cleared on
+   * any manual edit, so the "auto-fetched" indicator only shows while
+   * the live value is still the API value.
+   */
+  autoFetchedAt?: string;
+  /** API-reported round metadata, e.g. "เวลา 14:04 น. (ครั้งที่ 14)". */
+  autoFetchedRound?: string;
 }
 
 /**

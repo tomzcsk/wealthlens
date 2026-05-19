@@ -26,6 +26,7 @@ import SellGoldForm from '@/components/forms/SellGoldForm';
 import type { GoldHolding, GoldPurity } from '@/types';
 import { GRAMS_PER_BAHT } from '@/types';
 import { formatNumber, formatTHB } from '@/utils/formatters';
+import { fetchGoldSpotPrice } from '@/utils/goldPriceFetch';
 
 const PURITY_LABELS: Record<GoldPurity, string> = {
   '96.5': 'ทอง 96.5%',
@@ -268,7 +269,32 @@ export const GoldPage = (): ReactNode => {
   const data = useFinanceStore((s) => s.data);
   const deleteGoldHolding = useFinanceStore((s) => s.deleteGoldHolding);
   const unsellGoldHolding = useFinanceStore((s) => s.unsellGoldHolding);
+  const applyFetchedGoldPrice = useFinanceStore(
+    (s) => s.applyFetchedGoldPrice,
+  );
   const pushToast = useToastStore((s) => s.push);
+  const [fetchingSpot, setFetchingSpot] = useState(false);
+
+  const handleFetchSpot = async (): Promise<void> => {
+    if (fetchingSpot) return;
+    setFetchingSpot(true);
+    try {
+      const result = await fetchGoldSpotPrice();
+      applyFetchedGoldPrice(result.price965, result.round);
+      pushToast({
+        message: `ดึงราคาทอง 96.5% สำเร็จ: ${formatTHB(result.price965, { decimals: 0 })}/บาท`,
+        tone: 'success',
+      });
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : 'unknown error';
+      pushToast({
+        message: `ดึงราคาทองไม่สำเร็จ — ${reason}`,
+        tone: 'error',
+      });
+    } finally {
+      setFetchingSpot(false);
+    }
+  };
 
   const snapshot = useMemo(() => ({ data }), [data]);
   const summary = useMemo(() => selectGoldSummary(snapshot), [snapshot]);
@@ -365,22 +391,46 @@ export const GoldPage = (): ReactNode => {
 
       {/* Spot price editor */}
       <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-2">
-        <header className="flex items-center justify-between px-3">
+        <header className="flex items-center justify-between px-3 gap-2">
           <h2 className="text-sm font-semibold text-slate-700">
-            ราคาทองปัจจุบัน (manual)
+            ราคาทองปัจจุบัน
           </h2>
-          {spotPrice?.updatedAt && (
-            <span className="text-xs text-slate-400">
-              อัปเดต {spotPrice.updatedAt.slice(0, 10)}
-            </span>
-          )}
+          <div className="flex items-center gap-3">
+            {spotPrice?.updatedAt && (
+              <span className="text-xs text-slate-400">
+                อัปเดต {spotPrice.updatedAt.slice(0, 10)}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={handleFetchSpot}
+              disabled={fetchingSpot}
+              className="px-2.5 py-1 text-xs font-medium text-primary bg-primary-light border border-primary/20 rounded hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            >
+              {fetchingSpot ? '⏳ กำลังดึง...' : '🔄 ดึงจาก สมาคมค้าทองคำ'}
+            </button>
+          </div>
         </header>
         <div className="divide-y divide-slate-100">
           <SpotEntry purity="96.5" value={spotPrice?.['96.5']} />
           <SpotEntry purity="99.99" value={spotPrice?.['99.99']} />
         </div>
+        {spotPrice?.autoFetchedAt && (
+          <p className="px-3 pt-1 text-xs text-slate-500">
+            🟢 96.5% จาก สมาคมค้าทองคำ
+            {spotPrice.autoFetchedRound && ` · ${spotPrice.autoFetchedRound}`}
+            {' · '}
+            {new Date(spotPrice.autoFetchedAt).toLocaleString('th-TH', {
+              hour: '2-digit',
+              minute: '2-digit',
+              day: '2-digit',
+              month: 'short',
+            })}
+          </p>
+        )}
         <p className="px-3 pt-1 text-xs text-slate-400">
-          ใส่ราคา/บาททอง — ระบบใช้คำนวณมูลค่าตลาดและกำไรที่ยังไม่ขาย
+          ราคาที่ใช้ = ราคาที่ร้านรับซื้อทองแท่ง (resale value). 99.99%
+          ต้องกรอกเอง — API ไม่มีข้อมูล
         </p>
       </section>
 
