@@ -2,9 +2,9 @@
   "project": {
     "name": "WealthLens",
     "description": "Personal Finance Dashboard สำหรับติดตามรายรับ-รายจ่ายส่วนตัว",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "created": "2026-05-06",
-    "lastUpdated": "2026-05-06",
+    "lastUpdated": "2026-05-19",
     "owner": "Tom",
     "status": "shipped",
     "storageStrategy": "LocalStorage (primary) + Google Drive Sync (cloud backup) + JSON Export (emergency)"
@@ -695,6 +695,199 @@
           }
         }
       ]
+    },
+    {
+      "id": "phase_4",
+      "name": "Phase 4 — Post-Ship Enhancements",
+      "status": "completed",
+      "completionPercent": 100,
+      "features": [
+        {
+          "id": "F18",
+          "name": "Multi-user Login Gate & Data Isolation",
+          "description": "Login gate ก่อนเข้า dashboard, per-user data isolation, และ Zustand-based auth state",
+          "status": "completed",
+          "priority": "P0",
+          "phase": "phase_4",
+          "acceptanceCriteria": [
+            "LoginPage แสดงก่อน dashboard เมื่อยังไม่ sign in",
+            "Multi-user data isolation — แต่ละ Google account เห็นข้อมูลของตัวเองเท่านั้น",
+            "Auth state ใน Zustand store เพื่อให้ sign-in propagate ไปทุก component",
+            "ไม่ overwrite remote Drive data ด้วย empty local บน first sync",
+            "Danger Zone ซ่อนหลัง URL gate"
+          ],
+          "estimatedHours": 6,
+          "dependencies": [
+            "F10_SYNC"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-11",
+            "notes": "Commits: 9e3aaf0, 7d5b502, c629304, a38c24f"
+          }
+        },
+        {
+          "id": "F19",
+          "name": "User Preferences Sync via Drive",
+          "description": "Sync Kept, goals, defaults preferences ผ่าน Google Drive",
+          "status": "completed",
+          "priority": "P1",
+          "phase": "phase_4",
+          "acceptanceCriteria": [
+            "User preferences (Kept, goals, defaults) sync ผ่าน Drive",
+            "normalizePreferences cache เพื่อกัน render loop",
+            "Preferences merge กับ finance data ใน wealthlens_data.json"
+          ],
+          "estimatedHours": 3,
+          "dependencies": [
+            "F18"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-12",
+            "notes": "Commits: 7005cea, 5d257f8"
+          }
+        },
+        {
+          "id": "F20",
+          "name": "Per-month Kept (Krungsri) Tracking",
+          "description": "Kept กลายเป็น per-month ตาม Sheet workflow จริงของ Tom — input, seed, edit ผ่าน Modal",
+          "status": "completed",
+          "priority": "P1",
+          "phase": "phase_4",
+          "acceptanceCriteria": [
+            "Kept (Krungsri savings balance) เก็บเป็น per-month value",
+            "Input ในส่วน Monthly Savings",
+            "ปุ่ม 'เติม Kept รายเดือน' ใน DangerZone — seed จาก SEED_KEPT_BALANCES",
+            "Seed-fill wipe orphan months ก่อนเขียนค่า seed",
+            "Kept รวมอยู่ใน SavingsList (unified ออม/ลงทุน list)",
+            "Edit ผ่าน Modal + KeptEditForm (แทน window.prompt)"
+          ],
+          "estimatedHours": 8,
+          "dependencies": [
+            "F11"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-14",
+            "notes": "Commits: 97f96b2, 79ed3c0, 01bbc38, ad026f0, 5c17a12, 2056527, 8d58b7b"
+          }
+        },
+        {
+          "id": "F21",
+          "name": "ลงทุน Dime Card & Kept Column",
+          "description": "Overview แสดง Dime card + monthly summary table เพิ่ม Kept column",
+          "status": "completed",
+          "priority": "P1",
+          "phase": "phase_4",
+          "acceptanceCriteria": [
+            "ลงทุน Dime card บน Overview dashboard",
+            "Kept column ใน monthly summary table",
+            "Kept column แสดงค่า per-month จาก preferences"
+          ],
+          "estimatedHours": 2,
+          "dependencies": [
+            "F20"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-15",
+            "notes": "Commit: 0464dbb"
+          }
+        },
+        {
+          "id": "F22",
+          "name": "Split ออม Column → ลงทุน Dime + ออมเที่ยว",
+          "description": "แยก column ออม เป็น 2 column: ลงทุน Dime กับ ออมเที่ยว",
+          "status": "completed",
+          "priority": "P2",
+          "phase": "phase_4",
+          "acceptanceCriteria": [
+            "Monthly summary แยก ลงทุน Dime กับ ออมเที่ยว เป็น 2 column",
+            "Total row คำนวณแยก",
+            "Backward-compat กับข้อมูลเก่าที่ไม่มี Dime"
+          ],
+          "estimatedHours": 2,
+          "dependencies": [
+            "F21"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-17",
+            "notes": "Commit: 19a07c9"
+          }
+        },
+        {
+          "id": "F23",
+          "name": "Company Reimbursement Tracking",
+          "description": "Track ค่าใช้จ่ายที่บริษัทเบิกคืนได้ + inline toggle 'เบิกแล้ว' บน Overview",
+          "status": "completed",
+          "priority": "P1",
+          "phase": "phase_4",
+          "acceptanceCriteria": [
+            "Expense item รองรับ reimbursable flag + reimbursement status",
+            "Out-of-pocket vs reimbursable แยกออกจากกันใน calculation",
+            "Overview reimbursement card แสดงรายการที่ยังไม่เบิก",
+            "Inline '🟢 เบิกแล้ว' toggle บน Overview reimbursement card",
+            "เมื่อ toggle เป็น 'เบิกแล้ว' → ย้ายจากค้างเป็น cleared"
+          ],
+          "estimatedHours": 6,
+          "dependencies": [
+            "F08"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-18",
+            "notes": "Commits: 5af775c, 42168fc"
+          }
+        },
+        {
+          "id": "F24",
+          "name": "Installment Plans (ผ่อน 0%)",
+          "description": "Expense entry รองรับการผ่อน 0% — auto-split ยอดเต็มเป็น N งวดเท่า ๆ กัน",
+          "status": "completed",
+          "priority": "P1",
+          "phase": "phase_4",
+          "acceptanceCriteria": [
+            "Expense form มี option 'ผ่อน 0%' พร้อมระบุจำนวนงวด N",
+            "Auto-split ยอดเต็มเป็น N expense items ในเดือนถัดไปต่อเนื่อง",
+            "แต่ละงวดมี linkage กลับไปยัง parent plan",
+            "ลบ/แก้ plan → จัดการทุกงวดที่ยังไม่ผ่านพร้อมกัน"
+          ],
+          "estimatedHours": 6,
+          "dependencies": [
+            "F08"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-18",
+            "notes": "Commit: 342b807"
+          }
+        },
+        {
+          "id": "F25",
+          "name": "Gold Holdings Ledger",
+          "description": "Ledger สำหรับ track ทองคำ — ซื้อ/ขาย auto สร้าง cashflow entries",
+          "status": "completed",
+          "priority": "P1",
+          "phase": "phase_4",
+          "acceptanceCriteria": [
+            "Gold holdings ledger: ซื้อ/ขาย พร้อมราคา/น้ำหนัก",
+            "Auto cashflow side-effect: ซื้อ → expense, ขาย → income",
+            "แสดง holdings ปัจจุบัน + cost basis + unrealized P/L",
+            "Linked เข้ากับ monthly summary"
+          ],
+          "estimatedHours": 8,
+          "dependencies": [
+            "F02"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-05-19",
+            "notes": "Commit: 40755d8"
+          }
+        }
+      ]
     }
   ],
   "dataInventory": {
@@ -782,12 +975,12 @@
     }
   },
   "progressSummary": {
-    "totalFeatures": 25,
-    "completed": 25,
+    "totalFeatures": 33,
+    "completed": 33,
     "inProgress": 0,
     "pending": 0,
     "overallProgress": "100%",
     "currentPhase": "shipped",
-    "nextMilestone": "Phase 4 (optional): dark mode, mobile UX polish, additional analytics"
+    "nextMilestone": "Phase 5 (optional): dark mode, mobile UX polish, additional analytics"
   }
 }
