@@ -23,6 +23,15 @@ export interface WealthLensData {
    * have it. Consumers must default-handle `undefined`.
    */
   preferences?: UserPreferences;
+  /**
+   * Discrete physical-gold purchases — each entry is one ทอง transaction
+   * with its own date, brand, weight, and price. Stored at the top level
+   * (not under YearData) because a holding is an asset whose lifecycle —
+   * buy → hold → sell — spans calendar years and isn't naturally bucketed
+   * by month. UI filters by `purchaseDate` when a year view is needed.
+   * Optional so payloads written before the gold feature still hydrate.
+   */
+  goldHoldings?: GoldHolding[];
 }
 
 /**
@@ -57,6 +66,24 @@ export interface UserPreferences {
   keptBalances: { [year: string]: { [month: string]: number } };
   /** Default income/deduction values — pre-fills new months on demand. */
   incomeDefaults: IncomeDefaults | null;
+  /**
+   * Manually-entered spot price for ทอง per 1 บาททอง (15.244g) — used
+   * by the Gold page to compute unrealized P&L. We deliberately do NOT
+   * fetch from an API: free gold APIs come with rate limits, CORS pain,
+   * and quietly-changing endpoints; manual entry from goldtraders.or.th
+   * is the same single-source Tom already trusts. Optional — undefined
+   * means "don't show unrealized P&L on the dashboard."
+   */
+  goldSpotPrice?: GoldSpotPrice;
+}
+
+export interface GoldSpotPrice {
+  /** ทองรูปพรรณ / ทองคำ 96.5% baseline. */
+  '96.5'?: number;
+  /** ทองคำแท่ง 99.99% baseline. */
+  '99.99'?: number;
+  /** ISO date the user last updated the spot — shows staleness in UI. */
+  updatedAt?: string;
 }
 
 /**
@@ -203,6 +230,13 @@ export type SavingsCategory =
    * stays in deductions because it's payroll-mandated).
    */
   | 'retirement'
+  /**
+   * Physical gold purchases auto-logged from a `GoldHolding` whose
+   * `paymentMethod === 'cash'`. The SavingsItem.id is mirrored back into
+   * `GoldHolding.sideEffects.savingsItemId` so a later delete can revert
+   * cleanly without orphaning either side of the dual write.
+   */
+  | 'gold'
   /** Catch-all for ad-hoc savings goals. */
   | 'general';
 
@@ -220,4 +254,90 @@ export interface MonthlySavings {
   /** Calendar month, 1-12. */
   month: number;
   items: SavingsItem[];
+}
+
+// ---------------------------------------------------------------------------
+// Gold holdings — discrete physical-gold purchases (asset ledger)
+// ---------------------------------------------------------------------------
+
+/** Conversion factor: 1 บาททอง = 15.244 grams (Thai gold trade standard). */
+export const GRAMS_PER_BAHT = 15.244;
+
+export type GoldType = 'bar' | 'jewelry';
+export type GoldPurity = '96.5' | '99.99';
+
+/**
+ * Source of funds for a gold purchase. Drives the auto-created
+ * side-effect on the cashflow side of the ledger:
+ *   - `cash`  → create a `SavingsItem` (category 'gold') in the savings
+ *                row of the purchase month. Tom sees the money leave via
+ *                the "ออม/ลงทุน" column of that month.
+ *   - `kept`  → decrement `preferences.keptBalances[year][month]` by
+ *                `totalCost`. Tom sees his Kept account shrink; no
+ *                impact on monthly Net.All (the cash already left months
+ *                ago when he funded Kept).
+ */
+export type GoldPaymentMethod = 'cash' | 'kept';
+
+/**
+ * Mirror of the side-effect this gold purchase wrote into the cashflow
+ * ledger. Stored so `deleteGoldHolding` can offer a "revert" path that
+ * cleanly undoes the dual write — without this, a delete would orphan
+ * either a SavingsItem or a Kept entry that doesn't match anything.
+ */
+export interface GoldSideEffectRefs {
+  /** Populated when paymentMethod === 'cash'. */
+  savingsItemId?: string;
+  savingsYear?: number;
+  savingsMonth?: number;
+  /** Populated when paymentMethod === 'kept'. */
+  keptYear?: number;
+  keptMonth?: number;
+  /** Amount subtracted from Kept (so we can re-add the same value on revert). */
+  keptAmount?: number;
+}
+
+/**
+ * Records that a holding has been sold. Realized P&L is computed as
+ * `soldPrice - totalCost` in the selector layer. No automatic ledger
+ * write on sell — proceeds are typically untracked cash; if Tom puts
+ * the money into Kept, he'll log that himself.
+ */
+export interface GoldSaleRecord {
+  /** ISO yyyy-mm-dd. */
+  soldDate: string;
+  /** Gross sale price received (฿). */
+  soldPrice: number;
+  notes?: string;
+}
+
+/**
+ * One physical-gold transaction. Identity = one trip to the shop.
+ * Weight is stored in บาททอง (Thai unit, 15.244g) because that's how
+ * the market is quoted; grams are displayed alongside via the
+ * `GRAMS_PER_BAHT` constant.
+ */
+export interface GoldHolding {
+  /** UUID v4 generated client-side. */
+  id: string;
+  /** ISO yyyy-mm-dd date Tom physically bought the gold. */
+  purchaseDate: string;
+  /** Free-form shop / brand label (ฮั่วเซ่งเฮง, ออโรร่า, MTS, ฯลฯ). */
+  brand: string;
+  /** ทองคำแท่ง (bar) vs ทองรูปพรรณ (jewelry). */
+  type: GoldType;
+  /** Purity grade — drives which spot price line is used for P&L. */
+  purity: GoldPurity;
+  /** Weight in บาททอง (1 = 15.244g). */
+  weightBaht: number;
+  /** Total ฿ paid (includes ค่ากำเหน็จ / making charges). */
+  totalCost: number;
+  /** Optional reference spot price at the time, per บาททอง. */
+  spotPriceAtPurchase?: number;
+  notes?: string;
+  paymentMethod: GoldPaymentMethod;
+  /** Side-effect tracking — see GoldSideEffectRefs. */
+  sideEffects?: GoldSideEffectRefs;
+  /** Present iff the holding has been sold. */
+  sold?: GoldSaleRecord;
 }

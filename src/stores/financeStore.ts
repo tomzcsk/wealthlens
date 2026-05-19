@@ -23,12 +23,18 @@ import seedData from '@/data/seedData';
 import type {
   ExpenseCategory,
   ExpenseItem,
+  GoldHolding,
+  GoldPaymentMethod,
+  GoldPurity,
+  GoldSaleRecord,
+  GoldType,
   InstallmentMeta,
   MonthlyExpense,
   MonthlyIncome,
   MonthlySavings,
   Reimbursement,
   SavingsItem,
+  UserPreferences,
   WealthLensData,
   YearData,
 } from '@/types';
@@ -103,6 +109,43 @@ export interface InstallmentPlanInput {
 const round2 = (n: number): number => Math.round(n * 100) / 100;
 
 /**
+ * Inputs for adding a gold purchase. The store derives `id`, generates
+ * the side-effect ref block, and writes both halves of the dual-entry.
+ */
+export interface GoldHoldingInput {
+  purchaseDate: string; // ISO yyyy-mm-dd
+  brand: string;
+  type: GoldType;
+  purity: GoldPurity;
+  weightBaht: number;
+  totalCost: number;
+  spotPriceAtPurchase?: number;
+  notes?: string;
+  paymentMethod: GoldPaymentMethod;
+}
+
+/** Subset of GoldHolding fields editable post-create — see action docs. */
+export interface GoldHoldingPatch {
+  brand?: string;
+  type?: GoldType;
+  purity?: GoldPurity;
+  notes?: string;
+  spotPriceAtPurchase?: number;
+}
+
+const DEFAULT_PREFERENCES: UserPreferences = {
+  yearlyGoals: {},
+  travelSavingsGoal: 0,
+  keptBalances: {},
+  incomeDefaults: null,
+};
+
+/** Returns prefs with sensible defaults filled in for missing fields. */
+const ensurePreferences = (
+  prefs: UserPreferences | undefined,
+): UserPreferences => prefs ?? DEFAULT_PREFERENCES;
+
+/**
  * Walk (year, month) forward by `offset` months. month overflow rolls into
  * the next calendar year, e.g. (2026, 11) + 3 → (2027, 2).
  */
@@ -160,6 +203,34 @@ export interface FinanceState {
   addInstallmentPlan: (input: InstallmentPlanInput) => string;
   /** Remove every ExpenseItem tagged with the given `planId`. */
   deleteInstallmentPlan: (planId: string) => void;
+
+  // --- Gold holdings ------------------------------------------------------
+  /**
+   * Record a gold purchase + auto-write the matching side-effect on the
+   * cashflow ledger (SavingsItem for `cash`, Kept decrement for `kept`).
+   * Returns the new holding's id.
+   */
+  addGoldHolding: (input: GoldHoldingInput) => string;
+  /**
+   * Patch a holding's metadata-only fields (brand/type/purity/notes/spot).
+   * Amount, date, and paymentMethod are immutable post-create to keep the
+   * side-effect bookkeeping coherent; change those by delete + re-add.
+   */
+  updateGoldHolding: (id: string, patch: GoldHoldingPatch) => void;
+  /**
+   * Remove a holding. When `revertSideEffects` is true, also undo the
+   * auto-write (delete the SavingsItem or restore the Kept balance).
+   */
+  deleteGoldHolding: (
+    id: string,
+    options: { revertSideEffects: boolean },
+  ) => void;
+  /** Mark a holding as sold with the resulting sale record. */
+  sellGoldHolding: (id: string, sale: GoldSaleRecord) => void;
+  /** Clear the sold record, putting the holding back into active. */
+  unsellGoldHolding: (id: string) => void;
+  /** Update the manually-entered spot price for one purity grade. */
+  setGoldSpotPrice: (purity: GoldPurity, price: number | null) => void;
 
   // --- Savings mutations --------------------------------------------------
   addSavings: (
@@ -463,6 +534,278 @@ export const useFinanceStore = create<FinanceState>()(
           const stamp = nowIso();
           return {
             data: { ...state.data, lastUpdated: stamp, years: nextYears },
+            lastUpdated: stamp,
+          };
+        }),
+
+      addGoldHolding: (input) => {
+        const newId = uuidv4();
+        set((state) => {
+          // Date parsing — purchaseDate is the cashflow anchor for both
+          // SavingsItem and Kept side-effects.
+          const dt = new Date(`${input.purchaseDate}T00:00:00`);
+          const year = dt.getFullYear();
+          const month = dt.getMonth() + 1;
+
+          const holding: GoldHolding = {
+            id: newId,
+            purchaseDate: input.purchaseDate,
+            brand: input.brand,
+            type: input.type,
+            purity: input.purity,
+            weightBaht: input.weightBaht,
+            totalCost: input.totalCost,
+            paymentMethod: input.paymentMethod,
+            ...(input.spotPriceAtPurchase != null
+              ? { spotPriceAtPurchase: input.spotPriceAtPurchase }
+              : {}),
+            ...(input.notes != null ? { notes: input.notes } : {}),
+          };
+
+          let nextYears = state.data.years;
+          let nextPrefs = ensurePreferences(state.data.preferences);
+
+          if (input.paymentMethod === 'cash') {
+            // Dual-write: mirror the purchase as a SavingsItem in the
+            // matching month's savings row so "ออม/ลงทุน" of that month
+            // reflects the cash outflow.
+            nextYears = ensureYear(nextYears, year);
+            const yearKey = String(year);
+            const yr = normalizeYear(nextYears[yearKey]);
+            const savingsItemId = uuidv4();
+            const newSavingsItem: SavingsItem = {
+              id: savingsItemId,
+              category: 'gold',
+              name: `🪙 ${input.brand} ${input.weightBaht} บาท`,
+              amount: input.totalCost,
+              isRecurring: false,
+            };
+            const monthRow = yr.savings.find((s) => s.month === month);
+            const nextSavings: MonthlySavings[] = monthRow
+              ? yr.savings.map((s) =>
+                  s.month === month
+                    ? { ...s, items: [...s.items, newSavingsItem] }
+                    : s,
+                )
+              : [...yr.savings, { month, items: [newSavingsItem] }];
+            nextYears = {
+              ...nextYears,
+              [yearKey]: { ...yr, savings: nextSavings },
+            };
+            holding.sideEffects = {
+              savingsItemId,
+              savingsYear: year,
+              savingsMonth: month,
+            };
+          } else {
+            // Kept decrement: read the absolute balance and subtract.
+            const yearKey = String(year);
+            const monthKey = String(month);
+            const currentKept = nextPrefs.keptBalances[yearKey]?.[monthKey] ?? 0;
+            const nextKept = currentKept - input.totalCost;
+            nextPrefs = {
+              ...nextPrefs,
+              keptBalances: {
+                ...nextPrefs.keptBalances,
+                [yearKey]: {
+                  ...(nextPrefs.keptBalances[yearKey] ?? {}),
+                  [monthKey]: nextKept,
+                },
+              },
+            };
+            holding.sideEffects = {
+              keptYear: year,
+              keptMonth: month,
+              keptAmount: input.totalCost,
+            };
+          }
+
+          const stamp = nowIso();
+          return {
+            data: {
+              ...state.data,
+              years: nextYears,
+              preferences: nextPrefs,
+              goldHoldings: [...(state.data.goldHoldings ?? []), holding],
+              lastUpdated: stamp,
+            },
+            lastUpdated: stamp,
+          };
+        });
+        return newId;
+      },
+
+      updateGoldHolding: (id, patch) =>
+        set((state) => {
+          const holdings = state.data.goldHoldings ?? [];
+          let touched = false;
+          const next = holdings.map((h) => {
+            if (h.id !== id) return h;
+            touched = true;
+            return {
+              ...h,
+              ...(patch.brand !== undefined ? { brand: patch.brand } : {}),
+              ...(patch.type !== undefined ? { type: patch.type } : {}),
+              ...(patch.purity !== undefined ? { purity: patch.purity } : {}),
+              ...(patch.notes !== undefined ? { notes: patch.notes } : {}),
+              ...(patch.spotPriceAtPurchase !== undefined
+                ? { spotPriceAtPurchase: patch.spotPriceAtPurchase }
+                : {}),
+            };
+          });
+          if (!touched) return state;
+          const stamp = nowIso();
+          return {
+            data: { ...state.data, goldHoldings: next, lastUpdated: stamp },
+            lastUpdated: stamp,
+          };
+        }),
+
+      deleteGoldHolding: (id, { revertSideEffects }) =>
+        set((state) => {
+          const holdings = state.data.goldHoldings ?? [];
+          const target = holdings.find((h) => h.id === id);
+          if (!target) return state;
+
+          const nextHoldings = holdings.filter((h) => h.id !== id);
+          let nextYears = state.data.years;
+          let nextPrefs = ensurePreferences(state.data.preferences);
+
+          if (revertSideEffects && target.sideEffects) {
+            const se = target.sideEffects;
+            if (
+              se.savingsItemId &&
+              se.savingsYear != null &&
+              se.savingsMonth != null
+            ) {
+              // Remove the matched SavingsItem only — keep the (possibly
+              // empty) month row, mirroring deleteSavings semantics.
+              const yearKey = String(se.savingsYear);
+              const yr = nextYears[yearKey];
+              if (yr) {
+                const normalized = normalizeYear(yr);
+                const nextSavings = normalized.savings.map((row) =>
+                  row.month === se.savingsMonth
+                    ? {
+                        ...row,
+                        items: row.items.filter(
+                          (it) => it.id !== se.savingsItemId,
+                        ),
+                      }
+                    : row,
+                );
+                nextYears = {
+                  ...nextYears,
+                  [yearKey]: { ...normalized, savings: nextSavings },
+                };
+              }
+            } else if (
+              se.keptYear != null &&
+              se.keptMonth != null &&
+              se.keptAmount != null
+            ) {
+              // Restore Kept by re-adding the subtracted amount.
+              const yearKey = String(se.keptYear);
+              const monthKey = String(se.keptMonth);
+              const current = nextPrefs.keptBalances[yearKey]?.[monthKey] ?? 0;
+              nextPrefs = {
+                ...nextPrefs,
+                keptBalances: {
+                  ...nextPrefs.keptBalances,
+                  [yearKey]: {
+                    ...(nextPrefs.keptBalances[yearKey] ?? {}),
+                    [monthKey]: current + se.keptAmount,
+                  },
+                },
+              };
+            }
+          }
+
+          const stamp = nowIso();
+          return {
+            data: {
+              ...state.data,
+              goldHoldings: nextHoldings,
+              years: nextYears,
+              preferences: nextPrefs,
+              lastUpdated: stamp,
+            },
+            lastUpdated: stamp,
+          };
+        }),
+
+      sellGoldHolding: (id, sale) =>
+        set((state) => {
+          const holdings = state.data.goldHoldings ?? [];
+          let touched = false;
+          const next = holdings.map((h) => {
+            if (h.id !== id) return h;
+            touched = true;
+            return { ...h, sold: sale };
+          });
+          if (!touched) return state;
+          const stamp = nowIso();
+          return {
+            data: { ...state.data, goldHoldings: next, lastUpdated: stamp },
+            lastUpdated: stamp,
+          };
+        }),
+
+      unsellGoldHolding: (id) =>
+        set((state) => {
+          const holdings = state.data.goldHoldings ?? [];
+          let touched = false;
+          const next = holdings.map((h) => {
+            if (h.id !== id || h.sold == null) return h;
+            touched = true;
+            // Drop `sold` by copying every other property.
+            const rest: GoldHolding = {
+              id: h.id,
+              purchaseDate: h.purchaseDate,
+              brand: h.brand,
+              type: h.type,
+              purity: h.purity,
+              weightBaht: h.weightBaht,
+              totalCost: h.totalCost,
+              paymentMethod: h.paymentMethod,
+              ...(h.spotPriceAtPurchase != null
+                ? { spotPriceAtPurchase: h.spotPriceAtPurchase }
+                : {}),
+              ...(h.notes != null ? { notes: h.notes } : {}),
+              ...(h.sideEffects ? { sideEffects: h.sideEffects } : {}),
+            };
+            return rest;
+          });
+          if (!touched) return state;
+          const stamp = nowIso();
+          return {
+            data: { ...state.data, goldHoldings: next, lastUpdated: stamp },
+            lastUpdated: stamp,
+          };
+        }),
+
+      setGoldSpotPrice: (purity, price) =>
+        set((state) => {
+          const prefs = ensurePreferences(state.data.preferences);
+          const existing = prefs.goldSpotPrice ?? {};
+          const nextSpot = { ...existing };
+          if (price == null || !Number.isFinite(price) || price <= 0) {
+            delete nextSpot[purity];
+          } else {
+            nextSpot[purity] = price;
+          }
+          nextSpot.updatedAt = new Date().toISOString();
+          const nextPrefs: UserPreferences = {
+            ...prefs,
+            goldSpotPrice: nextSpot,
+          };
+          const stamp = nowIso();
+          return {
+            data: {
+              ...state.data,
+              preferences: nextPrefs,
+              lastUpdated: stamp,
+            },
             lastUpdated: stamp,
           };
         }),

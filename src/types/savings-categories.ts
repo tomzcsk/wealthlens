@@ -39,6 +39,11 @@ export const SAVINGS_CATEGORIES: Record<SavingsCategory, SavingsCategoryMeta> = 
     icon: '🏖️',
     colorVar: '--cat-savings',
   },
+  gold: {
+    label: 'ทองคำ',
+    icon: '🪙',
+    colorVar: '--cat-savings',
+  },
   general: {
     label: 'ออมทั่วไป',
     icon: '💰',
@@ -52,5 +57,6 @@ export const SAVINGS_CATEGORY_ORDER: ReadonlyArray<SavingsCategory> = [
   'travel',
   'emergency',
   'retirement',
+  'gold',
   'general',
 ] as const;

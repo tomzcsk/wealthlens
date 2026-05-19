@@ -16,6 +16,9 @@
 import type {
   ExpenseCategory,
   ExpenseItem,
+  GoldHolding,
+  GoldPurity,
+  GoldSpotPrice,
   InstallmentMeta,
   MonthlyDeductions,
   MonthlyIncome,
@@ -25,6 +28,7 @@ import type {
   WealthLensData,
   YearData,
 } from '@/types';
+import { GRAMS_PER_BAHT } from '@/types';
 import { CATEGORY_ORDER } from '@/types/expense-categories';
 import { SAVINGS_CATEGORY_ORDER } from '@/types/savings-categories';
 import type { FinanceState } from './financeStore';
@@ -524,4 +528,103 @@ export const selectMonthlySummariesForYear = (
     rows.push({ month, ...selectMonthSummary({ data: state.data }, year, month) });
   }
   return rows;
+};
+
+// ---------------------------------------------------------------------------
+// Gold selectors
+// ---------------------------------------------------------------------------
+
+export interface GoldSummary {
+  /** All holdings, newest purchaseDate first. */
+  holdings: GoldHolding[];
+  activeHoldings: GoldHolding[];
+  soldHoldings: GoldHolding[];
+  /** Sum of weight across ACTIVE holdings, in บาททอง. */
+  totalWeightBaht: number;
+  /** Same number expressed in grams (for display). */
+  totalWeightGrams: number;
+  /** Total ฿ invested in active holdings = sum of totalCost. */
+  totalInvested: number;
+  /** Cost basis ÷ weight (in ฿ per บาททอง). 0 when no holdings. */
+  avgCostPerBaht: number;
+  /** Sum of (active holdings × matching spot price). 0 when spot unset. */
+  marketValue: number;
+  /** marketValue - totalInvested. Negative = loss. */
+  unrealizedPnl: number;
+  /** Sum of (soldPrice - totalCost) across sold holdings. */
+  realizedPnl: number;
+  /** Active holding count. */
+  activeCount: number;
+  /** Sold holding count. */
+  soldCount: number;
+}
+
+/**
+ * Currently-active spot price for a given purity, or `null` if Tom hasn't
+ * entered one yet. UI checks for `null` before rendering P&L numbers.
+ */
+const getSpotForPurity = (
+  spot: GoldSpotPrice | undefined,
+  purity: GoldPurity,
+): number | null => {
+  if (!spot) return null;
+  const value = spot[purity];
+  if (value == null || !Number.isFinite(value) || value <= 0) return null;
+  return value;
+};
+
+export const selectGoldSummary = (state: Snapshot): GoldSummary => {
+  const holdings = state.data.goldHoldings ?? [];
+  const spot = state.data.preferences?.goldSpotPrice;
+
+  // Sort: newest purchase first. Use ISO date string compare — ISO dates
+  // are lexicographically chronological, no Date() construction needed.
+  const sorted = [...holdings].sort((a, b) =>
+    a.purchaseDate < b.purchaseDate ? 1 : a.purchaseDate > b.purchaseDate ? -1 : 0,
+  );
+  const active = sorted.filter((h) => h.sold == null);
+  const sold = sorted.filter((h) => h.sold != null);
+
+  let totalWeightBaht = 0;
+  let totalInvested = 0;
+  let marketValue = 0;
+  for (const h of active) {
+    totalWeightBaht += h.weightBaht;
+    totalInvested += h.totalCost;
+    const sp = getSpotForPurity(spot, h.purity);
+    if (sp != null) marketValue += sp * h.weightBaht;
+  }
+
+  let realizedPnl = 0;
+  for (const h of sold) {
+    if (h.sold) realizedPnl += h.sold.soldPrice - h.totalCost;
+  }
+
+  return {
+    holdings: sorted,
+    activeHoldings: active,
+    soldHoldings: sold,
+    totalWeightBaht,
+    totalWeightGrams: totalWeightBaht * GRAMS_PER_BAHT,
+    totalInvested,
+    avgCostPerBaht:
+      totalWeightBaht > 0 ? totalInvested / totalWeightBaht : 0,
+    marketValue,
+    unrealizedPnl: marketValue > 0 ? marketValue - totalInvested : 0,
+    realizedPnl,
+    activeCount: active.length,
+    soldCount: sold.length,
+  };
+};
+
+/** Per-holding market value at the current spot, or `null` if spot unset. */
+export const selectGoldHoldingMarketValue = (
+  state: Snapshot,
+  holding: GoldHolding,
+): number | null => {
+  const spot = getSpotForPurity(
+    state.data.preferences?.goldSpotPrice,
+    holding.purity,
+  );
+  return spot == null ? null : spot * holding.weightBaht;
 };
