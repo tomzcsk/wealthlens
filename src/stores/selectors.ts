@@ -686,7 +686,7 @@ export interface GoldAssistantSnapshot {
 }
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-const MIN_SNAPSHOTS_FOR_MA = 7;
+const MIN_SNAPSHOTS_FOR_MA = 3;
 const WINDOW_DAYS = 30;
 const BUY_SIGNAL_PCT_BELOW_COST = -2;
 const SELL_SIGNAL_PCT_PNL = 10;

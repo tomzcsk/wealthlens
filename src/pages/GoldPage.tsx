@@ -12,7 +12,14 @@
  * docs in types/index.ts for the reasoning.
  */
 
-import { useMemo, useState, type ChangeEvent, type ReactNode } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type ReactNode,
+} from 'react';
 
 import { useFinanceStore } from '@/stores/financeStore';
 import {
@@ -277,26 +284,53 @@ export const GoldPage = (): ReactNode => {
   const pushToast = useToastStore((s) => s.push);
   const [fetchingSpot, setFetchingSpot] = useState(false);
 
-  const handleFetchSpot = async (): Promise<void> => {
+  const handleFetchSpot = async (
+    options: { silent?: boolean } = {},
+  ): Promise<void> => {
+    const { silent = false } = options;
     if (fetchingSpot) return;
     setFetchingSpot(true);
     try {
       const result = await fetchGoldSpotPrice();
       applyFetchedGoldPrice(result.price965, result.round);
-      pushToast({
-        message: `ดึงราคาทอง 96.5% สำเร็จ: ${formatTHB(result.price965, { decimals: 0 })}/บาท`,
-        tone: 'success',
-      });
+      if (!silent) {
+        pushToast({
+          message: `ดึงราคาทอง 96.5% สำเร็จ: ${formatTHB(result.price965, { decimals: 0 })}/บาท`,
+          tone: 'success',
+        });
+      }
     } catch (err) {
-      const reason = err instanceof Error ? err.message : 'unknown error';
-      pushToast({
-        message: `ดึงราคาทองไม่สำเร็จ — ${reason}`,
-        tone: 'error',
-      });
+      if (!silent) {
+        const reason = err instanceof Error ? err.message : 'unknown error';
+        pushToast({
+          message: `ดึงราคาทองไม่สำเร็จ — ${reason}`,
+          tone: 'error',
+        });
+      }
     } finally {
       setFetchingSpot(false);
     }
   };
+
+  // Auto-fetch on mount if last update was over 4h ago. updatedAt is set by
+  // both manual edits and successful auto-fetches, so manually overriding
+  // the spot also resets the staleness clock — we don't trample fresh input.
+  const STALE_THRESHOLD_MS = 4 * 60 * 60 * 1000;
+  const didAutoFetchRef = useRef(false);
+  useEffect(() => {
+    if (didAutoFetchRef.current) return;
+    didAutoFetchRef.current = true;
+    const updatedAt = data.preferences?.goldSpotPrice?.updatedAt;
+    const stale =
+      !updatedAt ||
+      Date.now() - new Date(updatedAt).getTime() > STALE_THRESHOLD_MS;
+    if (stale) {
+      // Defer to the next tick so the setFetchingSpot inside doesn't fire
+      // during the effect's render phase (react-hooks/set-state-in-effect).
+      setTimeout(() => void handleFetchSpot({ silent: true }), 0);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const snapshot = useMemo(() => ({ data }), [data]);
   const summary = useMemo(() => selectGoldSummary(snapshot), [snapshot]);
@@ -409,7 +443,7 @@ export const GoldPage = (): ReactNode => {
             )}
             <button
               type="button"
-              onClick={handleFetchSpot}
+              onClick={() => void handleFetchSpot()}
               disabled={fetchingSpot}
               className="px-2.5 py-1 text-xs font-medium text-primary bg-primary-light border border-primary/20 rounded hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
