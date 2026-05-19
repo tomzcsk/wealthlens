@@ -32,6 +32,27 @@ export interface WealthLensData {
    * Optional so payloads written before the gold feature still hydrate.
    */
   goldHoldings?: GoldHolding[];
+  /**
+   * Rolling log of 96.5% spot prices captured each time Tom hits "🔄 ดึง"
+   * on the Gold page. Powers the assistant's 30-day moving average and
+   * high/low signals. Capped to the last 365 entries to keep the Drive
+   * payload bounded. Optional — older payloads have no history yet.
+   */
+  goldPriceHistory?: GoldPriceSnapshot[];
+}
+
+/**
+ * One observation of the 96.5% gold-bar buy price at a moment in time.
+ * Append-only; we never edit past snapshots so the time series stays
+ * faithful to what the API actually returned.
+ */
+export interface GoldPriceSnapshot {
+  /** ISO timestamp when the API responded. */
+  fetchedAt: string;
+  /** ทองคำแท่ง 96.5% buy price (THB per 1 บาททอง). */
+  price965: number;
+  /** API-reported round, e.g. "เวลา 14:04 น. (ครั้งที่ 14)". */
+  round?: string;
 }
 
 /**

@@ -17,6 +17,7 @@ import type {
   ExpenseCategory,
   ExpenseItem,
   GoldHolding,
+  GoldPriceSnapshot,
   GoldPurity,
   GoldSpotPrice,
   InstallmentMeta,
@@ -627,4 +628,315 @@ export const selectGoldHoldingMarketValue = (
     holding.purity,
   );
   return spot == null ? null : spot * holding.weightBaht;
+};
+
+// ---------------------------------------------------------------------------
+// Gold assistant — rule-based context signals
+// ---------------------------------------------------------------------------
+
+/**
+ * Display tone for an assistant signal. `buy` and `sell` are deliberate
+ * leans, not advice — the UI tags every card with "ไม่ใช่คำแนะนำลงทุน".
+ */
+export type AssistantSignalTone =
+  | 'buy'
+  | 'sell'
+  | 'neutral'
+  | 'info'
+  | 'warmup';
+
+export interface AssistantSignal {
+  /** Stable id for React keys + dedup. */
+  id: string;
+  tone: AssistantSignalTone;
+  emoji: string;
+  title: string;
+  detail: string;
+}
+
+export interface GoldAssistantSnapshot {
+  /** Live 96.5% spot used everywhere below. */
+  spotPrice: number | null;
+  /** Tom's weighted avg cost across active 96.5% holdings. */
+  avgCostPerBaht: number;
+  /** (spot - avgCost) / avgCost * 100. Negative = spot below cost. */
+  spotVsCostPercent: number | null;
+  /** Active-portfolio P&L %. */
+  portfolioPnlPercent: number | null;
+  /** Most recent buy → today, in days. */
+  daysSinceLastBuy: number | null;
+  /** Mean gap between consecutive buys (≥2 buys needed). */
+  avgBuyIntervalDays: number | null;
+  /** How many buy transactions there are. */
+  buyCount: number;
+  /** Total stored price observations (across all time). */
+  snapshotCount: number;
+  /** Snapshots within the last 30 days. */
+  recentSnapshotCount: number;
+  /** 30-day mean of price965, or null if too few data points. */
+  ma30Price: number | null;
+  /** (spot - ma30) / ma30 * 100. */
+  spotVsMa30Percent: number | null;
+  /** Highest price seen in last 30 days. */
+  high30: number | null;
+  /** Lowest price seen in last 30 days. */
+  low30: number | null;
+  /** Ordered list of cards to render. */
+  signals: AssistantSignal[];
+}
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const MIN_SNAPSHOTS_FOR_MA = 7;
+const WINDOW_DAYS = 30;
+const BUY_SIGNAL_PCT_BELOW_COST = -2;
+const SELL_SIGNAL_PCT_PNL = 10;
+const BUY_SIGNAL_PCT_BELOW_MA = -1.5;
+const HIGH_LOW_TOLERANCE_PCT = 0.3;
+const DCA_OVERDUE_MULTIPLIER = 1.5;
+
+const daysBetween = (laterIso: string, earlierIso: string): number => {
+  const ms = new Date(laterIso).getTime() - new Date(earlierIso).getTime();
+  return ms / MS_PER_DAY;
+};
+
+const computeAvgBuyInterval = (
+  buys: readonly GoldHolding[],
+): number | null => {
+  if (buys.length < 2) return null;
+  const sorted = [...buys].sort((a, b) =>
+    a.purchaseDate < b.purchaseDate ? -1 : 1,
+  );
+  let totalGap = 0;
+  for (let i = 1; i < sorted.length; i += 1) {
+    totalGap += daysBetween(
+      sorted[i].purchaseDate,
+      sorted[i - 1].purchaseDate,
+    );
+  }
+  return totalGap / (sorted.length - 1);
+};
+
+const filterRecentSnapshots = (
+  history: readonly GoldPriceSnapshot[],
+  windowDays: number,
+): GoldPriceSnapshot[] => {
+  const cutoff = Date.now() - windowDays * MS_PER_DAY;
+  return history.filter((s) => new Date(s.fetchedAt).getTime() >= cutoff);
+};
+
+export const selectGoldAssistantSignals = (
+  state: Snapshot,
+): GoldAssistantSnapshot => {
+  const spot = getSpotForPurity(
+    state.data.preferences?.goldSpotPrice,
+    '96.5',
+  );
+  const holdings = state.data.goldHoldings ?? [];
+  const active965 = holdings.filter(
+    (h) => h.sold == null && h.purity === '96.5',
+  );
+
+  const totalWeight = active965.reduce((a, h) => a + h.weightBaht, 0);
+  const totalInvested = active965.reduce((a, h) => a + h.totalCost, 0);
+  const avgCostPerBaht = totalWeight > 0 ? totalInvested / totalWeight : 0;
+
+  const spotVsCostPercent =
+    spot != null && avgCostPerBaht > 0
+      ? ((spot - avgCostPerBaht) / avgCostPerBaht) * 100
+      : null;
+
+  const marketValue = spot != null ? spot * totalWeight : null;
+  const portfolioPnlPercent =
+    marketValue != null && totalInvested > 0
+      ? ((marketValue - totalInvested) / totalInvested) * 100
+      : null;
+
+  const lastBuy = active965
+    .map((h) => h.purchaseDate)
+    .sort()
+    .at(-1);
+  const daysSinceLastBuy =
+    lastBuy != null
+      ? Math.floor(daysBetween(new Date().toISOString(), lastBuy))
+      : null;
+  const avgBuyIntervalDays = computeAvgBuyInterval(active965);
+
+  const history = state.data.goldPriceHistory ?? [];
+  const recent = filterRecentSnapshots(history, WINDOW_DAYS);
+  const ma30Price =
+    recent.length >= MIN_SNAPSHOTS_FOR_MA
+      ? recent.reduce((a, s) => a + s.price965, 0) / recent.length
+      : null;
+  const spotVsMa30Percent =
+    spot != null && ma30Price != null
+      ? ((spot - ma30Price) / ma30Price) * 100
+      : null;
+  const high30 =
+    recent.length > 0
+      ? recent.reduce((a, s) => Math.max(a, s.price965), 0)
+      : null;
+  const low30 =
+    recent.length > 0
+      ? recent.reduce((a, s) => Math.min(a, s.price965), Infinity)
+      : null;
+
+  const signals: AssistantSignal[] = [];
+
+  // ---- Early-out: no spot yet ---------------------------------------------
+  if (spot == null) {
+    signals.push({
+      id: 'no-spot',
+      tone: 'info',
+      emoji: '🔍',
+      title: 'ยังไม่มีราคา spot',
+      detail:
+        'กด "🔄 ดึงจาก สมาคมค้าทองคำ" ก่อน — แล้วผู้ช่วยจะวิเคราะห์ให้',
+    });
+    return {
+      spotPrice: spot,
+      avgCostPerBaht,
+      spotVsCostPercent,
+      portfolioPnlPercent,
+      daysSinceLastBuy,
+      avgBuyIntervalDays,
+      buyCount: active965.length,
+      snapshotCount: history.length,
+      recentSnapshotCount: recent.length,
+      ma30Price,
+      spotVsMa30Percent,
+      high30,
+      low30,
+      signals,
+    };
+  }
+
+  // ---- Cost-basis signals (need active holdings) ---------------------------
+  if (active965.length > 0 && spotVsCostPercent != null) {
+    if (spotVsCostPercent <= BUY_SIGNAL_PCT_BELOW_COST) {
+      signals.push({
+        id: 'below-cost',
+        tone: 'buy',
+        emoji: '🟢',
+        title: `Spot ต่ำกว่าต้นทุนเฉลี่ย ${Math.abs(spotVsCostPercent).toFixed(1)}%`,
+        detail: `ราคา ${spot.toLocaleString()} vs ต้นทุน ${avgCostPerBaht.toLocaleString(undefined, { maximumFractionDigits: 0 })} /บาท — DCA opportunity?`,
+      });
+    } else if (
+      portfolioPnlPercent != null &&
+      portfolioPnlPercent >= SELL_SIGNAL_PCT_PNL
+    ) {
+      signals.push({
+        id: 'pnl-high',
+        tone: 'sell',
+        emoji: '🟡',
+        title: `พอร์ตกำไร +${portfolioPnlPercent.toFixed(1)}%`,
+        detail:
+          'ตามเกณฑ์ของผู้ช่วย (≥10%) — พิจารณาขายลอตเก่าบางส่วนเพื่อล็อกกำไร?',
+      });
+    } else if (portfolioPnlPercent != null) {
+      signals.push({
+        id: 'pnl-neutral',
+        tone: 'neutral',
+        emoji: '⚪',
+        title: `พอร์ตอยู่ที่ ${portfolioPnlPercent >= 0 ? '+' : ''}${portfolioPnlPercent.toFixed(1)}%`,
+        detail: 'ยังไม่ทะลุ ±เกณฑ์ของผู้ช่วย — hold ต่อไปก่อน',
+      });
+    }
+  }
+
+  // ---- DCA cadence signal --------------------------------------------------
+  if (
+    daysSinceLastBuy != null &&
+    avgBuyIntervalDays != null &&
+    avgBuyIntervalDays > 0 &&
+    daysSinceLastBuy > avgBuyIntervalDays * DCA_OVERDUE_MULTIPLIER
+  ) {
+    signals.push({
+      id: 'dca-overdue',
+      tone: 'buy',
+      emoji: '📅',
+      title: `ครบรอบ DCA แล้ว — ${daysSinceLastBuy} วัน`,
+      detail: `Tom ซื้อเฉลี่ยทุก ${avgBuyIntervalDays.toFixed(0)} วัน · ซื้อครั้งล่าสุด ${lastBuy ?? '?'}`,
+    });
+  }
+
+  // ---- Price-history signals ----------------------------------------------
+  if (recent.length < MIN_SNAPSHOTS_FOR_MA) {
+    signals.push({
+      id: 'history-warmup',
+      tone: 'warmup',
+      emoji: '⏳',
+      title: `เก็บข้อมูลราคาแล้ว ${recent.length}/${MIN_SNAPSHOTS_FOR_MA} ครั้ง`,
+      detail:
+        'กดอัปเดตวันละครั้ง — ครบเมื่อไหร่ ผู้ช่วยจะเปิดสัญญาณ MA 30 วันให้',
+    });
+  } else {
+    if (
+      spotVsMa30Percent != null &&
+      spotVsMa30Percent <= BUY_SIGNAL_PCT_BELOW_MA
+    ) {
+      signals.push({
+        id: 'below-ma30',
+        tone: 'buy',
+        emoji: '📉',
+        title: `Spot ต่ำกว่า MA 30 วัน ${Math.abs(spotVsMa30Percent).toFixed(1)}%`,
+        detail: `ค่าเฉลี่ย 30 วัน ${ma30Price?.toLocaleString(undefined, { maximumFractionDigits: 0 })} /บาท — ราคา relatively ถูก`,
+      });
+    }
+    if (
+      high30 != null &&
+      spot >= high30 * (1 - HIGH_LOW_TOLERANCE_PCT / 100)
+    ) {
+      signals.push({
+        id: 'near-high30',
+        tone: 'sell',
+        emoji: '⛰️',
+        title: 'แตะ peak 30 วัน',
+        detail: `Spot ${spot.toLocaleString()} ≈ จุดสูงสุด 30 วัน ${high30.toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
+      });
+    }
+    if (
+      low30 != null &&
+      low30 !== Infinity &&
+      spot <= low30 * (1 + HIGH_LOW_TOLERANCE_PCT / 100)
+    ) {
+      signals.push({
+        id: 'near-low30',
+        tone: 'buy',
+        emoji: '🪨',
+        title: 'แตะ low 30 วัน',
+        detail: `Spot ${spot.toLocaleString()} ≈ จุดต่ำสุด 30 วัน ${low30.toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
+      });
+    }
+  }
+
+  // ---- Default empty state --------------------------------------------------
+  if (signals.length === 0) {
+    signals.push({
+      id: 'no-signal',
+      tone: 'info',
+      emoji: '🟦',
+      title: 'ยังไม่มีสัญญาณเด่น',
+      detail:
+        active965.length === 0
+          ? 'ยังไม่มีทองในพอร์ต — ดูราคาเฉย ๆ ได้'
+          : 'ราคา + พอร์ตอยู่ในช่วงปกติ',
+    });
+  }
+
+  return {
+    spotPrice: spot,
+    avgCostPerBaht,
+    spotVsCostPercent,
+    portfolioPnlPercent,
+    daysSinceLastBuy,
+    avgBuyIntervalDays,
+    buyCount: active965.length,
+    snapshotCount: history.length,
+    recentSnapshotCount: recent.length,
+    ma30Price,
+    spotVsMa30Percent,
+    high30: high30 === Infinity ? null : high30,
+    low30: low30 === Infinity ? null : low30,
+    signals,
+  };
 };

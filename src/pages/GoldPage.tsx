@@ -16,8 +16,10 @@ import { useMemo, useState, type ChangeEvent, type ReactNode } from 'react';
 
 import { useFinanceStore } from '@/stores/financeStore';
 import {
+  selectGoldAssistantSignals,
   selectGoldHoldingMarketValue,
   selectGoldSummary,
+  type AssistantSignalTone,
 } from '@/stores/selectors';
 import { useToastStore } from '@/stores/toastStore';
 import { Modal } from '@/components/ui/Modal';
@@ -298,6 +300,10 @@ export const GoldPage = (): ReactNode => {
 
   const snapshot = useMemo(() => ({ data }), [data]);
   const summary = useMemo(() => selectGoldSummary(snapshot), [snapshot]);
+  const assistant = useMemo(
+    () => selectGoldAssistantSignals(snapshot),
+    [snapshot],
+  );
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<GoldHolding | null>(null);
@@ -433,6 +439,9 @@ export const GoldPage = (): ReactNode => {
           ต้องกรอกเอง — API ไม่มีข้อมูล
         </p>
       </section>
+
+      {/* Gold assistant */}
+      <GoldAssistant assistant={assistant} />
 
       {/* Active holdings */}
       <section className="space-y-3">
@@ -629,6 +638,79 @@ export const GoldPage = (): ReactNode => {
         )}
       </Modal>
     </div>
+  );
+};
+
+// ---------------------------------------------------------------------------
+// Gold assistant — rule-based signal cards from selectGoldAssistantSignals.
+// Wording is intentionally framed as observations ("น่าสนใจ?", "พิจารณา?"),
+// never directives, and the section header carries an explicit disclaimer.
+// ---------------------------------------------------------------------------
+
+interface GoldAssistantProps {
+  assistant: ReturnType<typeof selectGoldAssistantSignals>;
+}
+
+const SIGNAL_TONE_CLASS: Record<AssistantSignalTone, string> = {
+  buy: 'border-emerald-200 bg-emerald-50',
+  sell: 'border-amber-200 bg-amber-50',
+  neutral: 'border-slate-200 bg-slate-50',
+  info: 'border-blue-200 bg-blue-50',
+  warmup: 'border-slate-200 bg-white',
+};
+
+const SIGNAL_TONE_TEXT: Record<AssistantSignalTone, string> = {
+  buy: 'text-emerald-700',
+  sell: 'text-amber-700',
+  neutral: 'text-slate-700',
+  info: 'text-blue-700',
+  warmup: 'text-slate-500',
+};
+
+const GoldAssistant = ({ assistant }: GoldAssistantProps): ReactNode => {
+  const { signals, recentSnapshotCount, ma30Price, spotPrice } = assistant;
+
+  return (
+    <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3">
+      <header className="flex items-baseline justify-between px-1">
+        <div className="flex items-baseline gap-2">
+          <h2 className="text-sm font-semibold text-slate-700">
+            🤖 ผู้ช่วยทอง
+          </h2>
+          <span className="text-xs text-slate-400">
+            สัญญาณจากข้อมูลของคุณ · ไม่ใช่คำแนะนำการลงทุน
+          </span>
+        </div>
+        {ma30Price != null && spotPrice != null && (
+          <span className="text-xs text-slate-400">
+            MA 30 วัน:{' '}
+            <span className="financial-number tabular-nums text-slate-600">
+              {formatTHB(ma30Price, { decimals: 0 })}
+            </span>{' '}
+            · {recentSnapshotCount} จุด
+          </span>
+        )}
+      </header>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+        {signals.map((sig) => (
+          <div
+            key={sig.id}
+            className={`rounded-lg border px-3 py-2.5 ${SIGNAL_TONE_CLASS[sig.tone]}`}
+          >
+            <div
+              className={`text-sm font-medium ${SIGNAL_TONE_TEXT[sig.tone]}`}
+            >
+              <span className="mr-1.5">{sig.emoji}</span>
+              {sig.title}
+            </div>
+            <div className="text-xs text-slate-600 mt-1 leading-relaxed">
+              {sig.detail}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 };
 

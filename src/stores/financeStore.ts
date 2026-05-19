@@ -25,6 +25,7 @@ import type {
   ExpenseItem,
   GoldHolding,
   GoldPaymentMethod,
+  GoldPriceSnapshot,
   GoldPurity,
   GoldSaleRecord,
   GoldType,
@@ -833,11 +834,34 @@ export const useFinanceStore = create<FinanceState>()(
             ...prefs,
             goldSpotPrice: nextSpot,
           };
+
+          // Append to rolling history. Dedup: if the newest snapshot is
+          // from the same API round, replace it instead of growing the
+          // list (handles rapid re-clicks of the refresh button).
+          const MAX_SNAPSHOTS = 365;
+          const newSnap: GoldPriceSnapshot = {
+            fetchedAt: stampIso,
+            price965: price,
+            ...(round ? { round } : {}),
+          };
+          const prevHistory = state.data.goldPriceHistory ?? [];
+          const lastSnap = prevHistory[prevHistory.length - 1];
+          const sameRound =
+            lastSnap && round && lastSnap.round === round;
+          const nextHistory = sameRound
+            ? [...prevHistory.slice(0, -1), newSnap]
+            : [...prevHistory, newSnap];
+          const cappedHistory =
+            nextHistory.length > MAX_SNAPSHOTS
+              ? nextHistory.slice(-MAX_SNAPSHOTS)
+              : nextHistory;
+
           const stamp = nowIso();
           return {
             data: {
               ...state.data,
               preferences: nextPrefs,
+              goldPriceHistory: cappedHistory,
               lastUpdated: stamp,
             },
             lastUpdated: stamp,
