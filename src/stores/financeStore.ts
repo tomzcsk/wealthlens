@@ -234,6 +234,15 @@ export interface FinanceState {
   setGoldSpotPrice: (purity: GoldPurity, price: number | null) => void;
   /** Stamp 96.5% spot from a successful auto-fetch (preserves round meta). */
   applyFetchedGoldPrice: (price: number, round: string) => void;
+  /**
+   * Bulk-import historical price snapshots (e.g. from a pasted website
+   * table). `mode: 'merge'` dedupes against existing entries by minute;
+   * `'replace'` discards the existing history entirely.
+   */
+  bulkImportGoldPriceHistory: (
+    snapshots: GoldPriceSnapshot[],
+    mode: 'merge' | 'replace',
+  ) => void;
 
   // --- Savings mutations --------------------------------------------------
   addSavings: (
@@ -862,6 +871,34 @@ export const useFinanceStore = create<FinanceState>()(
               ...state.data,
               preferences: nextPrefs,
               goldPriceHistory: cappedHistory,
+              lastUpdated: stamp,
+            },
+            lastUpdated: stamp,
+          };
+        }),
+
+      bulkImportGoldPriceHistory: (incoming, mode) =>
+        set((state) => {
+          const MAX_SNAPSHOTS = 365;
+          let next: GoldPriceSnapshot[];
+          if (mode === 'replace') {
+            next = [...incoming];
+          } else {
+            const prev = state.data.goldPriceHistory ?? [];
+            const byTime = new Map<string, GoldPriceSnapshot>();
+            for (const s of prev) byTime.set(s.fetchedAt, s);
+            for (const s of incoming) byTime.set(s.fetchedAt, s);
+            next = Array.from(byTime.values());
+          }
+          next.sort((a, b) => (a.fetchedAt < b.fetchedAt ? -1 : 1));
+          if (next.length > MAX_SNAPSHOTS) {
+            next = next.slice(-MAX_SNAPSHOTS);
+          }
+          const stamp = nowIso();
+          return {
+            data: {
+              ...state.data,
+              goldPriceHistory: next,
               lastUpdated: stamp,
             },
             lastUpdated: stamp,
