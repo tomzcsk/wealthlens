@@ -124,10 +124,15 @@ interface KeptEditFormProps {
 }
 
 /**
- * Single-field editor for the (year, month) Kept entry. Visual parity with
- * SavingsForm — same input borders, same comma-formatted typing, same button
- * row (ยกเลิก + บันทึก + ลบ if existing). Replaces the previous
- * `window.prompt` UX so the experience matches "+ เพิ่มรายการออม" forms.
+ * Add/withdraw editor for the (year, month) Kept entry. Instead of asking
+ * Tom to key in the new monthly *total* (which forced him to a calculator
+ * whenever a month had several deposits/withdrawals), this field takes a
+ * single delta — positive = ฝากเข้า, negative = ถอนออก — and folds it into
+ * the running balance for him, previewing the result live before save.
+ *
+ * Storage is unchanged: we still persist one net number per month via
+ * `setKeptBalance`; we just compute `current + delta` here. To fix a wrong
+ * entry, clear the month (🗑️) and start fresh.
  */
 const KeptEditForm = ({
   year,
@@ -138,25 +143,31 @@ const KeptEditForm = ({
   onCancel,
 }: KeptEditFormProps): ReactNode => {
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const [text, setText] = useState<string>(
-    initialAmount !== undefined ? formatNumber(initialAmount) : '',
-  );
+  // The field now holds a delta to apply, never the stored total — so it
+  // always starts empty regardless of whether the month already has a value.
+  const [text, setText] = useState<string>('');
 
   useEffect(() => {
     inputRef.current?.focus();
-    inputRef.current?.select();
   }, []);
 
-  const parsed = useMemo<number | null>(() => {
+  const current = initialAmount ?? 0;
+
+  const delta = useMemo<number | null>(() => {
     const trimmed = text.trim();
-    if (trimmed === '') return null;
+    if (trimmed === '' || trimmed === '-') return null;
     const n = Number(trimmed.replace(/,/g, ''));
     return Number.isFinite(n) ? n : null;
   }, [text]);
 
-  const canSubmit = parsed !== null;
+  // Nothing to save unless a non-zero delta is entered.
+  const canSubmit = delta !== null && delta !== 0;
   const isEdit = initialAmount !== undefined;
   const monthLabel = THAI_MONTHS_LONG[month - 1];
+  const newTotal = current + (delta ?? 0);
+
+  const fmtMoney = (n: number): string =>
+    formatTHB(n, { decimals: Number.isInteger(n) ? 0 : 2 });
 
   const handleChange = (raw: string): void => {
     // Allow optional leading minus, digits, single decimal, and commas
@@ -186,8 +197,8 @@ const KeptEditForm = ({
 
   const handleSubmit = (e?: FormEvent): void => {
     if (e) e.preventDefault();
-    if (parsed === null) return;
-    onSave(parsed);
+    if (!canSubmit) return;
+    onSave(newTotal);
   };
 
   return (
@@ -199,6 +210,14 @@ const KeptEditForm = ({
         >
           ยอด Kept (กรุงศรี) — {monthLabel} {year}
         </label>
+
+        <div className="flex items-center justify-between rounded-md bg-slate-50 border border-slate-200 px-3 py-2 mb-3">
+          <span className="text-sm text-slate-600">ยอดปัจจุบันเดือนนี้</span>
+          <span className="text-base font-medium tabular-nums text-slate-800">
+            {fmtMoney(current)}
+          </span>
+        </div>
+
         <input
           id="kept-amount-input"
           ref={inputRef}
@@ -206,12 +225,27 @@ const KeptEditForm = ({
           inputMode="decimal"
           value={text}
           onChange={(e) => handleChange(e.target.value)}
-          placeholder="เช่น 45,000 หรือ -9,000"
+          placeholder="เช่น +5,000 หรือ -3,000"
           className="w-full px-3 py-2 text-base tabular-nums border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
         />
         <p className="mt-1.5 text-xs text-slate-500">
-          ค่าติดลบ = ถอนออกจากบัญชี · เว้นว่างแล้วกดลบเพื่อล้างค่าเดือนนี้
+          เพิ่ม/ถอน · บวก = ฝากเข้า · ลบ = ถอนออก
         </p>
+
+        <div className="flex items-center justify-between rounded-md bg-primary-light border border-blue-100 px-3 py-2 mt-3">
+          <span className="text-sm text-slate-600">ยอดใหม่หลังบันทึก</span>
+          <span
+            className={`text-lg font-semibold tabular-nums ${
+              delta === null || delta === 0
+                ? 'text-slate-800'
+                : delta > 0
+                  ? 'text-income'
+                  : 'text-expense'
+            }`}
+          >
+            {fmtMoney(newTotal)}
+          </span>
+        </div>
       </div>
 
       <div className="flex items-center justify-between pt-2">
