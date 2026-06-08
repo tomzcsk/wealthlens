@@ -56,18 +56,33 @@ export const fetchGoldSpotPrice = async (): Promise<FetchedGoldPrice> => {
     }
 
     const json = (await res.json()) as ApiResponse;
-    if (json.status !== 'success' || !json.response?.price?.gold_bar?.buy) {
-      throw new Error('API response missing gold_bar.buy');
+
+    if (json.status !== 'success') {
+      throw new Error(`แหล่งข้อมูลตอบกลับผิดปกติ (status: ${json.status ?? 'ไม่ทราบ'})`);
     }
 
-    const price965 = parseThaiNumber(json.response.price.gold_bar.buy);
+    // จุดที่พังบ่อยที่สุด: proxy ส่ง status:"success" แต่ค่าราคา "ว่าง"
+    // เมื่อ scraper ต้นทาง (goldtraders.or.th) ขัดข้อง หรือสมาคมฯ ยังไม่ประกาศ
+    // รอบราคา — แยกกรณี "ค่าว่าง" ออกจาก "ไม่พบ field" เพื่อบอกผู้ใช้ได้ตรง
+    // และแนะนำทางออก (ลองใหม่ภายหลัง / กรอกราคาเอง) แทนข้อความ technical กำกวม
+    const rawBuy = json.response?.price?.gold_bar?.buy?.trim();
+    if (rawBuy === undefined) {
+      throw new Error('รูปแบบข้อมูลจากแหล่งเปลี่ยนไป (ไม่พบ gold_bar.buy)');
+    }
+    if (rawBuy === '') {
+      throw new Error(
+        'สมาคมฯ ยังไม่อัปเดตราคา (แหล่งข้อมูลส่งค่าว่าง) — ลองใหม่ภายหลัง หรือกรอกราคาเอง',
+      );
+    }
+
+    const price965 = parseThaiNumber(rawBuy);
     if (!Number.isFinite(price965) || price965 <= 0) {
-      throw new Error(`Invalid price: ${json.response.price.gold_bar.buy}`);
+      throw new Error(`ราคาที่ได้ไม่ถูกต้อง: "${rawBuy}"`);
     }
 
     return {
       price965,
-      round: json.response.update_time ?? '',
+      round: json.response?.update_time ?? '',
       fetchedAt: new Date().toISOString(),
     };
   } finally {
