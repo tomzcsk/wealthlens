@@ -1,5 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 
+import { TaxAllowanceForm } from '@/components/forms/TaxAllowanceForm';
 import {
   useAvailableYears,
   useSelectedYear,
@@ -7,7 +8,11 @@ import {
 } from '@/hooks/useFinanceData';
 import { useFinanceStore } from '@/stores/financeStore';
 import { formatNumber, formatPercent, formatTHB } from '@/utils/formatters';
-import { calculateThaiPIT } from '@/utils/taxCalculator';
+import {
+  calculateThaiPIT,
+  EMPTY_TAX_ALLOWANCES,
+  resolveTaxAllowances,
+} from '@/utils/taxCalculator';
 
 interface DeductionBreakdown {
   tax: number;
@@ -23,7 +28,6 @@ export const TaxCalculatorPage = (): ReactNode => {
 
   const [includeBonus, setIncludeBonus] = useState(false);
   const [includeCommission, setIncludeCommission] = useState(false);
-  const [extraInput, setExtraInput] = useState('');
 
   const summary = useYearSummary(selectedYear);
   const data = useFinanceStore((s) => s.data);
@@ -48,25 +52,38 @@ export const TaxCalculatorPage = (): ReactNode => {
     return { tax, socialSecurity, providentFund, gsl };
   }, [data, selectedYear]);
 
-  const extraAllowances = useMemo(() => {
-    const cleaned = extraInput.replace(/,/g, '').trim();
-    if (cleaned === '') return 0;
-    const n = Number(cleaned);
-    return Number.isFinite(n) && n >= 0 ? n : 0;
-  }, [extraInput]);
+  const storedAllowances = useFinanceStore(
+    (s) => s.data.taxAllowances?.[String(selectedYear)],
+  );
+  const allowanceInputs = storedAllowances ?? EMPTY_TAX_ALLOWANCES;
+  const setTaxAllowances = useFinanceStore((s) => s.setTaxAllowances);
 
-  const result = useMemo(() => {
-    const income =
-      summary.salary +
-      (includeBonus ? summary.bonus : 0) +
-      (includeCommission ? summary.commission : 0);
-    return calculateThaiPIT({
-      income,
-      socialSecurity: deductionBreakdown.socialSecurity,
-      providentFund: deductionBreakdown.providentFund,
-      extraAllowances,
-    });
-  }, [summary, includeBonus, includeCommission, extraAllowances, deductionBreakdown]);
+  const grossIncome =
+    summary.salary +
+    (includeBonus ? summary.bonus : 0) +
+    (includeCommission ? summary.commission : 0);
+
+  const resolvedAllowances = useMemo(
+    () =>
+      resolveTaxAllowances(
+        allowanceInputs,
+        grossIncome,
+        deductionBreakdown.socialSecurity,
+        deductionBreakdown.providentFund,
+      ),
+    [allowanceInputs, grossIncome, deductionBreakdown],
+  );
+
+  const result = useMemo(
+    () =>
+      calculateThaiPIT({
+        income: grossIncome,
+        socialSecurity: deductionBreakdown.socialSecurity,
+        providentFund: deductionBreakdown.providentFund,
+        extraAllowances: resolvedAllowances.total,
+      }),
+    [grossIncome, deductionBreakdown, resolvedAllowances],
+  );
 
   // Actual tax withheld in the year (sum of monthly tax fields).
   const actualTax = deductionBreakdown.tax;
@@ -131,23 +148,13 @@ export const TaxCalculatorPage = (): ReactNode => {
           </label>
         </div>
 
-        <label className="block">
-          <span className="text-sm font-medium text-slate-700">
-            ลดหย่อนเพิ่มเติม (ประกัน, RMF, SSF, ลูก, คู่สมรส, etc.)
-          </span>
-          <input
-            type="text"
-            inputMode="numeric"
-            value={extraInput}
-            onChange={(e) => {
-              const digits = e.target.value.replace(/[^\d]/g, '');
-              setExtraInput(digits ? formatNumber(Number(digits)) : '');
-            }}
-            placeholder="0"
-            className="mt-1 w-full md:w-64 rounded-lg border border-slate-300 px-3 py-2 text-base tabular-nums text-right focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-          />
-        </label>
       </section>
+
+      <TaxAllowanceForm
+        value={allowanceInputs}
+        lines={resolvedAllowances.lines}
+        onChange={(next) => setTaxAllowances(selectedYear, next)}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-3">
@@ -174,13 +181,11 @@ export const TaxCalculatorPage = (): ReactNode => {
             value={-result.providentFundAllowance}
             tone="muted"
           />
-          {result.extraAllowances > 0 && (
-            <Row
-              label="หักลดหย่อนอื่นๆ"
-              value={-result.extraAllowances}
-              tone="muted"
-            />
-          )}
+          {resolvedAllowances.lines
+            .filter((l) => l.applied > 0)
+            .map((l) => (
+              <Row key={l.key} label={`หัก${l.label}`} value={-l.applied} tone="muted" />
+            ))}
           <hr className="border-slate-200" />
           <Row label="เงินได้สุทธิ (taxable)" value={result.taxableIncome} bold />
         </section>
