@@ -394,12 +394,20 @@ export const validateBackup = (parsed: unknown): ValidationResult => {
     return { ok: false, errors: ctx.errors };
   }
 
+  // Pass through the itemized tax allowances if present. Light-touch
+  // validation: accept the object shape as-is — resolveTaxAllowances
+  // clamps bad values (negative/NaN) to 0 at calculation time anyway.
+  const taxAllowances = isObject(parsed.taxAllowances)
+    ? (parsed.taxAllowances as WealthLensData['taxAllowances'])
+    : undefined;
+
   return {
     ok: true,
     data: {
       version: parsed.version as string,
       lastUpdated: parsed.lastUpdated as string,
       years,
+      ...(taxAllowances ? { taxAllowances } : {}),
     },
   };
 };
@@ -472,6 +480,7 @@ export const importFromFile = async (file: File): Promise<ValidationResult> => {
  * Merge `imported` into `local` at the year granularity.
  * For each year present in `imported`, the local entry is REPLACED whole-cloth
  * (last-write-wins per year). Years only present in `local` are preserved.
+ * Imported years and taxAllowances win on key collisions.
  *
  * `lastUpdated` is bumped to now so downstream sync layers see a fresh write.
  */
@@ -483,9 +492,14 @@ export const mergeData = (
   for (const [yearKey, yearData] of Object.entries(imported.years)) {
     years[yearKey] = yearData;
   }
+  const taxAllowances =
+    local.taxAllowances || imported.taxAllowances
+      ? { ...local.taxAllowances, ...imported.taxAllowances }
+      : undefined;
   return {
     version: local.version,
     lastUpdated: new Date().toISOString(),
     years,
+    ...(taxAllowances ? { taxAllowances } : {}),
   };
 };
