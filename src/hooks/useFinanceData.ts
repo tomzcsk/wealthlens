@@ -220,6 +220,46 @@ export const useDimeInvestmentTotal = (year?: number): number => {
   }, [data, target]);
 };
 
+export interface SavingsCategoryTotal {
+  category: SavingsCategory;
+  total: number;
+  itemCount: number;
+}
+
+/**
+ * F29 — ยอดออมรายปีแยกตามหมวด สำหรับ card อัตโนมัติบน Overview.
+ * ไม่รวม `investment-dime` / `travel` เพราะมี card เป้าหมายเฉพาะอยู่แล้ว
+ * (DimeInvestmentCard / TravelSavingsCard) — กันแสดงซ้ำ
+ * คืนเฉพาะหมวดที่ total > 0 เรียงยอดมาก → น้อย
+ */
+export const useSavingsCategoryTotals = (
+  year?: number,
+): SavingsCategoryTotal[] => {
+  const { data, selectedYear } = useSnapshot();
+  const target = year ?? selectedYear;
+  return useMemo(() => {
+    const yr = data.years[String(target)];
+    if (!yr) return [];
+    const totals = new Map<SavingsCategory, SavingsCategoryTotal>();
+    for (const row of yr.savings ?? []) {
+      for (const item of row.items) {
+        if (item.category === 'investment-dime' || item.category === 'travel') {
+          continue;
+        }
+        const entry =
+          totals.get(item.category) ??
+          { category: item.category, total: 0, itemCount: 0 };
+        entry.total += item.amount;
+        entry.itemCount += 1;
+        totals.set(item.category, entry);
+      }
+    }
+    return [...totals.values()]
+      .filter((t) => t.total > 0)
+      .sort((a, b) => b.total - a.total);
+  }, [data, target]);
+};
+
 // ---------------------------------------------------------------------------
 // F12 — Subscriptions
 // ---------------------------------------------------------------------------
