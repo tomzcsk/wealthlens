@@ -39,6 +39,7 @@ import type {
   MonthlySavings,
   Reimbursement,
   SavingsItem,
+  TaxAllowanceInputs,
   UserPreferences,
   WealthLensData,
   YearData,
@@ -323,6 +324,14 @@ export interface FinanceState {
     extraId: string,
     options: { revertExpenseSideEffect: boolean },
   ) => void;
+
+  // --- Tax allowances ------------------------------------------------------
+  /**
+   * Replace the itemized PIT allowance inputs for one tax year. The tax
+   * page writes the whole object on every keystroke (single-screen form),
+   * so field-level patching isn't needed.
+   */
+  setTaxAllowances: (year: number, inputs: TaxAllowanceInputs) => void;
 
   // --- Savings mutations --------------------------------------------------
   addSavings: (
@@ -1247,6 +1256,22 @@ export const useFinanceStore = create<FinanceState>()(
               loans: nextLoans,
               years: nextYears,
               lastUpdated: stamp,
+            },
+            lastUpdated: stamp,
+          };
+        }),
+
+      setTaxAllowances: (year, inputs) =>
+        set((state) => {
+          const stamp = nowIso();
+          return {
+            data: {
+              ...state.data,
+              lastUpdated: stamp,
+              taxAllowances: {
+                ...state.data.taxAllowances,
+                [String(year)]: inputs,
+              },
             },
             lastUpdated: stamp,
           };
