@@ -1381,8 +1381,12 @@ export const useFinanceStore = create<FinanceState>()(
           // we're fixing.
           const preferences =
             data.preferences ?? state.data.preferences;
+          // Same preserve-local policy as preferences: a remote payload
+          // written before the tax-allowances feature must not wipe them.
+          const taxAllowances =
+            data.taxAllowances ?? state.data.taxAllowances;
           return {
-            data: { ...data, years, preferences, lastUpdated: stamp },
+            data: { ...data, years, preferences, taxAllowances, lastUpdated: stamp },
             lastUpdated: stamp,
           };
         }),
