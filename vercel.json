@@ -1,5 +1,9 @@
 {
   "rewrites": [
+    {
+      "source": "/api/gold-price",
+      "destination": "https://www.goldtraders.or.th/api/GoldPrices/Latest"
+    },
     { "source": "/((?!assets/|favicon\\.ico).*)", "destination": "/index.html" }
   ]
 }

@@ -2,6 +2,20 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'node:path';
 
+/**
+ * Same-origin proxy สำหรับราคาทอง — goldtraders.or.th ไม่เปิด CORS
+ * และ proxy ฟรีภายนอก (chnwt.dev, corsproxy.io, allorigins) ทยอยปิด/พังหมด
+ * จึง proxy ผ่าน origin ตัวเอง: dev/preview ใช้ Vite proxy นี้,
+ * production ใช้ rewrite ใน vercel.json (path เดียวกัน: /api/gold-price)
+ */
+const goldPriceProxy = {
+  '/api/gold-price': {
+    target: 'https://www.goldtraders.or.th',
+    changeOrigin: true,
+    rewrite: () => '/api/GoldPrices/Latest',
+  },
+};
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
@@ -9,6 +23,12 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
+  },
+  server: {
+    proxy: goldPriceProxy,
+  },
+  preview: {
+    proxy: goldPriceProxy,
   },
   build: {
     rollupOptions: {

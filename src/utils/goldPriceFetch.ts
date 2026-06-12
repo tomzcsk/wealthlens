@@ -1,13 +1,14 @@
 /**
  * Thai gold spot price fetcher.
  *
- * มิ.ย. 2026 สมาคมค้าทองคำ (goldtraders.or.th) redesign เว็บ — เว็บเก่าที่
- * proxy ชุมชน api.chnwt.dev เคย scrape ถูกปิด ทำให้ proxy ตอบ success
- * แต่ราคาว่างตลอด เว็บใหม่มี JSON API ตรง (/api/GoldPrices/Latest)
- * แต่ไม่เปิด CORS จึงต้องเรียกผ่าน corsproxy.io (browser-only free tier;
- * ส่งแค่ URL ราคาทองสาธารณะ ไม่มีข้อมูลส่วนตัวออกไป)
+ * goldtraders.or.th มี JSON API ตรง (/api/GoldPrices/Latest) แต่ไม่เปิด CORS
+ * — proxy ฟรีภายนอกที่เคยใช้ทยอยพังหมด (chnwt.dev scrape เว็บเก่าที่ถูกปิด,
+ * corsproxy.io ตัด free tier เป็น 403, allorigins ล่มบ่อย) จึงเลิกพึ่ง
+ * third-party แล้วเรียกผ่าน same-origin path `/api/gold-price` แทน:
+ * dev/preview → Vite proxy (vite.config.ts), production → Vercel rewrite
+ * (vercel.json) ทั้งคู่ forward ไป goldtraders โดยไม่มีข้อมูลส่วนตัวติดไป
  *
- * ลำดับ source: goldtraders ผ่าน corsproxy.io → chnwt.dev (เผื่อกลับมาใช้ได้)
+ * ลำดับ source: same-origin proxy → chnwt.dev (เผื่อ scraper ชุมชนกลับมา)
  *
  * Returns the gold-bar BUY price for 96.5% gold — i.e. the price a shop
  * will pay if you sell your bar back today. This is the realistic
@@ -16,9 +17,7 @@
  * 99.99% has no Thai community API — that spot stays manual.
  */
 
-const GOLDTRADERS_API_URL =
-  'https://www.goldtraders.or.th/api/GoldPrices/Latest?readjson=false';
-const CORS_PROXY_PREFIX = 'https://corsproxy.io/?url=';
+const GOLDTRADERS_PROXY_PATH = '/api/gold-price';
 const LEGACY_API_URL = 'https://api.chnwt.dev/thai-gold-api/latest';
 const FETCH_TIMEOUT_MS = 8000;
 
@@ -78,8 +77,7 @@ const formatGoldTradersRound = (asTime: string | undefined, seq: number | undefi
 };
 
 const fetchFromGoldTraders = async (fetchedAt: string): Promise<FetchedGoldPrice> => {
-  const url = CORS_PROXY_PREFIX + encodeURIComponent(GOLDTRADERS_API_URL);
-  const json = (await fetchJsonWithTimeout(url)) as GoldTradersResponse;
+  const json = (await fetchJsonWithTimeout(GOLDTRADERS_PROXY_PATH)) as GoldTradersResponse;
 
   const price965 = json.bL_BuyPrice;
   if (typeof price965 !== 'number') {
