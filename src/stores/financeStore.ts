@@ -1385,8 +1385,23 @@ export const useFinanceStore = create<FinanceState>()(
           // written before the tax-allowances feature must not wipe them.
           const taxAllowances =
             data.taxAllowances ?? state.data.taxAllowances;
+          // Same preserve-local policy for gold/loans: payloads predating
+          // these features must not wipe locally-stored ledger data.
+          const goldHoldings = data.goldHoldings ?? state.data.goldHoldings;
+          const goldPriceHistory =
+            data.goldPriceHistory ?? state.data.goldPriceHistory;
+          const loans = data.loans ?? state.data.loans;
           return {
-            data: { ...data, years, preferences, taxAllowances, lastUpdated: stamp },
+            data: {
+              ...data,
+              years,
+              preferences,
+              taxAllowances,
+              goldHoldings,
+              goldPriceHistory,
+              loans,
+              lastUpdated: stamp,
+            },
             lastUpdated: stamp,
           };
         }),

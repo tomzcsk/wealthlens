@@ -401,6 +401,22 @@ export const validateBackup = (parsed: unknown): ValidationResult => {
     ? (parsed.taxAllowances as WealthLensData['taxAllowances'])
     : undefined;
 
+  // Same passthrough policy for the other optional root sections. Arrays
+  // are accepted shape-as-is — their pages already default-handle missing
+  // or partial entries.
+  const goldHoldings = Array.isArray(parsed.goldHoldings)
+    ? (parsed.goldHoldings as WealthLensData['goldHoldings'])
+    : undefined;
+  const goldPriceHistory = Array.isArray(parsed.goldPriceHistory)
+    ? (parsed.goldPriceHistory as WealthLensData['goldPriceHistory'])
+    : undefined;
+  const loans = Array.isArray(parsed.loans)
+    ? (parsed.loans as WealthLensData['loans'])
+    : undefined;
+  const preferences = isObject(parsed.preferences)
+    ? (parsed.preferences as unknown as WealthLensData['preferences'])
+    : undefined;
+
   return {
     ok: true,
     data: {
@@ -408,6 +424,10 @@ export const validateBackup = (parsed: unknown): ValidationResult => {
       lastUpdated: parsed.lastUpdated as string,
       years,
       ...(taxAllowances ? { taxAllowances } : {}),
+      ...(goldHoldings ? { goldHoldings } : {}),
+      ...(goldPriceHistory ? { goldPriceHistory } : {}),
+      ...(loans ? { loans } : {}),
+      ...(preferences ? { preferences } : {}),
     },
   };
 };
@@ -480,7 +500,10 @@ export const importFromFile = async (file: File): Promise<ValidationResult> => {
  * Merge `imported` into `local` at the year granularity.
  * For each year present in `imported`, the local entry is REPLACED whole-cloth
  * (last-write-wins per year). Years only present in `local` are preserved.
- * Imported years and taxAllowances win on key collisions.
+ * taxAllowances merges per-year key (imported wins on collision).
+ * Whole-array sections (goldHoldings, goldPriceHistory, loans) and preferences
+ * are taken wholesale from the import when present; otherwise local is kept
+ * ("payload has field = use payload's, payload lacks field = keep local").
  *
  * `lastUpdated` is bumped to now so downstream sync layers see a fresh write.
  */
@@ -496,10 +519,18 @@ export const mergeData = (
     local.taxAllowances || imported.taxAllowances
       ? { ...local.taxAllowances, ...imported.taxAllowances }
       : undefined;
+  const goldHoldings = imported.goldHoldings ?? local.goldHoldings;
+  const goldPriceHistory = imported.goldPriceHistory ?? local.goldPriceHistory;
+  const loans = imported.loans ?? local.loans;
+  const preferences = imported.preferences ?? local.preferences;
   return {
     version: local.version,
     lastUpdated: new Date().toISOString(),
     years,
     ...(taxAllowances ? { taxAllowances } : {}),
+    ...(goldHoldings ? { goldHoldings } : {}),
+    ...(goldPriceHistory ? { goldPriceHistory } : {}),
+    ...(loans ? { loans } : {}),
+    ...(preferences ? { preferences } : {}),
   };
 };
