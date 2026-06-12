@@ -919,6 +919,29 @@
             "completedAt": "2026-05-19",
             "notes": "Commit: 40755d8"
           }
+        },
+        {
+          "id": "F27",
+          "name": "Itemized Tax Allowances (ลดหย่อนรายช่อง)",
+          "description": "หน้าคำนวณภาษีรองรับช่องลดหย่อนครบชุดกรมสรรพากร — auto-cap, persist แยกตามปี, Drive sync",
+          "status": "completed",
+          "priority": "P1",
+          "phase": "phase_4",
+          "acceptanceCriteria": [
+            "ช่องลดหย่อนครบ 5 กลุ่ม: ครอบครัว/ประกัน/ลงทุน/บ้าน/บริจาค+อื่นๆ",
+            "ช่องครอบครัวกรอกเป็นจำนวนคน ระบบคูณอัตราให้",
+            "Cap อัตโนมัติทุกช่อง + กลุ่มเกษียณรวม ≤500,000 + บริจาคคิดท้ายสุด ≤10%",
+            "Badge แสดงยอดที่ใช้ได้จริงเมื่อกรอกเกิน cap",
+            "Persist แยกตามปีใน WealthLensData.taxAllowances + Drive sync + JSON backup",
+            "Payload เก่าไม่มี field ยัง hydrate ได้ (optional, backward-compat)"
+          ],
+          "estimatedHours": 6,
+          "dependencies": [],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-06-12",
+            "notes": "Spec: docs/superpowers/specs/2026-06-12-tax-allowances-design.md | Verified: scripts/verify-tax-allowances.ts (19 assertions) + Playwright UI run"
+          }
         }
       ]
     }
@@ -1008,8 +1031,8 @@
     }
   },
   "progressSummary": {
-    "totalFeatures": 34,
-    "completed": 34,
+    "totalFeatures": 35,
+    "completed": 35,
     "inProgress": 0,
     "pending": 0,
     "overallProgress": "100%",
