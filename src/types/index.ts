@@ -49,6 +49,13 @@ export interface WealthLensData {
    * older Drive payloads without the field still hydrate.
    */
   loans?: Loan[];
+  /**
+   * Itemized PIT allowance inputs keyed by 4-digit tax year. These are
+   * annual filing inputs, not monthly ledger rows — so they live at the
+   * root (pattern: `loans`/`goldHoldings`), not under YearData. Optional
+   * so payloads written before this feature still hydrate.
+   */
+  taxAllowances?: { [year: string]: TaxAllowanceInputs };
 }
 
 /**
@@ -123,6 +130,50 @@ export interface GoldSpotPrice {
   autoFetchedAt?: string;
   /** API-reported round metadata, e.g. "เวลา 14:04 น. (ครั้งที่ 14)". */
   autoFetchedRound?: string;
+}
+
+/**
+ * Itemized PIT allowance inputs for one tax year — what Tom types on the
+ * 🧮 tax page. Count fields are จำนวนคน; everything else is THB actually
+ * paid. Legal caps are deliberately NOT applied at entry —
+ * `resolveTaxAllowances` applies them at calculation time, so the raw
+ * inputs stay faithful if the law's ceilings change.
+ */
+export interface TaxAllowanceInputs {
+  /** คู่สมรสไม่มีเงินได้ → 60,000. */
+  spouseNoIncome: boolean;
+  /** บุตร → 30,000/คน. */
+  childrenCount: number;
+  /** บุตรคนที่ 2 เป็นต้นไปที่เกิดตั้งแต่ พ.ศ. 2561 → 60,000/คน. */
+  childrenBorn2561Count: number;
+  /** บิดามารดาอายุ 60+ (เงินได้ ≤30,000/ปี) → 30,000/คน สูงสุด 4 คน. */
+  parentsCount: number;
+  /** ผู้พิการ/ทุพพลภาพในอุปการะ → 60,000/คน. */
+  disabledCount: number;
+  /** ค่าฝากครรภ์/คลอดบุตร — ยอดจ่ายจริง (cap 60,000). */
+  prenatalCare: number;
+  /** เบี้ยประกันชีวิต (คุ้มครอง ≥10 ปี) — cap 100,000 ร่วมกับสุขภาพ. */
+  lifeInsurance: number;
+  /** เบี้ยประกันสุขภาพตนเอง — cap 25,000 และรวมประกันชีวิต ≤100,000. */
+  healthInsurance: number;
+  /** เบี้ยประกันสุขภาพบิดามารดา — cap 15,000. */
+  parentHealthInsurance: number;
+  /** เบี้ยประกันชีวิตแบบบำนาญ — ≤15% เงินได้, ≤200,000, กลุ่มเกษียณ 500k. */
+  pensionInsurance: number;
+  /** RMF — ≤30% เงินได้, ≤500,000, กลุ่มเกษียณ 500k. */
+  rmf: number;
+  /** ThaiESG — ≤30% เงินได้, ≤300,000 (แยกจากกลุ่มเกษียณ). */
+  thaiEsg: number;
+  /** กอช — cap 30,000, กลุ่มเกษียณ 500k. */
+  nsf: number;
+  /** ดอกเบี้ยเงินกู้ที่อยู่อาศัย — cap 100,000. */
+  homeLoanInterest: number;
+  /** บริจาคการศึกษา/กีฬา/รพ.รัฐ — นับ ×2, cap 10% หลังหักลดหย่อนอื่น. */
+  donationEducation: number;
+  /** บริจาคทั่วไป — cap 10% ของยอดหลังหักบริจาคการศึกษาแล้ว. */
+  donationGeneral: number;
+  /** มาตรการรายปี เช่น Easy E-Receipt — ไม่ cap. */
+  other: number;
 }
 
 /**
