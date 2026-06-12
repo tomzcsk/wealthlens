@@ -26,10 +26,11 @@ export const DRIVE_FOLDER = 'WealthLens';
 export const DRIVE_FILENAME = 'wealthlens_data.json';
 export const SYNC_DEBOUNCE_MS = 2000;
 
-const FOLDER_MIME = 'application/vnd.google-apps.folder';
-const JSON_MIME = 'application/json';
-const DRIVE_API = 'https://www.googleapis.com/drive/v3';
-const DRIVE_UPLOAD = 'https://www.googleapis.com/upload/drive/v3';
+// Exported for driveBackup.ts — daily snapshots reuse the same plumbing.
+export const FOLDER_MIME = 'application/vnd.google-apps.folder';
+export const JSON_MIME = 'application/json';
+export const DRIVE_API = 'https://www.googleapis.com/drive/v3';
+export const DRIVE_UPLOAD = 'https://www.googleapis.com/upload/drive/v3';
 
 /** Re-export here for callers that want everything from one module. */
 export type { SyncStatus } from '@/stores/syncStore';
@@ -141,14 +142,14 @@ export const retryWithBackoff = async <T>(
 // Low-level fetch wrapper
 // ---------------------------------------------------------------------------
 
-interface DriveFetchOptions {
+export interface DriveFetchOptions {
   method?: string;
   accessToken: string;
   body?: BodyInit | null;
   headers?: Record<string, string>;
 }
 
-const driveFetch = async (
+export const driveFetch = async (
   url: string,
   { method = 'GET', accessToken, body = null, headers = {} }: DriveFetchOptions,
 ): Promise<Response> => {
@@ -180,7 +181,7 @@ interface DriveListResponse {
   files?: DriveFileMeta[];
 }
 
-const escapeQuery = (raw: string): string => raw.replace(/'/g, "\\'");
+export const escapeQuery = (raw: string): string => raw.replace(/'/g, "\\'");
 
 /** Find the WealthLens folder under My Drive root, or create it. */
 export const findOrCreateFolder = async (
@@ -232,7 +233,7 @@ export const findDataFile = async (
 // Multipart upload body
 // ---------------------------------------------------------------------------
 
-const buildMultipartBody = (
+export const buildMultipartBody = (
   metadata: Record<string, unknown>,
   data: WealthLensData,
   boundary: string,
