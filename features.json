@@ -942,6 +942,31 @@
             "completedAt": "2026-06-12",
             "notes": "Spec: docs/superpowers/specs/2026-06-12-tax-allowances-design.md | Verified: scripts/verify-tax-allowances.ts (19 assertions) + Playwright UI run"
           }
+        },
+        {
+          "id": "F28",
+          "name": "Daily Drive Backup Snapshots (backup รายวัน)",
+          "description": "snapshot ข้อมูลขึ้น WealthLens/backups/ วันละไฟล์อัตโนมัติ + retention 30 วัน + restore UI ใน Settings",
+          "status": "completed",
+          "priority": "P1",
+          "phase": "phase_4",
+          "acceptanceCriteria": [
+            "หลัง sync สำเร็จครั้งแรกของวัน → เขียน wealthlens_backup_YYYY-MM-DD.json (local date)",
+            "กันซ้ำข้ามแท็บ/เครื่องด้วย hasBackupForDate + cache วันที่ per-user",
+            "ลบไฟล์เก่ากว่า 30 วันอัตโนมัติ",
+            "snapshot ล้มเหลว = เงียบ ไม่กระทบ main sync / sync UI",
+            "Settings: list snapshot + ปุ่มกู้พร้อม inline confirm",
+            "restore เป็น read-before-write: ดาวน์โหลด+validate ก่อน แล้วค่อยเขียน undo snapshot (กู้ไฟล์วันนี้เองได้)",
+            "restore ผ่าน validateBackup + replaceAllData (เส้นทางเดียวกับ Import)",
+            "scope Drive ยังเป็น drive.file เท่านั้น"
+          ],
+          "estimatedHours": 8,
+          "dependencies": [],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-06-12",
+            "notes": "Spec: docs/superpowers/specs/2026-06-12-daily-drive-backup-design.md | Helpers verified: scripts/verify-drive-backup.ts | UI smoke: Playwright signed-out state | Drive integration: รอ manual test กับ account จริงของ Tom"
+          }
         }
       ]
     }
@@ -1031,8 +1056,8 @@
     }
   },
   "progressSummary": {
-    "totalFeatures": 35,
-    "completed": 35,
+    "totalFeatures": 36,
+    "completed": 36,
     "inProgress": 0,
     "pending": 0,
     "overallProgress": "100%",
