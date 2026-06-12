@@ -2,10 +2,12 @@
  * Settings — Daily Backup (Drive) section.
  *
  * Lists per-day snapshot files from Drive's WealthLens/backups/ folder and
- * lets Tom restore any of them in one click.  Restore flow:
- *   1. Save today's state as an undo snapshot (so Tom can roll back).
- *   2. Download the chosen file and run it through validateBackup (same path
- *      as manual Import) — reject on schema error without touching live data.
+ * lets Tom restore any of them in one click.  Restore flow (read-before-write
+ * — restoring TODAY's own file must read it before the undo snapshot
+ * overwrites it):
+ *   1. Download the chosen file and run it through validateBackup (same path
+ *      as manual Import) — reject on schema error without writing anything.
+ *   2. Save today's state as an undo snapshot (so Tom can roll back).
  *   3. replaceAllData → store + LocalStorage updated.
  *   4. Refresh the list so the newly-written today file shows updated size.
  *
@@ -59,18 +61,21 @@ export const DailyBackupSection = (): ReactNode => {
     if (!accessToken) return;
     setRestoringId(file.fileId);
     try {
-      // 1) Undo path: เก็บสภาพปัจจุบันเป็นไฟล์ของวันนี้ก่อนเสมอ
-      await writeBackupSnapshot(accessToken, useFinanceStore.getState().data);
-      // 2) ดาวน์โหลด + validate ผ่านเส้นทางเดียวกับ Import ไฟล์มือ
+      // 1) ดาวน์โหลด + ตรวจไฟล์เป้าหมายให้ผ่านก่อน แล้วค่อยเขียน undo snapshot
+      //    ทับไฟล์วันนี้ — ลำดับนี้สำคัญ: ถ้ากู้ไฟล์ของวันนี้เอง
+      //    ต้องอ่านมันมาก่อนถูกทับ (validate ผ่านเส้นทางเดียวกับ Import ไฟล์มือ)
       const raw = await downloadBackup(accessToken, file.fileId);
       const result = validateBackup(JSON.parse(raw) as unknown);
       if (!result.ok) {
+        // ยังไม่มีอะไรถูกเขียนเลย — ทั้ง Drive และข้อมูลปัจจุบันอยู่ครบ
         pushToast({
           tone: 'error',
           message: `ไฟล์ backup ${file.date} ไม่ผ่านการตรวจสอบ — ข้อมูลปัจจุบันไม่ถูกแตะ`,
         });
         return;
       }
+      // 2) Undo path: เก็บสภาพปัจจุบันเป็นไฟล์ของวันนี้ ก่อน replace
+      await writeBackupSnapshot(accessToken, useFinanceStore.getState().data);
       replaceAllData(result.data);
       pushToast({
         tone: 'success',
