@@ -967,6 +967,29 @@
             "completedAt": "2026-06-12",
             "notes": "Spec: docs/superpowers/specs/2026-06-12-daily-drive-backup-design.md | Helpers verified: scripts/verify-drive-backup.ts | UI smoke: Playwright signed-out state | Drive integration: รอ manual test กับ account จริงของ Tom"
           }
+        },
+        {
+          "id": "F29",
+          "name": "Savings Category Cards (card ออมตามหมวด)",
+          "description": "Overview แสดง card ออมทุกหมวดที่มีข้อมูลในปีที่เลือกอัตโนมัติ (gold/emergency/retirement/general)",
+          "status": "completed",
+          "priority": "P2",
+          "phase": "phase_4",
+          "acceptanceCriteria": [
+            "card โผล่อัตโนมัติเฉพาะหมวดที่มียอด > 0 ในปีที่เลือก",
+            "ไม่แสดงซ้ำ investment-dime / travel (มี card เป้าหมายเฉพาะแล้ว)",
+            "แสดงยอดสะสม YTD + จำนวนรายการ (ไม่มีเป้าหมาย/progress)",
+            "เรียงตามยอดมาก → น้อย",
+            "เปลี่ยนปีแล้ว cards เปลี่ยนตาม",
+            "ไม่แตะ schema — read-only จาก years[*].savings"
+          ],
+          "estimatedHours": 3,
+          "dependencies": [],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-06-12",
+            "notes": "Spec: docs/superpowers/specs/2026-06-12-savings-category-cards-design.md | Verified: Playwright seeded-data run (gold ฿55,000/2 รายการ, general ฿10,000, year-switch hides cards)"
+          }
         }
       ]
     }
@@ -1056,8 +1079,8 @@
     }
   },
   "progressSummary": {
-    "totalFeatures": 36,
-    "completed": 36,
+    "totalFeatures": 37,
+    "completed": 37,
     "inProgress": 0,
     "pending": 0,
     "overallProgress": "100%",
