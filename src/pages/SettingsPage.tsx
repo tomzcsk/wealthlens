@@ -21,6 +21,7 @@ import { useGoogleAuth } from '@/auth/useGoogleAuth';
 import { useSyncCoordinator } from '@/auth/syncCoordinator';
 import GoogleSignInButton from '@/components/auth/GoogleSignInButton';
 import BackupSection from '@/components/settings/BackupSection';
+import DailyBackupSection from '@/components/settings/DailyBackupSection';
 import DangerZone from '@/components/settings/DangerZone';
 import IncomeDefaultsSection from '@/components/settings/IncomeDefaultsSection';
 import ReportsSection from '@/components/settings/ReportsSection';
@@ -180,6 +181,8 @@ export const SettingsPage = (): ReactNode => {
       <IncomeDefaultsSection />
 
       <BackupSection />
+
+      <DailyBackupSection />
 
       <ReportsSection />
 
