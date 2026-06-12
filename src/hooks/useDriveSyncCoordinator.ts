@@ -31,11 +31,16 @@
  *      Toggles syncStore status; when coming back online with a queued
  *      pending sync, retries it.
  *
- *   D. Token expiry handling
+ *   D. Daily backup snapshot (best-effort)
+ *      When status transitions to 'synced' for the first time today, fires
+ *      `maybeWriteDailySnapshot` — writes to WealthLens/backups/ and prunes
+ *      old snapshots. Errors are swallowed; never affects sync UI.
+ *
+ *   E. Token expiry handling
  *      When driveSync emits TOKEN_EXPIRED_EVENT (401 from Drive), sign the
  *      user out and toast them.
  *
- *   E. Sign-out cleanup
+ *   F. Sign-out cleanup
  *      Cancel any pending debounced sync; reset syncStore to idle. The
  *      LocalStorage payload is intentionally preserved.
  */
@@ -55,6 +60,7 @@ import {
   syncToDrive,
   TOKEN_EXPIRED_EVENT,
 } from '@/utils/driveSync';
+import { maybeWriteDailySnapshot } from '@/utils/driveBackup';
 import type { WealthLensData } from '@/types';
 
 /**
@@ -112,7 +118,7 @@ const pushNow = async (
 };
 
 export const useDriveSyncCoordinator = (): UseDriveSyncCoordinatorResult => {
-  const { isSignedIn, accessToken, isReady, signOut } = useGoogleAuth();
+  const { isSignedIn, accessToken, isReady, signOut, user } = useGoogleAuth();
 
   // Track "have we finished first-load reconciliation?" so the auto-sync
   // effect can skip the FIRST emission after we just replaced local data
@@ -241,7 +247,27 @@ export const useDriveSyncCoordinator = (): UseDriveSyncCoordinatorResult => {
   }, [isSignedIn, accessToken]);
 
   // -------------------------------------------------------------------------
-  // Effect D — token expiry handling
+  // Effect D — daily backup snapshot (best-effort, fire-and-forget)
+  // -------------------------------------------------------------------------
+  // เมื่อ main sync สำเร็จ (status เปลี่ยนเป็น 'synced') ครั้งแรกของวัน →
+  // ถ่าย snapshot ขึ้น WealthLens/backups/ + prune ของเก่า ความล้มเหลว
+  // ของ snapshot ห้ามกระทบ sync UI — maybeWriteDailySnapshot กลืน error เอง
+  useEffect(() => {
+    if (!isSignedIn || !accessToken || !user) return undefined;
+
+    const unsubscribe = useSyncStore.subscribe((state, prev) => {
+      if (state.status !== 'synced' || prev.status === 'synced') return;
+      void maybeWriteDailySnapshot(
+        useFinanceStore.getState().data,
+        accessToken,
+        user.email,
+      );
+    });
+    return unsubscribe;
+  }, [isSignedIn, accessToken, user]);
+
+  // -------------------------------------------------------------------------
+  // Effect E — token expiry handling
   // -------------------------------------------------------------------------
   useEffect(() => {
     const handleExpired = (): void => {
@@ -258,7 +284,7 @@ export const useDriveSyncCoordinator = (): UseDriveSyncCoordinatorResult => {
   }, [signOut]);
 
   // -------------------------------------------------------------------------
-  // Effect E — sign-out cleanup
+  // Effect F — sign-out cleanup
   // -------------------------------------------------------------------------
   useEffect(() => {
     if (isSignedIn) return;
