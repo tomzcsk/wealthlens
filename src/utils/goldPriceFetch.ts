@@ -1,8 +1,13 @@
 /**
  * Thai gold spot price fetcher.
  *
- * Source: api.chnwt.dev/thai-gold-api — a community proxy of สมาคมค้าทองคำ
- * (Gold Traders Association of Thailand) data. Wildcard CORS, no auth.
+ * มิ.ย. 2026 สมาคมค้าทองคำ (goldtraders.or.th) redesign เว็บ — เว็บเก่าที่
+ * proxy ชุมชน api.chnwt.dev เคย scrape ถูกปิด ทำให้ proxy ตอบ success
+ * แต่ราคาว่างตลอด เว็บใหม่มี JSON API ตรง (/api/GoldPrices/Latest)
+ * แต่ไม่เปิด CORS จึงต้องเรียกผ่าน corsproxy.io (browser-only free tier;
+ * ส่งแค่ URL ราคาทองสาธารณะ ไม่มีข้อมูลส่วนตัวออกไป)
+ *
+ * ลำดับ source: goldtraders ผ่าน corsproxy.io → chnwt.dev (เผื่อกลับมาใช้ได้)
  *
  * Returns the gold-bar BUY price for 96.5% gold — i.e. the price a shop
  * will pay if you sell your bar back today. This is the realistic
@@ -11,7 +16,10 @@
  * 99.99% has no Thai community API — that spot stays manual.
  */
 
-const GOLD_API_URL = 'https://api.chnwt.dev/thai-gold-api/latest';
+const GOLDTRADERS_API_URL =
+  'https://www.goldtraders.or.th/api/GoldPrices/Latest?readjson=false';
+const CORS_PROXY_PREFIX = 'https://corsproxy.io/?url=';
+const LEGACY_API_URL = 'https://api.chnwt.dev/thai-gold-api/latest';
 const FETCH_TIMEOUT_MS = 8000;
 
 export interface FetchedGoldPrice {
@@ -23,7 +31,16 @@ export interface FetchedGoldPrice {
   fetchedAt: string;
 }
 
-interface ApiResponse {
+interface GoldTradersResponse {
+  /** ราคารับซื้อทองคำแท่ง, e.g. 64950.0 */
+  bL_BuyPrice?: number;
+  /** Thai local time, e.g. "2026-06-12T09:53:00" (no timezone suffix). */
+  asTime?: string;
+  /** รอบประกาศราคาของวัน, e.g. 6 */
+  seq?: number;
+}
+
+interface LegacyApiResponse {
   status?: string;
   response?: {
     update_date?: string;
@@ -35,57 +52,101 @@ interface ApiResponse {
   };
 }
 
+const fetchJsonWithTimeout = async (url: string): Promise<unknown> => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      throw new Error(`API returned ${res.status}`);
+    }
+    return (await res.json()) as unknown;
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
+const formatGoldTradersRound = (asTime: string | undefined, seq: number | undefined): string => {
+  const timePart = asTime?.match(/T(\d{2}):(\d{2})/);
+  const time = timePart ? `เวลา ${timePart[1]}:${timePart[2]} น.` : '';
+  const round = typeof seq === 'number' ? `(ครั้งที่ ${seq})` : '';
+  return [time, round].filter(Boolean).join(' ');
+};
+
+const fetchFromGoldTraders = async (fetchedAt: string): Promise<FetchedGoldPrice> => {
+  const url = CORS_PROXY_PREFIX + encodeURIComponent(GOLDTRADERS_API_URL);
+  const json = (await fetchJsonWithTimeout(url)) as GoldTradersResponse;
+
+  const price965 = json.bL_BuyPrice;
+  if (typeof price965 !== 'number') {
+    throw new Error('รูปแบบข้อมูลจาก goldtraders เปลี่ยนไป (ไม่พบ bL_BuyPrice)');
+  }
+  if (!Number.isFinite(price965) || price965 <= 0) {
+    throw new Error(`ราคาที่ได้ไม่ถูกต้อง: "${price965}"`);
+  }
+
+  return {
+    price965,
+    round: formatGoldTradersRound(json.asTime, json.seq),
+    fetchedAt,
+  };
+};
+
 const parseThaiNumber = (raw: string | undefined): number => {
   if (!raw) return Number.NaN;
   return Number.parseFloat(raw.replace(/,/g, ''));
 };
 
+const fetchFromLegacyProxy = async (fetchedAt: string): Promise<FetchedGoldPrice> => {
+  const json = (await fetchJsonWithTimeout(LEGACY_API_URL)) as LegacyApiResponse;
+
+  if (json.status !== 'success') {
+    throw new Error(`แหล่งข้อมูลตอบกลับผิดปกติ (status: ${json.status ?? 'ไม่ทราบ'})`);
+  }
+
+  // proxy ส่ง status:"success" แต่ราคา "ว่าง" เมื่อ scraper ต้นทางขัดข้อง
+  // — แยกกรณี "ค่าว่าง" ออกจาก "ไม่พบ field" เพื่อบอกผู้ใช้ได้ตรง
+  const rawBuy = json.response?.price?.gold_bar?.buy?.trim();
+  if (rawBuy === undefined) {
+    throw new Error('รูปแบบข้อมูลจากแหล่งเปลี่ยนไป (ไม่พบ gold_bar.buy)');
+  }
+  if (rawBuy === '') {
+    throw new Error('แหล่งข้อมูลสำรองส่งค่าว่าง');
+  }
+
+  const price965 = parseThaiNumber(rawBuy);
+  if (!Number.isFinite(price965) || price965 <= 0) {
+    throw new Error(`ราคาที่ได้ไม่ถูกต้อง: "${rawBuy}"`);
+  }
+
+  return {
+    price965,
+    round: json.response?.update_time ?? '',
+    fetchedAt,
+  };
+};
+
 export const fetchGoldSpotPrice = async (): Promise<FetchedGoldPrice> => {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  const fetchedAt = new Date().toISOString();
+
+  let primaryError: unknown;
+  try {
+    return await fetchFromGoldTraders(fetchedAt);
+  } catch (err) {
+    primaryError = err;
+  }
 
   try {
-    const res = await fetch(GOLD_API_URL, {
-      method: 'GET',
-      headers: { Accept: 'application/json' },
-      signal: controller.signal,
-    });
-
-    if (!res.ok) {
-      throw new Error(`API returned ${res.status}`);
-    }
-
-    const json = (await res.json()) as ApiResponse;
-
-    if (json.status !== 'success') {
-      throw new Error(`แหล่งข้อมูลตอบกลับผิดปกติ (status: ${json.status ?? 'ไม่ทราบ'})`);
-    }
-
-    // จุดที่พังบ่อยที่สุด: proxy ส่ง status:"success" แต่ค่าราคา "ว่าง"
-    // เมื่อ scraper ต้นทาง (goldtraders.or.th) ขัดข้อง หรือสมาคมฯ ยังไม่ประกาศ
-    // รอบราคา — แยกกรณี "ค่าว่าง" ออกจาก "ไม่พบ field" เพื่อบอกผู้ใช้ได้ตรง
-    // และแนะนำทางออก (ลองใหม่ภายหลัง / กรอกราคาเอง) แทนข้อความ technical กำกวม
-    const rawBuy = json.response?.price?.gold_bar?.buy?.trim();
-    if (rawBuy === undefined) {
-      throw new Error('รูปแบบข้อมูลจากแหล่งเปลี่ยนไป (ไม่พบ gold_bar.buy)');
-    }
-    if (rawBuy === '') {
-      throw new Error(
-        'สมาคมฯ ยังไม่อัปเดตราคา (แหล่งข้อมูลส่งค่าว่าง) — ลองใหม่ภายหลัง หรือกรอกราคาเอง',
-      );
-    }
-
-    const price965 = parseThaiNumber(rawBuy);
-    if (!Number.isFinite(price965) || price965 <= 0) {
-      throw new Error(`ราคาที่ได้ไม่ถูกต้อง: "${rawBuy}"`);
-    }
-
-    return {
-      price965,
-      round: json.response?.update_time ?? '',
-      fetchedAt: new Date().toISOString(),
-    };
-  } finally {
-    clearTimeout(timer);
+    return await fetchFromLegacyProxy(fetchedAt);
+  } catch {
+    const reason =
+      primaryError instanceof Error ? primaryError.message : 'unknown error';
+    throw new Error(
+      `ดึงราคาจากทุกแหล่งไม่สำเร็จ (${reason}) — ลองใหม่ภายหลัง หรือกรอกราคาเอง`,
+    );
   }
 };
