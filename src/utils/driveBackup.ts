@@ -66,6 +66,8 @@ export const selectExpiredBackups = (
   retentionDays: number = BACKUP_RETENTION_DAYS,
 ): BackupFileInfo[] => {
   const cutoff = new Date(`${today}T00:00:00`);
+  // วันที่เพี้ยนห้ามกลายเป็น "ทุกไฟล์หมดอายุ" — เลือกไม่ลบอะไรเลยแทน
+  if (Number.isNaN(cutoff.getTime())) return [];
   cutoff.setDate(cutoff.getDate() - (retentionDays - 1));
   const cutoffStr = localDateString(cutoff);
   return files.filter((f) => f.date < cutoffStr);
@@ -160,16 +162,16 @@ export const hasBackupForDate = async (
   return (await findBackupFileForDate(accessToken, folderId, date)) !== null;
 };
 
-/** เขียน (สร้างหรือทับ) ไฟล์ snapshot ของ "วันนี้" ด้วย payload ที่ให้มา. */
+/** เขียน (สร้างหรือทับ) ไฟล์ snapshot ของวันที่ระบุ (default วันนี้) ด้วย payload ที่ให้มา. */
 export const writeBackupSnapshot = async (
   accessToken: string,
   data: WealthLensData,
+  date: string = localDateString(),
 ): Promise<void> => {
-  const today = localDateString();
   const folderId = await findOrCreateBackupFolder(accessToken);
-  const existingId = await findBackupFileForDate(accessToken, folderId, today);
+  const existingId = await findBackupFileForDate(accessToken, folderId, date);
   const boundary = `wealthlens_backup_${Date.now().toString(36)}`;
-  const name = backupFilenameForDate(today);
+  const name = backupFilenameForDate(date);
 
   if (existingId) {
     // PATCH — ห้ามส่ง parents ตอน update (Drive ตอบ 400) เหมือน syncToDrive
@@ -253,7 +255,7 @@ export const maybeWriteDailySnapshot = async (
   try {
     if (localStorage.getItem(cacheKey) === today) return;
     if (!(await hasBackupForDate(accessToken, today))) {
-      await writeBackupSnapshot(accessToken, data);
+      await writeBackupSnapshot(accessToken, data, today);
       const pruned = await pruneOldBackups(accessToken);
       if (pruned > 0) {
         console.info(`[driveBackup] pruned ${pruned} expired snapshot(s)`);
