@@ -165,7 +165,7 @@ export interface TaxAllowanceInputs {
   /** ThaiESG — ≤30% เงินได้, ≤300,000 (แยกจากกลุ่มเกษียณ). */
   thaiEsg: number;
   /** กอช — cap 30,000, กลุ่มเกษียณ 500k. */
-  nsf: number;
+  nationalSavingsFund: number;
   /** ดอกเบี้ยเงินกู้ที่อยู่อาศัย — cap 100,000. */
   homeLoanInterest: number;
   /** บริจาคการศึกษา/กีฬา/รพ.รัฐ — นับ ×2, cap 10% หลังหักลดหย่อนอื่น. */
