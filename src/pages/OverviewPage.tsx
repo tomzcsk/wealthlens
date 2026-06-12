@@ -7,10 +7,18 @@ import { ExpensePieChart } from '@/components/dashboard/ExpensePieChart';
 import { LoanSummaryCard } from '@/components/dashboard/LoanSummaryCard';
 import { MonthlySummaryTable } from '@/components/dashboard/MonthlySummaryTable';
 import { ReimbursementCard } from '@/components/dashboard/ReimbursementCard';
+import { SavingsCategoryCard } from '@/components/dashboard/SavingsCategoryCard';
 import { SavingsGoalCard } from '@/components/dashboard/SavingsGoalCard';
 import { TravelSavingsCard } from '@/components/dashboard/TravelSavingsCard';
+import {
+  useSavingsCategoryTotals,
+  useSelectedYear,
+} from '@/hooks/useFinanceData';
 
 export const OverviewPage = (): ReactNode => {
+  const selectedYear = useSelectedYear();
+  const savingsCategoryTotals = useSavingsCategoryTotals(selectedYear);
+
   return (
     <div className="space-y-6">
       <KpiCardGrid />
@@ -19,6 +27,15 @@ export const OverviewPage = (): ReactNode => {
         <SavingsGoalCard />
         <DimeInvestmentCard />
         <TravelSavingsCard />
+        {savingsCategoryTotals.map((t) => (
+          <SavingsCategoryCard
+            key={t.category}
+            category={t.category}
+            total={t.total}
+            itemCount={t.itemCount}
+            year={selectedYear}
+          />
+        ))}
       </div>
 
       <LoanSummaryCard />
