@@ -316,21 +316,19 @@ export const resolveTaxAllowances = (
   );
   const other = amt(inputs.other);
 
-  // --- บริจาค: ฐาน = เงินได้ − ค่าใช้จ่าย − ส่วนตัว − ปกส − PVD − ลดหย่อนอื่น ---
-  const ssAllowance = Math.min(amt(paidSocialSecurity), SOCIAL_SECURITY_CAP);
-  const expenseAllowance = Math.min(
-    gross * EXPENSE_DEDUCTION_RATE,
-    EXPENSE_DEDUCTION_CAP,
-  );
+  // --- บริจาค: ฐาน = เงินได้สุทธิก่อนหักบริจาค (taxable income) ---
+  // คำนวณผ่าน calculateThaiPIT ตัวเดียวกับที่ UI เรียก เพื่อไม่ implement
+  // สูตรค่าใช้จ่าย/ส่วนตัว/ปกส/PVD ซ้ำสองที่
   const nonDonationTotal =
     spouse + children + childrenBorn2561 + parents + disabled + prenatal +
     life + health + parentHealth + pension + rmf + savingsFund + thaiEsg +
     homeLoan + other;
-  const donationBase = Math.max(
-    0,
-    gross - expenseAllowance - PERSONAL_ALLOWANCE - ssAllowance -
-      pfAllowance - nonDonationTotal,
-  );
+  const donationBase = calculateThaiPIT({
+    income: gross,
+    socialSecurity: amt(paidSocialSecurity),
+    providentFund: amt(paidProvidentFund),
+    extraAllowances: nonDonationTotal,
+  }).taxableIncome;
   const donationEdu = Math.min(
     amt(inputs.donationEducation) * 2,
     donationBase * DONATION_RATE_CAP,

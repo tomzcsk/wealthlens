@@ -79,6 +79,74 @@ expectEq(
   471_200,
 );
 
+// ประกันสุขภาพโดนบีบโดยโควต้ารวม: ชีวิต 90,000 + สุขภาพ 25,000
+// → สุขภาพเหลือ min(25,000, 25,000, 100,000−90,000) = 10,000
+const squeezed = resolveTaxAllowances(
+  { ...EMPTY_TAX_ALLOWANCES, lifeInsurance: 90_000, healthInsurance: 25_000 },
+  1_000_000,
+  0,
+  0,
+);
+expectEq(
+  'health squeezed by combined 100k cap',
+  squeezed.lines.find((l) => l.key === 'healthInsurance')?.applied ?? NaN,
+  10_000,
+);
+
+// กลุ่มเกษียณ cascade เกิน RMF ไปตัดบำนาญ:
+// gross 2M | PVD 300,000 (= 15% cap พอดี) | บำนาญ 200,000 | RMF 480,000 | กอช 30,000
+// group = 1,010,000, overflow 510,000 → RMF 480,000 → 0,
+// บำนาญตัดอีก 30,000 → 170,000, กอช ไม่โดน → 30,000
+const cascade = resolveTaxAllowances(
+  {
+    ...EMPTY_TAX_ALLOWANCES,
+    pensionInsurance: 200_000,
+    rmf: 480_000,
+    nationalSavingsFund: 30_000,
+  },
+  2_000_000,
+  9_000,
+  300_000,
+);
+const cascadeGet = (key: string): number =>
+  cascade.lines.find((l) => l.key === key)?.applied ?? NaN;
+expectEq('cascade: rmf cut to 0', cascadeGet('rmf'), 0);
+expectEq('cascade: pension cut to 170k', cascadeGet('pensionInsurance'), 170_000);
+expectEq('cascade: กอช untouched', cascadeGet('nationalSavingsFund'), 30_000);
+
+// พ่อแม่เกิน 4 คน → ตัดเหลือ 4 × 30,000 = 120,000 และ flag capped
+const manyParents = resolveTaxAllowances(
+  { ...EMPTY_TAX_ALLOWANCES, parentsCount: 5 },
+  1_000_000,
+  0,
+  0,
+);
+const parentsLine = manyParents.lines.find((l) => l.key === 'parents');
+expectEq('parents capped at 4 persons', parentsLine?.applied ?? NaN, 120_000);
+if (parentsLine?.capped !== true) {
+  throw new Error('parents line should be flagged capped');
+}
+console.log('✅ parents line capped flag = true');
+
+// ลดหย่อนท่วมเงินได้: gross 200,000 − ค่าใช้จ่าย 100k − ส่วนตัว 60k −
+// ชีวิต 100k − ดอกเบี้ยบ้าน 100k → donationBase = 0 → บริจาคทั่วไปหักไม่ได้
+const overAllowed = resolveTaxAllowances(
+  {
+    ...EMPTY_TAX_ALLOWANCES,
+    lifeInsurance: 100_000,
+    homeLoanInterest: 100_000,
+    donationGeneral: 50_000,
+  },
+  200_000,
+  0,
+  0,
+);
+expectEq(
+  'donationGeneral = 0 when allowances exceed income',
+  overAllowed.lines.find((l) => l.key === 'donationGeneral')?.applied ?? NaN,
+  0,
+);
+
 // ค่าว่าง/ติดลบ → 0 ทั้งหมด
 const empty = resolveTaxAllowances(
   { ...EMPTY_TAX_ALLOWANCES, rmf: -5, childrenCount: -1 },
