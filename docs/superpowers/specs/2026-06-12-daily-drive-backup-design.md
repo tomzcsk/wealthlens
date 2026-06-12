@@ -77,13 +77,15 @@ Cache key แยกตาม account (แอป multi-user ตาม F18 — ใ
 - list โหลดตอนผู้ใช้กดขยาย section (lazy — ไม่ query ทุกครั้งที่เปิด Settings):
   วันที่ + ขนาดไฟล์ + ปุ่ม "กู้จากวันนี้" ต่อแถว
 - กดกู้ → confirm dialog: "ข้อมูลปัจจุบันจะถูกแทนที่ด้วยข้อมูลของวันที่ X"
-- ยืนยันแล้ว flow คือ:
-  1. **เขียน snapshot สภาพปัจจุบันทับไฟล์ของวันนี้ก่อน** (undo path —
-     เปลี่ยนใจกู้ไฟล์วันนี้กลับได้)
-  2. `downloadBackup` → `JSON.parse` → `validateBackup` (เส้นทางเดียวกับ
+- ยืนยันแล้ว flow คือ (**read-before-write** — แก้จาก draft แรกหลัง review
+  พบว่าเขียน undo ก่อนดาวน์โหลดจะทำลายไฟล์เป้าหมายในเคสกู้ไฟล์ของวันนี้เอง
+  ซึ่งเป็นเคสที่ใช้บ่อยสุด: ข้อมูลพังบ่าย → ถอยกลับ snapshot เช้า):
+  1. `downloadBackup` → `JSON.parse` → `validateBackup` (เส้นทางเดียวกับ
      Import ที่แก้แล้ว — years/loans/gold/preferences/taxAllowances ครบ)
-  3. validation ผ่าน → `replaceAllData` → toast สำเร็จ; ไม่ผ่าน → toast
-     error พร้อมเหตุผล ข้อมูลปัจจุบันไม่ถูกแตะ
+     ไม่ผ่าน → toast error, **ยังไม่มีอะไรถูกเขียนเลย**
+  2. ผ่านแล้วจึง **เขียน snapshot สภาพปัจจุบันทับไฟล์ของวันนี้** (undo path —
+     เปลี่ยนใจกู้ไฟล์วันนี้กลับได้ และไฟล์เป้าหมายถูกอ่านขึ้นมาแล้วก่อนถูกทับ)
+  3. `replaceAllData` → toast สำเร็จ
 - หลังกู้ `lastUpdated` ถูก bump → main sync push ข้อมูลที่กู้ขึ้น Drive เอง
   (สอดคล้อง conflict resolution เดิม)
 
@@ -93,7 +95,8 @@ Cache key แยกตาม account (แอป multi-user ตาม F18 — ใ
 |---|---|
 | หลายแท็บ/เครื่องวันเดียวกัน | `hasBackupForDate` เช็คก่อน; race สุดๆ ก็แค่ไฟล์เดียวถูกทับด้วยข้อมูลใหม่กว่า — ไม่เสียหาย |
 | snapshot fail (เน็ต/token) | เงียบ, log, ไม่แตะ main sync, รอบถัดไปลองใหม่ |
-| กู้แล้วเปลี่ยนใจ | ไฟล์วันนี้ = สภาพก่อนกู้ (เขียนไว้ใน step 1) → กู้กลับได้ |
+| กู้แล้วเปลี่ยนใจ | ไฟล์วันนี้ = สภาพก่อนกู้ (เขียนไว้ใน step 2) → กู้กลับได้ |
+| กู้ไฟล์ของวันนี้เอง | ปลอดภัย — ไฟล์ถูกดาวน์โหลดมาแล้วใน step 1 ก่อนถูกทับใน step 2 |
 | ไฟล์ใน backups โดนแก้มือจน parse ไม่ได้ | validateBackup ปฏิเสธ → toast error, ข้อมูลปัจจุบันปลอดภัย |
 | token หมดอายุระหว่าง restore | error ปกติของ Drive layer → toast ให้ sign in ใหม่ |
 | ขนาดพื้นที่ | 30 × ~100KB ≈ 3MB — ไม่เป็นประเด็น |
