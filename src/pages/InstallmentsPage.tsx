@@ -51,8 +51,6 @@ const PlanCard = ({ plan, onDelete }: PlanCardProps): ReactNode => {
     plan.totalAmount > 0
       ? Math.min(100, Math.round((plan.paidAmount / plan.totalAmount) * 100))
       : 0;
-  const lastInstance = plan.instances[plan.instances.length - 1];
-
   return (
     <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-4">
       {/* Header */}
@@ -71,14 +69,8 @@ const PlanCard = ({ plan, onDelete }: PlanCardProps): ReactNode => {
           </div>
           <p className="text-xs text-slate-500 mt-1">
             {meta.label} · เริ่ม{' '}
-            {formatThaiMonthYearShort(plan.startYear, plan.startMonth)}
-            {lastInstance && (
-              <>
-                {' '}
-                → จบ{' '}
-                {formatThaiMonthYearShort(lastInstance.year, lastInstance.month)}
-              </>
-            )}
+            {formatThaiMonthYearShort(plan.startYear, plan.startMonth)} → จบ{' '}
+            {formatThaiMonthYearShort(plan.endYear, plan.endMonth)}
           </p>
         </div>
         <button
@@ -145,25 +137,30 @@ const PlanCard = ({ plan, onDelete }: PlanCardProps): ReactNode => {
           onClick={() => setExpanded((v) => !v)}
           className="text-xs text-primary hover:text-primary-dark"
         >
-          {expanded ? '▾ ซ่อน timeline' : `▸ ดู timeline (${plan.instances.length} งวด)`}
+          {expanded ? '▾ ซ่อน timeline' : `▸ ดู timeline (${plan.schedule.length} งวด)`}
         </button>
         {expanded && (
           <ol className="mt-3 space-y-1 max-h-64 overflow-y-auto pr-1">
-            {plan.instances.map((inst) => {
+            {plan.schedule.map((inst) => {
               const today = todayYearMonth();
-              const isPast =
-                inst.year * 100 + inst.month <=
-                today.year * 100 + today.month;
+              const isFuture =
+                inst.year * 100 + inst.month > today.year * 100 + today.month;
+              const faded = isFuture || !inst.materialized;
               return (
                 <li
-                  key={inst.itemId}
+                  key={inst.sequence}
                   className={`flex items-center justify-between text-xs px-3 py-1.5 rounded ${
-                    isPast ? 'bg-slate-50 text-slate-500' : 'bg-white text-slate-700'
+                    faded ? 'bg-white text-slate-400' : 'bg-slate-50 text-slate-600'
                   }`}
                 >
                   <span>
                     งวด {inst.sequence}/{plan.totalMonths} ·{' '}
                     {formatThaiMonthYearShort(inst.year, inst.month)}
+                    {!inst.materialized && (
+                      <span className="ml-2 text-[10px] text-slate-400">
+                        คาดการณ์
+                      </span>
+                    )}
                   </span>
                   <span className="financial-number tabular-nums">
                     {formatTHB(inst.amount)}
@@ -183,6 +180,9 @@ export const InstallmentsPage = (): ReactNode => {
   const selectedYear = useFinanceStore((s) => s.selectedYear);
   const deleteInstallmentPlan = useFinanceStore(
     (s) => s.deleteInstallmentPlan,
+  );
+  const untagInstallmentPlan = useFinanceStore(
+    (s) => s.untagInstallmentPlan,
   );
   const pushToast = useToastStore((s) => s.push);
 
@@ -211,7 +211,7 @@ export const InstallmentsPage = (): ReactNode => {
     let totalRemaining = 0;
     for (const plan of activePlans) {
       totalRemaining += plan.remainingAmount;
-      for (const inst of plan.instances) {
+      for (const inst of plan.schedule) {
         if (inst.year * 100 + inst.month === todayKey) {
           thisMonthDue += inst.amount;
         }
@@ -231,6 +231,17 @@ export const InstallmentsPage = (): ReactNode => {
     setPendingDelete(null);
     pushToast({
       message: `ลบแผน '${plan.name}' (${plan.totalMonths} งวด) แล้ว`,
+      tone: 'info',
+    });
+  };
+
+  const confirmUntag = (): void => {
+    const plan = pendingDelete;
+    if (!plan) return;
+    untagInstallmentPlan(plan.planId);
+    setPendingDelete(null);
+    pushToast({
+      message: `ยกเลิกสถานะผ่อนของ '${plan.name}' แล้ว (เก็บรายการไว้)`,
       tone: 'info',
     });
   };
@@ -363,23 +374,32 @@ export const InstallmentsPage = (): ReactNode => {
               {formatTHB(pendingDelete.totalAmount)})?
             </p>
             <p className="text-xs text-slate-500">
-              ระบบจะลบทุกงวดของแผนนี้ออกจากทุกเดือน (รวม{' '}
-              {pendingDelete.instances.length} แถว) — undo ไม่ได้
+              เลือก "ยกเลิกสถานะผ่อน" ถ้าแค่อยากเอา badge ออกแต่เก็บรายการรายจ่ายไว้
+              (เช่น รถยนต์) — หรือ "ลบทุกงวด" ถ้าต้องการลบรายการออกจริง (เช่น
+              แผนซื้อของผ่อน) · ลบทุกงวด undo ไม่ได้
             </p>
-            <div className="flex items-center justify-end gap-2">
+            <div className="space-y-2">
               <button
                 type="button"
-                onClick={() => setPendingDelete(null)}
-                className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition"
+                onClick={confirmUntag}
+                className="w-full px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition"
               >
-                ยกเลิก
+                ยกเลิกสถานะผ่อน (เก็บรายการไว้)
               </button>
               <button
                 type="button"
                 onClick={confirmDelete}
-                className="px-4 py-2 text-sm font-medium text-white bg-expense rounded-md hover:bg-red-700 transition"
+                className="w-full px-4 py-2 text-sm font-medium text-white bg-expense rounded-md hover:bg-red-700 transition"
               >
-                ลบทั้งแผน
+                ลบทุกงวด ({pendingDelete.totalMonths} งวด รวม{' '}
+                {pendingDelete.instances.length} แถว)
+              </button>
+              <button
+                type="button"
+                onClick={() => setPendingDelete(null)}
+                className="w-full px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 transition"
+              >
+                ยกเลิก
               </button>
             </div>
           </div>
