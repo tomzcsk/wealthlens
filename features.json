@@ -990,6 +990,29 @@
             "completedAt": "2026-06-12",
             "notes": "Spec: docs/superpowers/specs/2026-06-12-savings-category-cards-design.md | Verified: Playwright seeded-data run (gold ฿55,000/2 รายการ, general ฿10,000, year-switch hides cards)"
           }
+        },
+        {
+          "id": "F30",
+          "name": "Car Installment Plan (รถยนต์เป็นผ่อน 60 งวด)",
+          "description": "ติดป้าย 'ผ่อน X/60' ให้รายการรถยนต์ + หน้าแผนผ่อนคิดจากตารางงวด (schedule) แทนนับแถว",
+          "status": "completed",
+          "priority": "P2",
+          "phase": "phase_4",
+          "acceptanceCriteria": [
+            "รายการ 'รถยนต์' แสดง badge 'ผ่อน X/60' แทน 'ประจำ' (sequence = (ปี−2023)×12+เดือน−3)",
+            "หน้าแผนผ่อนคิดจาก schedule (metadata) → รถแสดง 39/60, งวดถัดไป ก.ค. 2026, จบ มี.ค. 2028, อยู่หมวด active",
+            "ติดเฉพาะเดือนที่มีข้อมูลจริง ไม่สร้างแถวอนาคต ไม่แตะ 2023 (timeline แสดงงวดที่ไม่มีแถวเป็น 'คาดการณ์')",
+            "คงเหลือแบบงวด ฿498,162",
+            "ปุ่ม DangerZone 'ผูกรถยนต์เป็นผ่อน' (idempotent) + tag ใน seed",
+            "ปุ่มลบแผนมี 2 ทางเลือก: 'ยกเลิกสถานะผ่อน (เก็บรายการ)' กันลบประวัติรถจริง / 'ลบทุกงวด'"
+          ],
+          "estimatedHours": 6,
+          "dependencies": ["F24"],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-06-15",
+            "notes": "Spec: docs/superpowers/specs/2026-06-15-car-installment-plan-design.md | Plan: docs/superpowers/plans/2026-06-15-car-installment-plan.md | Verified: scripts/verify-car-installment.ts (31 assertions) + typecheck + build"
+          }
         }
       ]
     }
@@ -1079,8 +1102,8 @@
     }
   },
   "progressSummary": {
-    "totalFeatures": 37,
-    "completed": 37,
+    "totalFeatures": 38,
+    "completed": 38,
     "inProgress": 0,
     "pending": 0,
     "overallProgress": "100%",
