@@ -154,6 +154,7 @@ export const ExpenseList = ({
   );
   const deleteExpense = useFinanceStore((s) => s.deleteExpense);
   const deleteInstallmentPlan = useFinanceStore((s) => s.deleteInstallmentPlan);
+  const untagInstallmentPlan = useFinanceStore((s) => s.untagInstallmentPlan);
   const addExpense = useFinanceStore((s) => s.addExpense);
   const updateExpense = useFinanceStore((s) => s.updateExpense);
   const pushToast = useToastStore((s) => s.push);
@@ -274,6 +275,17 @@ export const ExpenseList = ({
     setPendingInstallmentDelete(null);
     pushToast({
       message: `ลบแผนผ่อน '${item.name}' (${item.installment.totalMonths} งวด) แล้ว`,
+      tone: 'info',
+    });
+  };
+
+  const confirmUntagPlan = (): void => {
+    const item = pendingInstallmentDelete;
+    if (!item?.installment) return;
+    untagInstallmentPlan(item.installment.planId);
+    setPendingInstallmentDelete(null);
+    pushToast({
+      message: `ยกเลิกสถานะผ่อนของ '${item.name}' แล้ว (เก็บทุกรายการไว้)`,
       tone: 'info',
     });
   };
@@ -512,6 +524,16 @@ export const ExpenseList = ({
                 <span className="block">ลบเฉพาะเดือนนี้</span>
                 <span className="block text-xs text-slate-500 mt-0.5">
                   คงเหลืออีก {pendingInstallmentDelete.installment.totalMonths - 1} งวดในเดือนอื่น
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={confirmUntagPlan}
+                className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 text-left transition"
+              >
+                <span className="block">ยกเลิกสถานะผ่อน (เก็บทุกรายการ)</span>
+                <span className="block text-xs text-slate-500 mt-0.5">
+                  เอา badge ผ่อนออก แต่เก็บรายการรายจ่ายทุกเดือนไว้
                 </span>
               </button>
               <button
