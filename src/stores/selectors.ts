@@ -496,6 +496,7 @@ export const selectInstallmentPlans = (
       sorted.map((i) => [i.sequence, { amount: i.amount, itemId: i.itemId }]),
     );
     const schedule = buildInstallmentSchedule(meta.meta, materializedBySeq);
+    if (schedule.length === 0) continue; // totalMonths === 0 is a data-integrity error; skip the plan
     const paid = schedule.filter((s) => ymKey(s.year, s.month) <= refYm);
     const paidAmount = paid.reduce((acc, s) => acc + s.amount, 0);
     const nextDue =
