@@ -30,7 +30,19 @@ expectEq('seq มี.ค. 2023 (ก่อนเริ่ม)', carSequenceFor(20
 expectEq('seq เม.ย. 2028 (เกินแผน)', carSequenceFor(2028, 4), null);
 
 // --- applyCarInstallmentTags (idempotent, ไม่แตะ amount) ---
-const tagged = applyCarInstallmentTags(seedData.years, 'test-car-plan');
+// seedData is now pre-tagged at build time (fixed planId) — strip any existing
+// car installment tags first so this test exercises applyCarInstallmentTags from
+// a clean base with the known 'test-car-plan' planId.
+const existingCar = Object.values(seedData.years)
+  .flatMap((yr) => yr.expenses)
+  .flatMap((row) => row.items)
+  .find(
+    (it) => it.name === 'รถยนต์' && it.category === 'vehicle' && it.installment,
+  );
+const cleanBase = existingCar?.installment
+  ? removeInstallmentTags(seedData.years, existingCar.installment.planId)
+  : seedData.years;
+const tagged = applyCarInstallmentTags(cleanBase, 'test-car-plan');
 const jan24Car = tagged['2024'].expenses
   .find((e) => e.month === 1)
   ?.items.find((it) => it.name === 'รถยนต์' && it.category === 'vehicle');

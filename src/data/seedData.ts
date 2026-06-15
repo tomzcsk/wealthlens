@@ -44,6 +44,7 @@
  */
 
 import type { Loan, WealthLensData, YearData } from '@/types';
+import { applyCarInstallmentTags } from '@/utils/installments';
 
 const year2023: YearData = {
   income: [
@@ -2932,15 +2933,20 @@ export const gslLoan: Loan = {
   ],
 };
 
+const SEED_CAR_PLAN_ID = 'seed-car-installment-plan';
+
 const seedData: WealthLensData = {
   version: '1.0.0',
   lastUpdated: '2026-05-06T00:00:00.000Z',
-  years: {
-    '2023': year2023,
-    '2024': year2024,
-    '2025': year2025,
-    '2026': year2026,
-  },
+  years: applyCarInstallmentTags(
+    {
+      '2023': year2023,
+      '2024': year2024,
+      '2025': year2025,
+      '2026': year2026,
+    },
+    SEED_CAR_PLAN_ID,
+  ),
   loans: [gslLoan],
 };
 
