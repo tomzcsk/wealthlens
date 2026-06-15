@@ -20,6 +20,12 @@ import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
 
 import seedData, { gslLoan as seedGslLoan } from '@/data/seedData';
+import {
+  advanceMonth,
+  applyCarInstallmentTags,
+  removeInstallmentTags,
+  round2,
+} from '@/utils/installments';
 import type {
   ExpenseCategory,
   ExpenseItem,
@@ -109,12 +115,6 @@ export interface InstallmentPlanInput {
 }
 
 /**
- * Round to 2 decimals. Uses `Math.round` rather than `toFixed` to keep the
- * result as a number (avoids string→number churn downstream).
- */
-const round2 = (n: number): number => Math.round(n * 100) / 100;
-
-/**
  * Inputs for adding a gold purchase. The store derives `id`, generates
  * the side-effect ref block, and writes both halves of the dual-entry.
  */
@@ -186,22 +186,6 @@ const ensurePreferences = (
   prefs: UserPreferences | undefined,
 ): UserPreferences => prefs ?? DEFAULT_PREFERENCES;
 
-/**
- * Walk (year, month) forward by `offset` months. month overflow rolls into
- * the next calendar year, e.g. (2026, 11) + 3 → (2027, 2).
- */
-const advanceMonth = (
-  year: number,
-  month: number,
-  offset: number,
-): { year: number; month: number } => {
-  const zeroBased = month - 1 + offset;
-  return {
-    year: year + Math.floor(zeroBased / 12),
-    month: (zeroBased % 12) + 1,
-  };
-};
-
 export interface FinanceState {
   /** Persisted finance data — everything Drive cares about. */
   data: WealthLensData;
@@ -244,6 +228,10 @@ export interface FinanceState {
   addInstallmentPlan: (input: InstallmentPlanInput) => string;
   /** Remove every ExpenseItem tagged with the given `planId`. */
   deleteInstallmentPlan: (planId: string) => void;
+  /** ติดป้าย installment ให้รายการ "รถยนต์" ที่มีอยู่ทุกเดือน — คืนจำนวนงวดที่ tag. */
+  tagCarInstallments: () => number;
+  /** ถอด installment metadata ออกจากทุกแถวของแผน (เก็บแถว expense ไว้). */
+  untagInstallmentPlan: (planId: string) => void;
 
   // --- Gold holdings ------------------------------------------------------
   /**
@@ -635,6 +623,42 @@ export const useFinanceStore = create<FinanceState>()(
           const stamp = nowIso();
           return {
             data: { ...state.data, lastUpdated: stamp, years: nextYears },
+            lastUpdated: stamp,
+          };
+        }),
+
+      tagCarInstallments: () => {
+        let count = 0;
+        set((state) => {
+          const years = applyCarInstallmentTags(state.data.years);
+          for (const yr of Object.values(years)) {
+            for (const row of yr.expenses) {
+              for (const item of row.items) {
+                if (
+                  item.name === 'รถยนต์' &&
+                  item.category === 'vehicle' &&
+                  item.installment
+                ) {
+                  count += 1;
+                }
+              }
+            }
+          }
+          const stamp = nowIso();
+          return {
+            data: { ...state.data, lastUpdated: stamp, years },
+            lastUpdated: stamp,
+          };
+        });
+        return count;
+      },
+
+      untagInstallmentPlan: (planId) =>
+        set((state) => {
+          const years = removeInstallmentTags(state.data.years, planId);
+          const stamp = nowIso();
+          return {
+            data: { ...state.data, lastUpdated: stamp, years },
             lastUpdated: stamp,
           };
         }),
