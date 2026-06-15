@@ -23,6 +23,8 @@ import seedData, { gslLoan as seedGslLoan } from '@/data/seedData';
 import {
   advanceMonth,
   applyCarInstallmentTags,
+  CAR_INSTALLMENT,
+  carSequenceFor,
   removeInstallmentTags,
   round2,
 } from '@/utils/installments';
@@ -457,15 +459,28 @@ export const useFinanceStore = create<FinanceState>()(
                 e.month === month ? { ...e, items: [...e.items, newItem] } : e,
               )
             : [...current.expenses, { month, items: [newItem] }];
+          const expensesAddedYears: WealthLensData['years'] = {
+            ...years,
+            [key]: { ...current, expenses: nextExpenses },
+          };
+          // Auto-continue the รถยนต์ installment plan — a freshly added car row
+          // in a month within the 60-งวด range is tagged automatically (joining
+          // the existing plan via its planId, computing งวด from the calendar),
+          // so the "ผ่อน X/60" badge appears without a manual re-tag. Idempotent
+          // and a no-op for every other expense.
+          const isCarInstallmentRow =
+            newItem.name === CAR_INSTALLMENT.name &&
+            newItem.category === CAR_INSTALLMENT.category &&
+            carSequenceFor(year, month) != null;
+          const finalYears = isCarInstallmentRow
+            ? applyCarInstallmentTags(expensesAddedYears)
+            : expensesAddedYears;
           const stamp = nowIso();
           return {
             data: {
               ...state.data,
               lastUpdated: stamp,
-              years: {
-                ...years,
-                [key]: { ...current, expenses: nextExpenses },
-              },
+              years: finalYears,
             },
             lastUpdated: stamp,
           };

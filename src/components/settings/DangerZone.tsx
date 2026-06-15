@@ -25,38 +25,13 @@ export const DangerZone = (): ReactNode => {
   const setKeptBalance = useGoalsStore((s) => s.setKeptBalance);
   const clearKeptBalance = useGoalsStore((s) => s.clearKeptBalance);
   const existingKept = useGoalsStore((s) => s.keptBalances);
-  const tagCarInstallments = useFinanceStore((s) => s.tagCarInstallments);
   const push = useToastStore((s) => s.push);
-  const [busy, setBusy] = useState<null | 'reset' | 'kept' | 'gold' | 'car'>(null);
+  const [busy, setBusy] = useState<null | 'reset' | 'kept' | 'gold'>(null);
   const [pasteText, setPasteText] = useState('');
   const preview = useMemo(
     () => (pasteText.trim() ? parseGoldPriceHistory(pasteText) : null),
     [pasteText],
   );
-
-  const handleTagCar = async (): Promise<void> => {
-    setBusy('car');
-    try {
-      const count = tagCarInstallments();
-      if (isSignedIn) {
-        await manualSync();
-        push({
-          message: `ผูกรถยนต์เป็นผ่อน ${count} งวด + sync Drive แล้ว`,
-          tone: 'success',
-        });
-      } else {
-        push({
-          message: `ผูกรถยนต์เป็นผ่อน ${count} งวดแล้ว`,
-          tone: 'success',
-        });
-      }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Unknown error';
-      push({ message: `Tag error: ${msg}`, tone: 'error' });
-    } finally {
-      setBusy(null);
-    }
-  };
 
   const handleImportGoldHistory = (mode: 'merge' | 'replace'): void => {
     if (!preview || preview.rowsAccepted === 0) return;
@@ -229,29 +204,6 @@ export const DangerZone = (): ReactNode => {
           className="px-4 py-2 rounded-lg bg-amber-600 text-white text-sm font-semibold hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {busy === 'kept' ? 'กำลังเติม...' : '💼 เติม Kept รายเดือน'}
-        </button>
-      </div>
-
-      <div className="space-y-2 pt-4 border-t border-red-100">
-        <h3 className="text-sm font-semibold text-slate-900">
-          ผูกรถยนต์เป็นแผนผ่อน
-        </h3>
-        <p className="text-sm text-slate-600 leading-relaxed">
-          ติดป้าย "ผ่อน X/60" ให้รายการ{' '}
-          <code className="bg-slate-100 px-1.5 py-0.5 rounded text-xs">
-            รถยนต์
-          </code>{' '}
-          ทุกเดือนที่มีข้อมูล (งวด 1 = เม.ย. 2023, 60 งวด) — ยอดเงินไม่เปลี่ยน
-          กดซ้ำได้
-          {isSignedIn && <> · sync Drive ให้ทันที</>}
-        </p>
-        <button
-          type="button"
-          onClick={handleTagCar}
-          disabled={busy !== null}
-          className="px-4 py-2 rounded-lg bg-slate-700 text-white text-sm font-semibold hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {busy === 'car' ? 'กำลังผูก...' : '🚗 ผูกรถยนต์เป็นผ่อน (60 งวด)'}
         </button>
       </div>
 

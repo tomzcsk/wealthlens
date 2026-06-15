@@ -28,6 +28,9 @@ expectEq('seq ม.ค. 2024', carSequenceFor(2024, 1), 10);
 expectEq('seq มี.ค. 2028 (งวดสุดท้าย)', carSequenceFor(2028, 3), 60);
 expectEq('seq มี.ค. 2023 (ก่อนเริ่ม)', carSequenceFor(2023, 3), null);
 expectEq('seq เม.ย. 2028 (เกินแผน)', carSequenceFor(2028, 4), null);
+// เดือนอนาคตที่กรอกใหม่ (เช่น ก.ค. 2026 = งวด 40) อยู่ในช่วง 1..60 → addExpense
+// จะ auto-tag ให้เองผ่าน applyCarInstallmentTags (badge ขึ้นโดยไม่ต้องกดปุ่ม)
+expectEq('seq ก.ค. 2026 (เดือนใหม่ auto-tag)', carSequenceFor(2026, 7), 40);
 
 // --- applyCarInstallmentTags (idempotent, ไม่แตะ amount) ---
 // seedData is now pre-tagged at build time (fixed planId) — strip any existing
