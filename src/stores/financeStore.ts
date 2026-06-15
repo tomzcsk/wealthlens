@@ -19,7 +19,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
 
-import seedData, { gslLoan as seedGslLoan } from '@/data/seedData';
+import { gslLoan as seedGslLoan } from '@/data/seedData';
 import {
   advanceMonth,
   applyCarInstallmentTags,
@@ -342,8 +342,6 @@ export interface FinanceState {
   // --- Bulk operations ----------------------------------------------------
   /** Wholesale replacement — used by import / restore-from-Drive. */
   replaceAllData: (data: WealthLensData) => void;
-  /** Reload the bundled seed dataset (handy in dev / for "Reset"). */
-  resetToSeed: () => void;
 }
 
 /**
@@ -1412,24 +1410,6 @@ export const useFinanceStore = create<FinanceState>()(
               goldHoldings,
               goldPriceHistory,
               loans,
-              lastUpdated: stamp,
-            },
-            lastUpdated: stamp,
-          };
-        }),
-
-      resetToSeed: () =>
-        set((state) => {
-          const stamp = nowIso();
-          // Preserve current preferences across a "Reset to seed" — the
-          // DangerZone flow re-hydrates Kept balances from
-          // SEED_KEPT_BALANCES explicitly after calling this, so wiping
-          // here would just be churn. yearlyGoals, travelSavingsGoal, and
-          // incomeDefaults are intentionally retained.
-          return {
-            data: {
-              ...seedData,
-              preferences: state.data.preferences,
               lastUpdated: stamp,
             },
             lastUpdated: stamp,
