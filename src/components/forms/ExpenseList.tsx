@@ -82,7 +82,7 @@ const ExpenseRow = ({
               ผ่อน {installment.sequence}/{installment.totalMonths}
             </span>
           )}
-          {item.isRecurring && (
+          {item.isRecurring && installment == null && (
             <span
               title="รายการประจำเดือน"
               className="ml-2 inline-block px-1.5 py-0.5 text-[10px] font-medium text-primary bg-primary-light rounded"
