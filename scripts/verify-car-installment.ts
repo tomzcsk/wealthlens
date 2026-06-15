@@ -1,6 +1,10 @@
 /**
  * Hand-computed verification for car installment plan (F30).
- * Repo has no test runner — run with: npx tsx scripts/verify-car-installment.ts
+ * Repo has no test runner — run with:
+ *   npx tsx --tsconfig tsconfig.app.json scripts/verify-car-installment.ts
+ * (the `--tsconfig` flag is required because this script transitively imports
+ *  selectors.ts, which uses the `@/*` path alias defined in tsconfig.app.json —
+ *  plain `npx tsx` cannot resolve it.)
  */
 import seedData from '../src/data/seedData';
 import {
