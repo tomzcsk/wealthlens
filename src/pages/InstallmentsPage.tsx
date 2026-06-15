@@ -157,7 +157,7 @@ const PlanCard = ({ plan, onDelete }: PlanCardProps): ReactNode => {
                     งวด {inst.sequence}/{plan.totalMonths} ·{' '}
                     {formatThaiMonthYearShort(inst.year, inst.month)}
                     {!inst.materialized && (
-                      <span className="ml-2 text-[10px] text-slate-400">
+                      <span className="ml-2 inline-block px-1 text-[10px] text-slate-500 bg-slate-100 rounded">
                         คาดการณ์
                       </span>
                     )}
