@@ -29,6 +29,10 @@ import type {
   WealthLensData,
   YearData,
 } from '@/types';
+import {
+  buildInstallmentSchedule,
+  type ScheduledInstallment,
+} from '@/utils/installments';
 import { GRAMS_PER_BAHT } from '@/types';
 import { CATEGORY_ORDER } from '@/types/expense-categories';
 import { SAVINGS_CATEGORY_ORDER } from '@/types/savings-categories';
@@ -409,14 +413,19 @@ export interface InstallmentPlanSummary {
   startMonth: number;
   /** All งวด found in the data, sorted by sequence. */
   instances: InstallmentInstance[];
+  /** ตารางงวดเต็ม (derive จาก metadata, overlay แถวจริง). */
+  schedule: ScheduledInstallment[];
   /** Sum of งวด amounts up to and including `referenceDate`. */
   paidAmount: number;
-  /** Count of งวด already due (sequence-wise). */
+  /** Count of งวด already due (schedule-wise). */
   paidMonths: number;
   /** Remaining balance = totalAmount - paidAmount. */
   remainingAmount: number;
-  /** Next งวด due (the first งวด with month > referenceDate), if any. */
-  nextDue: InstallmentInstance | null;
+  /** Next งวด due (first schedule entry with month > referenceDate), if any. */
+  nextDue: ScheduledInstallment | null;
+  /** งวดสุดท้ายของตาราง (จบเมื่อไหร่). */
+  endYear: number;
+  endMonth: number;
   /** True when every งวด of the plan is in the past. */
   isCompleted: boolean;
 }
@@ -483,10 +492,15 @@ export const selectInstallmentPlans = (
     const sorted = [...instances].sort((a, b) => a.sequence - b.sequence);
     const meta = planMeta.get(planId);
     if (!meta) continue;
-    const paid = sorted.filter((i) => ymKey(i.year, i.month) <= refYm);
-    const paidAmount = paid.reduce((acc, i) => acc + i.amount, 0);
+    const materializedBySeq = new Map(
+      sorted.map((i) => [i.sequence, { amount: i.amount, itemId: i.itemId }]),
+    );
+    const schedule = buildInstallmentSchedule(meta.meta, materializedBySeq);
+    const paid = schedule.filter((s) => ymKey(s.year, s.month) <= refYm);
+    const paidAmount = paid.reduce((acc, s) => acc + s.amount, 0);
     const nextDue =
-      sorted.find((i) => ymKey(i.year, i.month) > refYm) ?? null;
+      schedule.find((s) => ymKey(s.year, s.month) > refYm) ?? null;
+    const end = schedule[schedule.length - 1];
     summaries.push({
       planId,
       name: meta.name,
@@ -496,10 +510,13 @@ export const selectInstallmentPlans = (
       startYear: meta.meta.startYear,
       startMonth: meta.meta.startMonth,
       instances: sorted,
+      schedule,
       paidAmount,
       paidMonths: paid.length,
       remainingAmount: Math.max(0, meta.meta.totalAmount - paidAmount),
       nextDue,
+      endYear: end.year,
+      endMonth: end.month,
       isCompleted: nextDue === null,
     });
   }

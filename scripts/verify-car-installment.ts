@@ -9,6 +9,7 @@ import {
   carSequenceFor,
   removeInstallmentTags,
 } from '../src/utils/installments';
+import { selectInstallmentPlans } from '../src/stores/selectors';
 
 let failures = 0;
 const expectEq = (label: string, actual: unknown, expected: unknown): void => {
@@ -63,6 +64,22 @@ expectEq('งวด 10 materialized', sched[9].materialized, true);
 expectEq('งวด 10 itemId', sched[9].itemId, 'x');
 expectEq('งวด 1 projected', sched[0].materialized, false);
 expectEq('งวด 1 amount = perInstallment', sched[0].amount, 23722);
+
+// --- selectInstallmentPlans (schedule-driven) ---
+const snapshot = { data: { ...seedData, years: tagged } };
+const refDate = new Date('2026-06-15T00:00:00.000Z');
+const plans = selectInstallmentPlans(snapshot, refDate);
+const carPlan = plans.find((p) => p.name === 'รถยนต์');
+expectEq('มีแผนรถ', carPlan != null, true);
+expectEq('paidMonths', carPlan?.paidMonths, 39);
+expectEq('totalMonths', carPlan?.totalMonths, 60);
+expectEq('คงเหลือแบบงวด', carPlan?.remainingAmount, 498162);
+expectEq('nextDue ปี', carPlan?.nextDue?.year, 2026);
+expectEq('nextDue เดือน', carPlan?.nextDue?.month, 7);
+expectEq('endYear', carPlan?.endYear, 2028);
+expectEq('endMonth', carPlan?.endMonth, 3);
+expectEq('schedule length', carPlan?.schedule.length, 60);
+expectEq('ยัง active', carPlan?.isCompleted, false);
 
 console.log(failures === 0 ? '\nALL PASS' : `\n${failures} FAILED`);
 process.exit(failures === 0 ? 0 : 1);
