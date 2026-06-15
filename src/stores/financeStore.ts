@@ -230,8 +230,6 @@ export interface FinanceState {
   addInstallmentPlan: (input: InstallmentPlanInput) => string;
   /** Remove every ExpenseItem tagged with the given `planId`. */
   deleteInstallmentPlan: (planId: string) => void;
-  /** ติดป้าย installment ให้รายการ "รถยนต์" ที่มีอยู่ทุกเดือน — คืนจำนวนงวดที่ tag. */
-  tagCarInstallments: () => number;
   /** ถอด installment metadata ออกจากทุกแถวของแผน (เก็บแถว expense ไว้). */
   untagInstallmentPlan: (planId: string) => void;
 
@@ -642,31 +640,6 @@ export const useFinanceStore = create<FinanceState>()(
           };
         }),
 
-      tagCarInstallments: () => {
-        let count = 0;
-        set((state) => {
-          const years = applyCarInstallmentTags(state.data.years);
-          for (const yr of Object.values(years)) {
-            for (const row of yr.expenses) {
-              for (const item of row.items) {
-                if (
-                  item.name === 'รถยนต์' &&
-                  item.category === 'vehicle' &&
-                  item.installment
-                ) {
-                  count += 1;
-                }
-              }
-            }
-          }
-          const stamp = nowIso();
-          return {
-            data: { ...state.data, lastUpdated: stamp, years },
-            lastUpdated: stamp,
-          };
-        });
-        return count;
-      },
 
       untagInstallmentPlan: (planId) =>
         set((state) => {
