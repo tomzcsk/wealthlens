@@ -101,6 +101,47 @@ export const applyCarInstallmentTags = (
   return next;
 };
 
+/** หนึ่งงวดในตารางผ่อน — derive จาก metadata, overlay แถวจริงถ้ามี. */
+export interface ScheduledInstallment {
+  sequence: number;
+  year: number;
+  month: number;
+  /** ค่าแถวจริงถ้า materialized ; ไม่งั้น perInstallment (งวดท้ายดูดเศษ). */
+  amount: number;
+  /** true = มีแถว expense จริงในเดือนนั้น. */
+  materialized: boolean;
+  itemId: string | null;
+}
+
+/**
+ * สร้างตารางงวดเต็ม 1..totalMonths จาก metadata แล้ว overlay แถวจริง
+ * (`materializedBySeq`) ลงไป — งวดที่ไม่มีแถวจะเป็น "คาดการณ์".
+ */
+export const buildInstallmentSchedule = (
+  meta: InstallmentMeta,
+  materializedBySeq: Map<number, { amount: number; itemId: string }>,
+): ScheduledInstallment[] => {
+  const perInstallment = round2(meta.totalAmount / meta.totalMonths);
+  const lastInstallment = round2(
+    meta.totalAmount - perInstallment * (meta.totalMonths - 1),
+  );
+  const schedule: ScheduledInstallment[] = [];
+  for (let seq = 1; seq <= meta.totalMonths; seq += 1) {
+    const { year, month } = advanceMonth(meta.startYear, meta.startMonth, seq - 1);
+    const row = materializedBySeq.get(seq);
+    const expected = seq === meta.totalMonths ? lastInstallment : perInstallment;
+    schedule.push({
+      sequence: seq,
+      year,
+      month,
+      amount: row ? row.amount : expected,
+      materialized: row != null,
+      itemId: row?.itemId ?? null,
+    });
+  }
+  return schedule;
+};
+
 /** ลบ `installment` ออกจากทุกแถวของแผน planId แต่เก็บแถว expense ไว้. */
 export const removeInstallmentTags = (
   years: WealthLensData['years'],

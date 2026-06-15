@@ -5,6 +5,7 @@
 import seedData from '../src/data/seedData';
 import {
   applyCarInstallmentTags,
+  buildInstallmentSchedule,
   carSequenceFor,
   removeInstallmentTags,
 } from '../src/utils/installments';
@@ -47,6 +48,21 @@ const jan24u = untagged['2024'].expenses
   ?.items.find((it) => it.name === 'รถยนต์');
 expectEq('untag removes metadata', jan24u?.installment, undefined);
 expectEq('untag keeps amount', jan24u?.amount, 23722);
+
+// --- buildInstallmentSchedule ---
+const carMeta = jan24Car!.installment!;
+const sched = buildInstallmentSchedule(
+  carMeta,
+  new Map([[10, { amount: 23722, itemId: 'x' }]]),
+);
+expectEq('schedule length', sched.length, 60);
+expectEq('งวด 1 = เม.ย. 2023', `${sched[0].year}-${sched[0].month}`, '2023-4');
+expectEq('งวด 39 = มิ.ย. 2026', `${sched[38].year}-${sched[38].month}`, '2026-6');
+expectEq('งวด 60 = มี.ค. 2028', `${sched[59].year}-${sched[59].month}`, '2028-3');
+expectEq('งวด 10 materialized', sched[9].materialized, true);
+expectEq('งวด 10 itemId', sched[9].itemId, 'x');
+expectEq('งวด 1 projected', sched[0].materialized, false);
+expectEq('งวด 1 amount = perInstallment', sched[0].amount, 23722);
 
 console.log(failures === 0 ? '\nALL PASS' : `\n${failures} FAILED`);
 process.exit(failures === 0 ? 0 : 1);
