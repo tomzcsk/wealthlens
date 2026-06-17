@@ -34,7 +34,7 @@ import {
   EXPENSE_CATEGORIES,
 } from '@/types/expense-categories';
 import type { ExpenseCategory, ExpenseItem, Reimbursement } from '@/types';
-import { formatNumber } from '@/utils/formatters';
+import { formatNumber, formatTHB } from '@/utils/formatters';
 
 /** Today's date as ISO yyyy-mm-dd — used when Tom flips status to received. */
 const todayIso = (): string => new Date().toISOString().slice(0, 10);
@@ -63,37 +63,53 @@ interface FormTouched {
   amount?: boolean;
 }
 
-/** Strip commas + non-digit characters so users can paste "1,234" freely. */
-const parseAmount = (input: string): number => {
-  if (input.trim() === '') return 0;
-  const cleaned = input.replace(/[^0-9.]/g, '');
-  const value = Number.parseFloat(cleaned);
-  return Number.isFinite(value) ? value : 0;
+/**
+ * Parse a signed delta string ("+500", "-3,000", "1234") into a number.
+ * Returns `null` when there's nothing usable yet (empty or a lone "-"), so
+ * callers can treat "no delta entered" as "leave the amount unchanged".
+ */
+const parseDelta = (input: string): number | null => {
+  const trimmed = input.trim();
+  if (trimmed === '' || trimmed === '-') return null;
+  const n = Number(trimmed.replace(/,/g, ''));
+  return Number.isFinite(n) ? n : null;
 };
 
-/** Render the live numeric value with thousand separators in the input. */
-const displayAmount = (raw: string): string => {
-  if (raw === '' || raw === '-') return raw;
-  // Preserve trailing dot while typing decimals.
-  const endsWithDot = raw.endsWith('.');
-  const numeric = parseAmount(raw);
-  if (numeric === 0 && raw.replace(/[^0-9]/g, '') === '') return raw;
-  const [, decimalPart] = raw.split('.');
-  if (decimalPart !== undefined) {
-    return `${formatNumber(Math.trunc(numeric))}.${decimalPart}`;
-  }
-  return formatNumber(numeric) + (endsWithDot ? '.' : '');
+/**
+ * Re-format the delta field with thousand separators on every keystroke,
+ * preserving an optional leading minus and a trailing decimal while typing.
+ * Mirrors the Kept (Krungsri) add/withdraw editor so the two feel identical.
+ */
+const formatDeltaInput = (raw: string): string => {
+  const cleaned = raw.replace(/[^\d.,-]/g, '').trim();
+  if (cleaned === '' || cleaned === '-') return cleaned;
+  const negative = cleaned.startsWith('-');
+  const digits = cleaned.replace(/[^\d.]/g, '');
+  if (digits === '') return negative ? '-' : '';
+  const [intPart, decPart] = digits.split('.');
+  const intNum = Number(intPart);
+  const intFormatted = Number.isFinite(intNum) ? formatNumber(intNum) : '';
+  return decPart !== undefined
+    ? `${negative ? '-' : ''}${intFormatted}.${decPart}`
+    : `${negative ? '-' : ''}${intFormatted}`;
 };
 
 const validate = (values: {
   name: string;
-  amount: number;
+  newAmount: number;
+  isEdit: boolean;
 }): FormErrors => {
   const errors: FormErrors = {};
   if (values.name.trim() === '') {
     errors.name = 'กรอกชื่อรายการ';
   }
-  if (!(values.amount > 0)) {
+  if (values.newAmount < 0) {
+    // A withdrawal larger than the current amount would go negative — block it.
+    errors.amount = 'ยอดใหม่ติดลบไม่ได้';
+  } else if (!values.isEdit && !(values.newAmount > 0)) {
+    // New rows still need a real amount (keeps quick-add from inserting ฿0
+    // junk); edits may legitimately drop to ฿0 (e.g. a recurring item not
+    // billed this month).
     errors.amount = 'จำนวนเงินต้องมากกว่า 0';
   }
   return errors;
@@ -118,9 +134,10 @@ export const ExpenseForm = ({
     initialValues?.category ?? defaultCategory ?? 'housing',
   );
   const [name, setName] = useState<string>(initialValues?.name ?? '');
-  const [amountInput, setAmountInput] = useState<string>(
-    initialValues != null ? formatNumber(initialValues.amount) : '',
-  );
+  // The amount field holds a *delta* to apply to the existing amount (or to
+  // ฿0 for new rows) — positive = เพิ่ม, negative = ลด. It always starts empty
+  // so an edit that only touches category/name keeps the amount untouched.
+  const [amountDeltaText, setAmountDeltaText] = useState<string>('');
   const [isRecurring, setIsRecurring] = useState<boolean>(
     initialValues?.isRecurring ?? false,
   );
@@ -165,8 +182,16 @@ export const ExpenseForm = ({
     };
   }, []);
 
-  const amount = useMemo(() => parseAmount(amountInput), [amountInput]);
-  const errors = useMemo(() => validate({ name, amount }), [name, amount]);
+  const baseAmount = initialValues?.amount ?? 0;
+  const amountDelta = useMemo(
+    () => parseDelta(amountDeltaText),
+    [amountDeltaText],
+  );
+  const newAmount = baseAmount + (amountDelta ?? 0);
+  const errors = useMemo(
+    () => validate({ name, newAmount, isEdit }),
+    [name, newAmount, isEdit],
+  );
   const isValid = Object.keys(errors).length === 0;
 
   // -------------------------------------------------------------------------
@@ -200,7 +225,7 @@ export const ExpenseForm = ({
       updateExpense(year, month, initialValues.id, {
         category,
         name: trimmedName,
-        amount,
+        amount: newAmount,
         isRecurring,
         reimbursement,
       });
@@ -208,7 +233,7 @@ export const ExpenseForm = ({
         ...initialValues,
         category,
         name: trimmedName,
-        amount,
+        amount: newAmount,
         isRecurring,
         reimbursement,
       });
@@ -218,7 +243,7 @@ export const ExpenseForm = ({
     addExpense(year, month, {
       category,
       name: trimmedName,
-      amount,
+      amount: newAmount,
       isRecurring,
       reimbursement,
     });
@@ -230,7 +255,7 @@ export const ExpenseForm = ({
       id: '',
       category,
       name: trimmedName,
-      amount,
+      amount: newAmount,
       isRecurring,
       reimbursement,
     });
@@ -239,7 +264,7 @@ export const ExpenseForm = ({
       // Quick-add: keep category, clear the rest, flash confirmation,
       // refocus the name field for the next entry.
       setName('');
-      setAmountInput('');
+      setAmountDeltaText('');
       setIsRecurring(false);
       setReimbursable(false);
       setReimbursementStatus('pending');
@@ -352,22 +377,34 @@ export const ExpenseForm = ({
         )}
       </div>
 
-      {/* Amount */}
+      {/* Amount — delta editor (matches the Kept add/withdraw field). Type a
+          signed change instead of the full total; leaving it blank keeps the
+          current amount so category/name-only edits save cleanly. */}
       <div>
         <label htmlFor={amountId} className={labelClass}>
           จำนวนเงิน (บาท)
         </label>
+
+        {isEdit && (
+          <div className="flex items-center justify-between rounded-md bg-slate-50 border border-slate-200 px-3 py-2 mb-2">
+            <span className="text-xs text-slate-500">ยอดเดิม</span>
+            <span className="text-sm font-medium tabular-nums text-slate-700">
+              {formatTHB(baseAmount)}
+            </span>
+          </div>
+        )}
+
         <input
           id={amountId}
           type="text"
           inputMode="decimal"
-          value={displayAmount(amountInput)}
+          value={amountDeltaText}
           onChange={(e: ChangeEvent<HTMLInputElement>) =>
-            setAmountInput(e.target.value)
+            setAmountDeltaText(formatDeltaInput(e.target.value))
           }
           onBlur={() => setTouched((t) => ({ ...t, amount: true }))}
           onKeyDown={handleAmountKeyDown}
-          placeholder="0"
+          placeholder={isEdit ? 'เช่น +500 หรือ -200' : 'เช่น 2,228'}
           className={`${inputBaseClass} financial-number text-right`}
           aria-invalid={touched.amount === true && errors.amount !== undefined}
           aria-describedby={
@@ -376,6 +413,35 @@ export const ExpenseForm = ({
               : undefined
           }
         />
+        <p className="mt-1 text-xs text-slate-500">
+          {isEdit
+            ? 'ปรับยอด · บวก = เพิ่ม · ลบ = ลด · เว้นว่าง = คงเดิม'
+            : 'พิมพ์จำนวนเงิน (ใส่ - ข้างหน้าเพื่อลดยอด)'}
+        </p>
+
+        <div className="flex items-center justify-between rounded-md bg-primary-light border border-blue-100 px-3 py-2 mt-2">
+          <span className="text-sm text-slate-600">ยอดใหม่หลังบันทึก</span>
+          <span className="flex items-baseline gap-2">
+            {amountDelta !== null && amountDelta !== 0 && (
+              <span
+                className={`text-xs tabular-nums ${
+                  amountDelta > 0 ? 'text-income' : 'text-expense'
+                }`}
+              >
+                {amountDelta > 0 ? '+' : '−'}
+                {formatNumber(Math.abs(amountDelta))}
+              </span>
+            )}
+            <span
+              className={`text-lg font-semibold tabular-nums ${
+                newAmount < 0 ? 'text-expense' : 'text-slate-800'
+              }`}
+            >
+              {formatTHB(newAmount)}
+            </span>
+          </span>
+        </div>
+
         {touched.amount === true && errors.amount !== undefined && (
           <p id={`${amountId}-err`} className={errorClass}>
             {errors.amount}
