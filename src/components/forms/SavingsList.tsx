@@ -566,8 +566,10 @@ export const SavingsList = ({
             month={month}
             initialValues={editing}
             defaultCategory={defaultCategory}
-            onSaved={() => {
-              if (editing != null) handleClose();
+            onSaved={(_item, continueAdding) => {
+              // Edit always closes. Add: button click closes (continueAdding
+              // false); Enter quick-add keeps the modal open for batch entry.
+              if (editing != null || !continueAdding) handleClose();
             }}
             onCancel={handleClose}
           />

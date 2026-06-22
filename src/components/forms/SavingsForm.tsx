@@ -37,8 +37,13 @@ export interface SavingsFormProps {
   initialValues?: SavingsItem | null;
   /** Pre-select a category (used by per-category "+ Add" buttons). */
   defaultCategory?: SavingsCategory;
-  /** Fired after a successful save with the resulting item. */
-  onSaved?: (item: SavingsItem) => void;
+  /**
+   * Fired after a successful save with the resulting item.
+   * `continueAdding` is true only for quick-add (Enter / ⌘S on a new item),
+   * signalling the parent to keep the modal open for the next entry; a plain
+   * button click saves with `continueAdding = false` so the modal can close.
+   */
+  onSaved?: (item: SavingsItem, continueAdding: boolean) => void;
   /** Fired when the user presses Cancel or Esc. */
   onCancel?: () => void;
 }
@@ -114,6 +119,11 @@ export const SavingsForm = ({
   const nameInputRef = useRef<HTMLInputElement | null>(null);
   const flashTimerRef = useRef<number | null>(null);
 
+  // Tracks how the latest submit was triggered. A direct button click means
+  // "I'm done — close the modal"; Enter (native form submit) means quick-add.
+  // Defaults to 'enter' and resets after every submit.
+  const submitSourceRef = useRef<'click' | 'enter'>('enter');
+
   const categoryId = useId();
   const nameId = useId();
   const amountId = useId();
@@ -153,13 +163,16 @@ export const SavingsForm = ({
         amount,
         isRecurring,
       });
-      onSaved?.({
-        ...initialValues,
-        category,
-        name: trimmedName,
-        amount,
-        isRecurring,
-      });
+      onSaved?.(
+        {
+          ...initialValues,
+          category,
+          name: trimmedName,
+          amount,
+          isRecurring,
+        },
+        false,
+      );
       return;
     }
 
@@ -170,13 +183,16 @@ export const SavingsForm = ({
       isRecurring,
     });
 
-    onSaved?.({
-      id: '',
-      category,
-      name: trimmedName,
-      amount,
-      isRecurring,
-    });
+    onSaved?.(
+      {
+        id: '',
+        category,
+        name: trimmedName,
+        amount,
+        isRecurring,
+      },
+      continueAdding,
+    );
 
     if (continueAdding) {
       setName('');
@@ -197,7 +213,11 @@ export const SavingsForm = ({
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
-    persist(!isEdit);
+    // Quick-add (keep modal open) only on a NEW item submitted via Enter.
+    // A direct button click — even on a new item — means "done": save & close.
+    const source = submitSourceRef.current;
+    submitSourceRef.current = 'enter';
+    persist(!isEdit && source === 'enter');
   };
 
   const handleFormKeyDown = (event: KeyboardEvent<HTMLFormElement>): void => {
@@ -344,6 +364,9 @@ export const SavingsForm = ({
           )}
           <button
             type="submit"
+            onClick={() => {
+              submitSourceRef.current = 'click';
+            }}
             disabled={!isValid}
             className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
