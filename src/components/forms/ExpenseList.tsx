@@ -335,8 +335,9 @@ export const ExpenseList = ({
               year={year}
               month={month}
               defaultCategory={defaultCategory}
-              onSaved={() => {
-                /* keep modal open for quick-add — Form handles state reset */
+              onSaved={(_item, continueAdding) => {
+                // Button click → close; Enter quick-add → keep open.
+                if (!continueAdding) handleClose();
               }}
               onCancel={handleClose}
             />
@@ -465,10 +466,10 @@ export const ExpenseList = ({
             month={month}
             initialValues={editing}
             defaultCategory={defaultCategory}
-            onSaved={() => {
-              // Edit mode → close immediately. Add mode → keep open so the
-              // quick-add flow inside ExpenseForm can take over.
-              if (editing != null) handleClose();
+            onSaved={(_item, continueAdding) => {
+              // Edit always closes. Add: button click closes (continueAdding
+              // false); Enter quick-add keeps the modal open for batch entry.
+              if (editing != null || !continueAdding) handleClose();
             }}
             onCancel={handleClose}
           />

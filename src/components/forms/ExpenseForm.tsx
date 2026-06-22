@@ -47,8 +47,13 @@ export interface ExpenseFormProps {
   initialValues?: ExpenseItem | null;
   /** Pre-select a category (used by per-category "+ Add" buttons). */
   defaultCategory?: ExpenseCategory;
-  /** Fired after a successful save with the resulting item. */
-  onSaved?: (item: ExpenseItem) => void;
+  /**
+   * Fired after a successful save with the resulting item.
+   * `continueAdding` is true only for quick-add (Enter / ⌘S on a new item),
+   * signalling the parent to keep the modal open for the next entry; a plain
+   * button click saves with `continueAdding = false` so the modal can close.
+   */
+  onSaved?: (item: ExpenseItem, continueAdding: boolean) => void;
   /** Fired when the user presses Cancel or Esc. */
   onCancel?: () => void;
 }
@@ -153,6 +158,11 @@ export const ExpenseForm = ({
   const nameInputRef = useRef<HTMLInputElement | null>(null);
   const flashTimerRef = useRef<number | null>(null);
 
+  // Tracks how the latest submit was triggered. A direct button click means
+  // "I'm done — close the modal"; Enter (native form submit) means quick-add.
+  // Defaults to 'enter' and resets after every submit.
+  const submitSourceRef = useRef<'click' | 'enter'>('enter');
+
   // Stable IDs for label/input pairing.
   const categoryId = useId();
   const nameId = useId();
@@ -229,14 +239,17 @@ export const ExpenseForm = ({
         isRecurring,
         reimbursement,
       });
-      onSaved?.({
-        ...initialValues,
-        category,
-        name: trimmedName,
-        amount: newAmount,
-        isRecurring,
-        reimbursement,
-      });
+      onSaved?.(
+        {
+          ...initialValues,
+          category,
+          name: trimmedName,
+          amount: newAmount,
+          isRecurring,
+          reimbursement,
+        },
+        false,
+      );
       return;
     }
 
@@ -251,14 +264,17 @@ export const ExpenseForm = ({
     // Best-effort callback — we don't have the new id since addExpense
     // generates it internally and doesn't return it. Synthesize a transient
     // payload so consumers that just want "something saved" can react.
-    onSaved?.({
-      id: '',
-      category,
-      name: trimmedName,
-      amount: newAmount,
-      isRecurring,
-      reimbursement,
-    });
+    onSaved?.(
+      {
+        id: '',
+        category,
+        name: trimmedName,
+        amount: newAmount,
+        isRecurring,
+        reimbursement,
+      },
+      continueAdding,
+    );
 
     if (continueAdding) {
       // Quick-add: keep category, clear the rest, flash confirmation,
@@ -283,9 +299,11 @@ export const ExpenseForm = ({
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
-    // Form-level submit comes from the Save button → close on edit, quick-add
-    // on new (matches the user expectation of "Enter to save and continue").
-    persist(!isEdit);
+    // Quick-add (keep modal open) only on a NEW item submitted via Enter.
+    // A direct button click — even on a new item — means "done": save & close.
+    const source = submitSourceRef.current;
+    submitSourceRef.current = 'enter';
+    persist(!isEdit && source === 'enter');
   };
 
   const handleAmountKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
@@ -542,6 +560,9 @@ export const ExpenseForm = ({
           )}
           <button
             type="submit"
+            onClick={() => {
+              submitSourceRef.current = 'click';
+            }}
             disabled={!isValid}
             className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
