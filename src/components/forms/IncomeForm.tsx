@@ -336,11 +336,14 @@ export const IncomeForm = ({
   // ---- Validation -------------------------------------------------------
   const errors = useMemo(() => {
     const out: Partial<Record<keyof IncomeFormState, string>> = {};
-    if (num(form.salary) <= 0) {
-      out.salary = 'กรุณากรอกเงินเดือน (มากกว่า 0)';
+    // บางเดือนเป็นโบนัสล้วน หรือคอมล้วน (เงินเดือน 0) ก็ต้องเซฟได้ —
+    // ขอแค่มีรายได้อย่างน้อยหนึ่งช่อง ไม่บังคับเงินเดือนอย่างเดียว
+    const totalIncome = num(form.salary) + num(form.bonus) + num(form.commission);
+    if (totalIncome <= 0) {
+      out.salary = 'กรอกรายได้อย่างน้อยหนึ่งช่อง (เงินเดือน/โบนัส/คอม)';
     }
     return out;
-  }, [form.salary]);
+  }, [form.salary, form.bonus, form.commission]);
 
   const isValid = Object.keys(errors).length === 0;
 
