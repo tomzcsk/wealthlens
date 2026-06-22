@@ -152,6 +152,23 @@ export interface RecurringFillModalProps {
   4. ทำซ้ำ (2) บนหน้า SavingsList กับหมวดออม
   5. ยกเลิก/ESC → ไม่มีอะไรเปลี่ยน
 
+## Iteration (2026-06-22, post-ship)
+
+Tom feedback หลังใช้จริง: เปิด modal ครั้งที่สองแล้วว่าง ("รายการหาย") + อยากให้
+รายการที่เคยใช้ "ติ๊กเพิ่มได้เลย ไม่ต้องพิมพ์เอง" และเห็นรายการทั้งหมด (master list).
+
+แก้จาก one-shot template → **library picker**:
+- เพิ่ม `buildRecurring{Expense,Savings}Library(data, year, month)` ใน `recurringTemplate.ts`
+  — รวมรายการ recurring ทุกตัวจากประวัติ (dedupe by name) ติด status:
+  - `present` → มีในเดือนนี้แล้ว (โชว์ "🔒 มีแล้ว", read-only, ไม่เติมซ้ำ)
+  - `active`  → recurring เดือนล่าสุด (ติ๊กไว้ default)
+  - `history` → เคยใช้ในอดีต (badge "เคยใช้", ติ๊กเพิ่มได้)
+- `RecurringFillModal` รับ `initialItems: RecurringFillItem[]` (มี `status`) แทน draft เปล่า;
+  locked rows (present) แสดงเป็น text + badge, ตัด checkbox/edit/trash ออก;
+  `kept = !locked && included && name≠''` → กันเติมซ้ำ
+- ตัด prop `sourceLabel` ออก (ใช้ legend/hint ภายในแทน)
+- Verified: `scripts/verify-recurring-library.ts` (11 assertions)
+
 ## Files Touched
 
 - `src/components/forms/RecurringFillModal.tsx` (ใหม่)

@@ -164,3 +164,114 @@ export const findRecurringSavingsTemplate = (
       isRecurring: true,
     }),
   });
+
+/**
+ * Status of a recurring item relative to the target month:
+ *   - 'present' → already in this month (show as "มีแล้ว", not re-added)
+ *   - 'active'  → recurring in the most recent prior month (default-checked)
+ *   - 'history' → recurring sometime earlier but not active (tick to add)
+ */
+export type RecurringLibraryStatus = 'present' | 'active' | 'history';
+
+export interface RecurringLibraryEntry<C extends string = string> {
+  category: C;
+  name: string;
+  amount: number;
+  status: RecurringLibraryStatus;
+}
+
+const STATUS_WEIGHT: Record<RecurringLibraryStatus, number> = {
+  active: 0,
+  history: 1,
+  present: 2,
+};
+
+/**
+ * Build the full "library" of recurring items Tom has ever recorded, so the
+ * fill modal can show them as a checklist instead of making him retype.
+ *
+ * Walks back up to STEP_LIMIT months, dedupes recurring items by normalised
+ * name (keeping the most-recent occurrence's category + original casing), and
+ * tags each with a `status`. Amount is inferred via the same stability rule as
+ * the one-shot template (stable across last 3 months → carry; varies → 0).
+ *
+ * Sorted active → history → present; recency preserved within each bucket.
+ */
+const buildLibrary = <
+  T extends RecurrableItem & { category: string },
+  C extends string,
+>(
+  data: WealthLensData,
+  year: number,
+  month: number,
+  fetcher: (data: WealthLensData, year: number, month: number) => T[],
+): RecurringLibraryEntry<C>[] => {
+  const presentNames = new Set(
+    fetcher(data, year, month).map((it) => it.name.trim().toLowerCase()),
+  );
+
+  const activeNames = new Set<string>();
+  const order: string[] = [];
+  const meta = new Map<
+    string,
+    { category: string; name: string; anchorYear: number; anchorMonth: number }
+  >();
+
+  let cursor = stepBack(year, month);
+  let activeCaptured = false;
+  for (let i = 0; i < STEP_LIMIT; i += 1) {
+    const recurring = fetcher(data, cursor.year, cursor.month).filter(
+      (it) => it.isRecurring,
+    );
+    if (recurring.length > 0 && !activeCaptured) {
+      activeCaptured = true;
+      for (const it of recurring) activeNames.add(it.name.trim().toLowerCase());
+    }
+    for (const it of recurring) {
+      const key = it.name.trim().toLowerCase();
+      if (!meta.has(key)) {
+        order.push(key);
+        meta.set(key, {
+          category: it.category,
+          name: it.name,
+          anchorYear: cursor.year,
+          anchorMonth: cursor.month,
+        });
+      }
+    }
+    cursor = stepBack(cursor.year, cursor.month);
+  }
+
+  return order
+    .map((key): RecurringLibraryEntry<C> => {
+      const m = meta.get(key)!;
+      const status: RecurringLibraryStatus = presentNames.has(key)
+        ? 'present'
+        : activeNames.has(key)
+          ? 'active'
+          : 'history';
+      const amount = inferStableAmount(
+        fetcher,
+        data,
+        m.anchorYear,
+        m.anchorMonth,
+        key,
+      );
+      return { category: m.category as C, name: m.name, amount, status };
+    })
+    .sort((a, b) => STATUS_WEIGHT[a.status] - STATUS_WEIGHT[b.status]);
+};
+
+export const buildRecurringExpenseLibrary = (
+  data: WealthLensData,
+  year: number,
+  month: number,
+): RecurringLibraryEntry[] =>
+  buildLibrary<ExpenseItem, string>(data, year, month, expenseItemsForMonth);
+
+export const buildRecurringSavingsLibrary = (
+  data: WealthLensData,
+  year: number,
+  month: number,
+): RecurringLibraryEntry[] =>
+  buildLibrary<SavingsItem, string>(data, year, month, savingsItemsForMonth);

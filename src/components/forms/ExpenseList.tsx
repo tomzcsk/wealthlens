@@ -28,13 +28,14 @@ import {
   EXPENSE_CATEGORIES,
 } from '@/types/expense-categories';
 import type { ExpenseCategory, ExpenseItem } from '@/types';
-import { formatTHB, formatThaiMonth } from '@/utils/formatters';
-import { findRecurringTemplate } from '@/utils/recurringTemplate';
+import { formatTHB } from '@/utils/formatters';
+import { buildRecurringExpenseLibrary } from '@/utils/recurringTemplate';
 
 import ExpenseForm from './ExpenseForm';
 import InstallmentForm from './InstallmentForm';
 import RecurringFillModal, {
   type RecurringFillDraft,
+  type RecurringFillItem,
 } from './RecurringFillModal';
 
 /** Category dropdown options for the recurring-fill modal (stable order). */
@@ -199,29 +200,14 @@ export const ExpenseList = ({
   };
 
   const [fillModalOpen, setFillModalOpen] = useState(false);
-  const [fillDraft, setFillDraft] = useState<{
-    items: RecurringFillDraft[];
-    sourceLabel?: string;
-  }>({ items: [] });
+  const [fillItems, setFillItems] = useState<RecurringFillItem[]>([]);
 
-  // Open the preview/edit modal instead of writing immediately. A missing
-  // template (first month / already complete) opens it blank so Tom can build
-  // the list by hand.
+  // Open the picker instead of writing immediately. The library shows every
+  // recurring item Tom has ever used (active pre-checked, history tickable,
+  // present shown as "มีแล้ว") so he can add without retyping.
   const handleFillRecurring = (): void => {
     const data = useFinanceStore.getState().data;
-    const template = findRecurringTemplate(data, year, month);
-    setFillDraft(
-      template != null
-        ? {
-            items: template.items.map(({ category, name, amount }) => ({
-              category,
-              name,
-              amount,
-            })),
-            sourceLabel: `จาก ${formatThaiMonth(template.sourceMonth)} ${template.sourceYear}`,
-          }
-        : { items: [], sourceLabel: undefined },
-    );
+    setFillItems(buildRecurringExpenseLibrary(data, year, month));
     setFillModalOpen(true);
   };
 
@@ -402,8 +388,7 @@ export const ExpenseList = ({
           open={fillModalOpen}
           onClose={() => setFillModalOpen(false)}
           title="เติมรายการประจำ"
-          sourceLabel={fillDraft.sourceLabel}
-          initialItems={fillDraft.items}
+          initialItems={fillItems}
           categories={EXPENSE_CATEGORY_OPTIONS}
           defaultCategory="other"
           onConfirm={handleConfirmFill}
@@ -609,8 +594,7 @@ export const ExpenseList = ({
         open={fillModalOpen}
         onClose={() => setFillModalOpen(false)}
         title="เติมรายการประจำ"
-        sourceLabel={fillDraft.sourceLabel}
-        initialItems={fillDraft.items}
+        initialItems={fillItems}
         categories={EXPENSE_CATEGORY_OPTIONS}
         defaultCategory="other"
         onConfirm={handleConfirmFill}

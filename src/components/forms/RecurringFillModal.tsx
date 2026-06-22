@@ -1,20 +1,24 @@
 /**
  * WealthLens — Recurring-fill preview/edit modal.
  *
- * Sits between the "📋 เติมรายการประจำ" button and the actual write. Instead
- * of looping `addExpense`/`addSavings` immediately, the parent list derives a
- * template (via `recurringTemplate.ts`) and hands it here so Tom can review and
- * tweak before anything lands in the month:
+ * Sits between the "📋 เติมรายการประจำ" button and the actual write. The parent
+ * list builds a *library* of every recurring item Tom has ever recorded (via
+ * `buildRecurring*Library`) and hands it here as a checklist, so he never has
+ * to retype a known item:
  *
- *   • ☑ ติ๊กเลือก/ไม่เอา  • แก้ชื่อ  • เปลี่ยนหมวด  • แก้จำนวนเงิน
- *   • + เพิ่มแถวใหม่       • 🗑️ ลบแถว
+ *   🟢 ติ๊กไว้ให้ (active)  — recurring last month; default-checked, add on confirm
+ *   ⚪ "เคยใช้"   (history) — used before; tick to add, no typing
+ *   🔒 "มีแล้ว"   (present) — already in this month; shown for context, never re-added
+ *
+ * Tom can still edit each actionable row (ชื่อ/หมวด/จำนวนเงิน), untick, delete,
+ * or "+ เพิ่มรายการ" a brand-new one. Locked (present) rows are read-only.
  *
  * Generic over expense vs savings — it knows nothing about either domain. The
- * parent passes the category options (label + icon) and an `onConfirm` that
- * receives only the kept rows (included && non-empty name). `isRecurring` is
+ * parent passes category options (label + icon) and an `onConfirm` receiving
+ * only the kept rows (checked, unlocked, non-empty name). `isRecurring` is
  * stamped by the parent when it builds the store object, not here.
  *
- * The working rows live in local state, re-seeded each time the modal opens.
+ * Working rows live in local state, re-seeded each time the modal opens.
  * Closing (ESC / backdrop / ยกเลิก) discards everything — nothing is written
  * until "ยืนยันเติม".
  */
@@ -22,6 +26,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import Modal from '@/components/ui/Modal';
+import type { RecurringLibraryStatus } from '@/utils/recurringTemplate';
 import { formatTHB } from '@/utils/formatters';
 
 export interface RecurringFillCategoryOption {
@@ -37,10 +42,19 @@ export interface RecurringFillDraft {
   amount: number;
 }
 
-/** Working row — adds a local React key + include flag over the draft. */
+/** A library item handed in to pre-fill the checklist. */
+export interface RecurringFillItem extends RecurringFillDraft {
+  /** Omitted ⇒ treated as a fresh actionable row (checked, unlocked). */
+  status?: RecurringLibraryStatus;
+}
+
+/** Working row — adds local key + flags over the draft. */
 interface DraftRow extends RecurringFillDraft {
   key: number;
   included: boolean;
+  /** Already in this month → read-only context, excluded from confirm. */
+  locked: boolean;
+  status?: RecurringLibraryStatus;
 }
 
 export interface RecurringFillModalProps {
@@ -48,25 +62,34 @@ export interface RecurringFillModalProps {
   onClose: () => void;
   /** Header title, e.g. "เติมรายการประจำ" / "เติมรายการออมประจำ". */
   title: string;
-  /** Provenance line, e.g. "จาก มี.ค. 2026". Undefined ⇒ empty-template hint. */
-  sourceLabel?: string;
-  /** Template items pre-filling the list. Empty ⇒ start blank. */
-  initialItems: ReadonlyArray<RecurringFillDraft>;
+  /** Library items pre-filling the checklist. Empty ⇒ start blank. */
+  initialItems: ReadonlyArray<RecurringFillItem>;
   /** Category dropdown options (already ordered). */
   categories: ReadonlyArray<RecurringFillCategoryOption>;
   /** Category assigned to rows added via "เพิ่มรายการ". */
   defaultCategory: string;
-  /** Fires on confirm with only the kept rows (included && non-empty name). */
+  /** Fires on confirm with only the kept rows (checked, unlocked, non-empty). */
   onConfirm: (items: ReadonlyArray<RecurringFillDraft>) => void;
 }
 
-const GRID = 'grid grid-cols-[24px_1fr_148px_104px_28px] gap-2 items-center';
+const GRID = 'grid grid-cols-[24px_1fr_140px_100px_28px] gap-2 items-center';
+
+const seedRow = (it: RecurringFillItem, key: number): DraftRow => ({
+  category: it.category,
+  name: it.name,
+  amount: it.amount,
+  status: it.status,
+  key,
+  locked: it.status === 'present',
+  // present rows render checked (they're in the month) but are excluded from
+  // confirm via `locked`; active checked by default; history unchecked.
+  included: it.status === 'present' || it.status === 'active' || it.status == null,
+});
 
 export const RecurringFillModal = ({
   open,
   onClose,
   title,
-  sourceLabel,
   initialItems,
   categories,
   defaultCategory,
@@ -86,22 +109,14 @@ export const RecurringFillModal = ({
   useEffect(() => {
     if (open && !seeded.current) {
       seeded.current = true;
-      setRows(
-        initialItems.map((it) => ({
-          ...it,
-          included: true,
-          key: nextKey(),
-        })),
-      );
+      setRows(initialItems.map((it) => seedRow(it, nextKey())));
     } else if (!open) {
       seeded.current = false;
     }
   }, [open, initialItems]);
 
   const patchRow = (key: number, patch: Partial<DraftRow>): void => {
-    setRows((prev) =>
-      prev.map((r) => (r.key === key ? { ...r, ...patch } : r)),
-    );
+    setRows((prev) => prev.map((r) => (r.key === key ? { ...r, ...patch } : r)));
   };
 
   const removeRow = (key: number): void => {
@@ -111,12 +126,19 @@ export const RecurringFillModal = ({
   const addRow = (): void => {
     setRows((prev) => [
       ...prev,
-      { key: nextKey(), included: true, name: '', category: defaultCategory, amount: 0 },
+      {
+        key: nextKey(),
+        included: true,
+        locked: false,
+        name: '',
+        category: defaultCategory,
+        amount: 0,
+      },
     ]);
   };
 
   const kept = useMemo(
-    () => rows.filter((r) => r.included && r.name.trim() !== ''),
+    () => rows.filter((r) => !r.locked && r.included && r.name.trim() !== ''),
     [rows],
   );
   const total = useMemo(() => kept.reduce((acc, r) => acc + r.amount, 0), [kept]);
@@ -132,20 +154,23 @@ export const RecurringFillModal = ({
     );
   };
 
+  const hint =
+    initialItems.length === 0
+      ? 'ไม่พบรายการประจำเดิม — เพิ่มเองได้'
+      : "ติ๊กรายการที่จะเติมเข้าเดือนนี้ · 🔒 มีแล้ว = อยู่ในเดือนนี้แล้ว · เคยใช้ = ติ๊กเพิ่มได้";
+
   return (
     <Modal open={open} onClose={onClose} title={title} size="md">
-      {/* Provenance / empty hint */}
       <div className="px-6 pt-3">
-        {sourceLabel != null ? (
-          <p className="text-xs text-slate-500">{sourceLabel}</p>
-        ) : (
-          <p className="text-xs text-amber-600">
-            ไม่พบรายการประจำเดิม — เพิ่มเองได้
-          </p>
-        )}
+        <p
+          className={`text-xs ${
+            initialItems.length === 0 ? 'text-amber-600' : 'text-slate-500'
+          }`}
+        >
+          {hint}
+        </p>
       </div>
 
-      {/* Rows */}
       <div className="px-6 py-3">
         {rows.length > 0 && (
           <div
@@ -163,28 +188,55 @@ export const RecurringFillModal = ({
           {rows.map((r) => (
             <div
               key={r.key}
-              className={`${GRID} rounded-md px-2 py-1.5 hover:bg-slate-50 transition ${
-                r.included ? '' : 'opacity-45'
+              className={`${GRID} rounded-md px-2 py-1.5 transition ${
+                r.locked
+                  ? 'opacity-55'
+                  : r.included
+                    ? 'hover:bg-slate-50'
+                    : 'opacity-50 hover:bg-slate-50'
               }`}
             >
               <input
                 type="checkbox"
                 checked={r.included}
+                disabled={r.locked}
                 onChange={(e) => patchRow(r.key, { included: e.target.checked })}
                 aria-label={`เลือก ${r.name || 'รายการ'}`}
-                className="h-[17px] w-[17px] accent-primary cursor-pointer"
+                className="h-[17px] w-[17px] accent-primary cursor-pointer disabled:cursor-not-allowed"
               />
-              <input
-                type="text"
-                value={r.name}
-                placeholder="ชื่อรายการ"
-                onChange={(e) => patchRow(r.key, { name: e.target.value })}
-                className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm text-slate-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-light"
-              />
+
+              {/* Name (+ status badge) */}
+              <div className="flex items-center gap-1.5 min-w-0">
+                {r.locked ? (
+                  <span className="flex-1 truncate text-sm text-slate-700">
+                    {r.name}
+                  </span>
+                ) : (
+                  <input
+                    type="text"
+                    value={r.name}
+                    placeholder="ชื่อรายการ"
+                    onChange={(e) => patchRow(r.key, { name: e.target.value })}
+                    className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm text-slate-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-light"
+                  />
+                )}
+                {r.status === 'present' && (
+                  <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
+                    🔒 มีแล้ว
+                  </span>
+                )}
+                {r.status === 'history' && (
+                  <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-400">
+                    เคยใช้
+                  </span>
+                )}
+              </div>
+
               <select
                 value={r.category}
+                disabled={r.locked}
                 onChange={(e) => patchRow(r.key, { category: e.target.value })}
-                className="w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-900 cursor-pointer focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-light"
+                className="w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-900 cursor-pointer focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-light disabled:cursor-not-allowed disabled:bg-slate-50"
               >
                 {categories.map((c) => (
                   <option key={c.value} value={c.value}>
@@ -192,24 +244,31 @@ export const RecurringFillModal = ({
                   </option>
                 ))}
               </select>
+
               <input
                 type="number"
                 value={r.amount}
                 min={0}
+                disabled={r.locked}
                 onChange={(e) =>
                   patchRow(r.key, { amount: Number(e.target.value) || 0 })
                 }
                 aria-label={`จำนวนเงิน ${r.name || 'รายการ'}`}
-                className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm text-right text-slate-900 tabular-nums focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-light"
+                className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm text-right text-slate-900 tabular-nums focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-light disabled:cursor-not-allowed disabled:bg-slate-50"
               />
-              <button
-                type="button"
-                onClick={() => removeRow(r.key)}
-                aria-label={`ลบ ${r.name || 'รายการ'}`}
-                className="text-slate-400 hover:text-expense transition text-sm"
-              >
-                🗑️
-              </button>
+
+              {r.locked ? (
+                <span />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => removeRow(r.key)}
+                  aria-label={`ลบ ${r.name || 'รายการ'}`}
+                  className="text-slate-400 hover:text-expense transition text-sm"
+                >
+                  🗑️
+                </button>
+              )}
             </div>
           ))}
         </div>

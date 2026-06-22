@@ -33,12 +33,12 @@ import {
   THAI_MONTHS_LONG,
   formatNumber,
   formatTHB,
-  formatThaiMonth,
 } from '@/utils/formatters';
-import { findRecurringSavingsTemplate } from '@/utils/recurringTemplate';
+import { buildRecurringSavingsLibrary } from '@/utils/recurringTemplate';
 
 import RecurringFillModal, {
   type RecurringFillDraft,
+  type RecurringFillItem,
 } from './RecurringFillModal';
 import SavingsForm from './SavingsForm';
 
@@ -392,29 +392,14 @@ export const SavingsList = ({
   const handleCloseKept = (): void => setKeptModalOpen(false);
 
   const [fillModalOpen, setFillModalOpen] = useState(false);
-  const [fillDraft, setFillDraft] = useState<{
-    items: RecurringFillDraft[];
-    sourceLabel?: string;
-  }>({ items: [] });
+  const [fillItems, setFillItems] = useState<RecurringFillItem[]>([]);
 
-  // Open the preview/edit modal instead of writing immediately. A missing
-  // template (first month / already complete) opens it blank so Tom can build
-  // the list by hand.
+  // Open the picker instead of writing immediately. The library shows every
+  // recurring savings item Tom has ever used (active pre-checked, history
+  // tickable, present shown as "มีแล้ว") so he can add without retyping.
   const handleFillRecurring = (): void => {
     const data = useFinanceStore.getState().data;
-    const template = findRecurringSavingsTemplate(data, year, month);
-    setFillDraft(
-      template != null
-        ? {
-            items: template.items.map(({ category, name, amount }) => ({
-              category,
-              name,
-              amount,
-            })),
-            sourceLabel: `จาก ${formatThaiMonth(template.sourceMonth)} ${template.sourceYear}`,
-          }
-        : { items: [], sourceLabel: undefined },
-    );
+    setFillItems(buildRecurringSavingsLibrary(data, year, month));
     setFillModalOpen(true);
   };
 
@@ -638,8 +623,7 @@ export const SavingsList = ({
         open={fillModalOpen}
         onClose={() => setFillModalOpen(false)}
         title="เติมรายการออมประจำ"
-        sourceLabel={fillDraft.sourceLabel}
-        initialItems={fillDraft.items}
+        initialItems={fillItems}
         categories={SAVINGS_CATEGORY_OPTIONS}
         defaultCategory="general"
         onConfirm={handleConfirmFill}
