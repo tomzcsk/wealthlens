@@ -79,8 +79,12 @@ const lib = buildRecurringExpenseLibrary(data, 2026, 4);
 const byName = (n: string): RecurringLibraryEntry | undefined =>
   lib.find((e) => e.name === n);
 
-// Four distinct recurring names ever seen: Netflix, ค่าไฟบ้าน, ChatGPT, บ้าน
-expectEq('library has 4 distinct items', lib.length, 4);
+// Only active + present — no old "history". Active set = March (most-recent
+// recurring month) minus present. ChatGPT (last in Jan) must NOT appear.
+//   present: Netflix
+//   active:  ค่าไฟบ้าน, บ้าน
+expectEq('library has 3 items (no history)', lib.length, 3);
+expectEq('ChatGPT dropped (was history)', byName('ChatGPT'), undefined);
 
 // Netflix is in April already → present
 expectEq('Netflix → present', byName('Netflix')?.status, 'present');
@@ -89,19 +93,18 @@ expectEq('Netflix → present', byName('Netflix')?.status, 'present');
 expectEq('บ้าน → active', byName('บ้าน')?.status, 'active');
 expectEq('ค่าไฟบ้าน → active', byName('ค่าไฟบ้าน')?.status, 'active');
 
-// ChatGPT last recurred in Jan (not in active month, not present) → history
-expectEq('ChatGPT → history', byName('ChatGPT')?.status, 'history');
-
 // Amount inference: บ้าน single obs → 25000; ค่าไฟ varies (1200/1500/1000) → 0
 expectEq('บ้าน amount carried', byName('บ้าน')?.amount, 25000);
 expectEq('ค่าไฟบ้าน varies → 0', byName('ค่าไฟบ้าน')?.amount, 0);
-expectEq('ChatGPT single obs → 720', byName('ChatGPT')?.amount, 720);
 
-// Sort order: active(s) first, then history, then present last.
-expectEq('last entry is present (Netflix)', lib[lib.length - 1]?.status, 'present');
+// Present amount = the month's actual value (Netflix 419 in April)
+expectEq('Netflix present amount', byName('Netflix')?.amount, 419);
+
+// Sort order: active first, present last.
 expectEq('first entry is active', lib[0]?.status, 'active');
+expectEq('last entry is present (Netflix)', lib[lib.length - 1]?.status, 'present');
 
-// Category dedup uses most-recent occurrence (ค่าไฟ stayed utilities)
+// Category from the active month (ค่าไฟ stayed utilities)
 expectEq('ค่าไฟบ้าน category', byName('ค่าไฟบ้าน')?.category, 'utilities');
 
 console.log(failures === 0 ? '\nALL PASSED' : `\n${failures} FAILED`);

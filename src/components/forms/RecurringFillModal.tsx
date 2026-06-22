@@ -2,12 +2,10 @@
  * WealthLens — Recurring-fill preview/edit modal.
  *
  * Sits between the "📋 เติมรายการประจำ" button and the actual write. The parent
- * list builds a *library* of every recurring item Tom has ever recorded (via
- * `buildRecurring*Library`) and hands it here as a checklist, so he never has
- * to retype a known item:
+ * list builds the recurring checklist (via `buildRecurring*Library`) and hands
+ * it here, so Tom never has to retype a known item:
  *
  *   🟢 ติ๊กไว้ให้ (active)  — recurring last month; default-checked, add on confirm
- *   ⚪ "เคยใช้"   (history) — used before; tick to add, no typing
  *   🔒 "มีแล้ว"   (present) — already in this month; shown for context, never re-added
  *
  * Tom can still edit each actionable row (ชื่อ/หมวด/จำนวนเงิน), untick, delete,
@@ -80,10 +78,10 @@ const seedRow = (it: RecurringFillItem, key: number): DraftRow => ({
   amount: it.amount,
   status: it.status,
   key,
+  // present rows are in the month already → render checked but read-only,
+  // excluded from confirm via `locked`. Active + manual rows default checked.
   locked: it.status === 'present',
-  // present rows render checked (they're in the month) but are excluded from
-  // confirm via `locked`; active checked by default; history unchecked.
-  included: it.status === 'present' || it.status === 'active' || it.status == null,
+  included: true,
 });
 
 export const RecurringFillModal = ({
@@ -157,7 +155,7 @@ export const RecurringFillModal = ({
   const hint =
     initialItems.length === 0
       ? 'ไม่พบรายการประจำเดิม — เพิ่มเองได้'
-      : "ติ๊กรายการที่จะเติมเข้าเดือนนี้ · 🔒 มีแล้ว = อยู่ในเดือนนี้แล้ว · เคยใช้ = ติ๊กเพิ่มได้";
+      : 'ติ๊กรายการที่จะเติมเข้าเดือนนี้ · 🔒 มีแล้ว = อยู่ในเดือนนี้แล้ว';
 
   return (
     <Modal open={open} onClose={onClose} title={title} size="md">
@@ -223,11 +221,6 @@ export const RecurringFillModal = ({
                 {r.status === 'present' && (
                   <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
                     🔒 มีแล้ว
-                  </span>
-                )}
-                {r.status === 'history' && (
-                  <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-400">
-                    เคยใช้
                   </span>
                 )}
               </div>

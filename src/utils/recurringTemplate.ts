@@ -169,9 +169,8 @@ export const findRecurringSavingsTemplate = (
  * Status of a recurring item relative to the target month:
  *   - 'present' → already in this month (show as "มีแล้ว", not re-added)
  *   - 'active'  → recurring in the most recent prior month (default-checked)
- *   - 'history' → recurring sometime earlier but not active (tick to add)
  */
-export type RecurringLibraryStatus = 'present' | 'active' | 'history';
+export type RecurringLibraryStatus = 'present' | 'active';
 
 export interface RecurringLibraryEntry<C extends string = string> {
   category: C;
@@ -182,20 +181,17 @@ export interface RecurringLibraryEntry<C extends string = string> {
 
 const STATUS_WEIGHT: Record<RecurringLibraryStatus, number> = {
   active: 0,
-  history: 1,
-  present: 2,
+  present: 1,
 };
 
 /**
- * Build the full "library" of recurring items Tom has ever recorded, so the
- * fill modal can show them as a checklist instead of making him retype.
+ * Build the recurring-item checklist for the fill modal: the current month's
+ * recurring items (status 'present', shown for context) plus the recurring
+ * items from the most-recent prior month that aren't here yet (status 'active',
+ * default-checked). No older "history" cruft — only the active recurring set.
  *
- * Walks back up to STEP_LIMIT months, dedupes recurring items by normalised
- * name (keeping the most-recent occurrence's category + original casing), and
- * tags each with a `status`. Amount is inferred via the same stability rule as
- * the one-shot template (stable across last 3 months → carry; varies → 0).
- *
- * Sorted active → history → present; recency preserved within each bucket.
+ * Active amounts use the same stability rule as the one-shot template (stable
+ * across last 3 months → carry; varies → 0). Sorted active → present.
  */
 const buildLibrary = <
   T extends RecurrableItem & { category: string },
@@ -206,60 +202,46 @@ const buildLibrary = <
   month: number,
   fetcher: (data: WealthLensData, year: number, month: number) => T[],
 ): RecurringLibraryEntry<C>[] => {
+  const currentItems = fetcher(data, year, month);
   const presentNames = new Set(
-    fetcher(data, year, month).map((it) => it.name.trim().toLowerCase()),
+    currentItems.map((it) => it.name.trim().toLowerCase()),
   );
 
-  const activeNames = new Set<string>();
-  const order: string[] = [];
-  const meta = new Map<
-    string,
-    { category: string; name: string; anchorYear: number; anchorMonth: number }
-  >();
+  // 'present' — recurring items already in this month (read-only context).
+  const entries: RecurringLibraryEntry<C>[] = currentItems
+    .filter((it) => it.isRecurring)
+    .map((it) => ({
+      category: it.category as C,
+      name: it.name,
+      amount: it.amount,
+      status: 'present' as const,
+    }));
 
+  // 'active' — recurring items from the most-recent prior month that has any,
+  // minus anything already present. Only that one month (no deeper history).
   let cursor = stepBack(year, month);
-  let activeCaptured = false;
   for (let i = 0; i < STEP_LIMIT; i += 1) {
     const recurring = fetcher(data, cursor.year, cursor.month).filter(
       (it) => it.isRecurring,
     );
-    if (recurring.length > 0 && !activeCaptured) {
-      activeCaptured = true;
-      for (const it of recurring) activeNames.add(it.name.trim().toLowerCase());
-    }
-    for (const it of recurring) {
-      const key = it.name.trim().toLowerCase();
-      if (!meta.has(key)) {
-        order.push(key);
-        meta.set(key, {
-          category: it.category,
-          name: it.name,
-          anchorYear: cursor.year,
-          anchorMonth: cursor.month,
-        });
+    if (recurring.length > 0) {
+      for (const it of recurring) {
+        const key = it.name.trim().toLowerCase();
+        if (!presentNames.has(key)) {
+          entries.push({
+            category: it.category as C,
+            name: it.name,
+            amount: inferStableAmount(fetcher, data, cursor.year, cursor.month, key),
+            status: 'active',
+          });
+        }
       }
+      break;
     }
     cursor = stepBack(cursor.year, cursor.month);
   }
 
-  return order
-    .map((key): RecurringLibraryEntry<C> => {
-      const m = meta.get(key)!;
-      const status: RecurringLibraryStatus = presentNames.has(key)
-        ? 'present'
-        : activeNames.has(key)
-          ? 'active'
-          : 'history';
-      const amount = inferStableAmount(
-        fetcher,
-        data,
-        m.anchorYear,
-        m.anchorMonth,
-        key,
-      );
-      return { category: m.category as C, name: m.name, amount, status };
-    })
-    .sort((a, b) => STATUS_WEIGHT[a.status] - STATUS_WEIGHT[b.status]);
+  return entries.sort((a, b) => STATUS_WEIGHT[a.status] - STATUS_WEIGHT[b.status]);
 };
 
 export const buildRecurringExpenseLibrary = (

@@ -169,6 +169,12 @@ Tom feedback หลังใช้จริง: เปิด modal ครั้�
 - ตัด prop `sourceLabel` ออก (ใช้ legend/hint ภายในแทน)
 - Verified: `scripts/verify-recurring-library.ts` (11 assertions)
 
+**Iteration 2 (เอา history ออก):** Tom ขอเหลือแค่รายการประจำจริงๆ ไม่เอา "เคยใช้".
+- ตัด status `history` ทิ้ง → เหลือ `'present' | 'active'`
+- `buildLibrary` ใหม่: present = recurring ในเดือนนี้ (ตรงจากเดือนปัจจุบัน),
+  active = recurring จากเดือนล่าสุดที่มี ลบที่ present ออก — ไม่ไล่ลึกกว่านั้น
+- modal ตัด badge "เคยใช้" + seed `included: true` เสมอ (present locked)
+
 ## Files Touched
 
 - `src/components/forms/RecurringFillModal.tsx` (ใหม่)
