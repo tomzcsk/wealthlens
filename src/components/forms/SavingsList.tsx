@@ -37,7 +37,17 @@ import {
 } from '@/utils/formatters';
 import { findRecurringSavingsTemplate } from '@/utils/recurringTemplate';
 
+import RecurringFillModal, {
+  type RecurringFillDraft,
+} from './RecurringFillModal';
 import SavingsForm from './SavingsForm';
+
+/** Category dropdown options for the recurring-fill modal (stable order). */
+const SAVINGS_CATEGORY_OPTIONS = SAVINGS_CATEGORY_ORDER.map((c) => ({
+  value: c,
+  label: SAVINGS_CATEGORIES[c].label,
+  icon: SAVINGS_CATEGORIES[c].icon,
+}));
 
 export interface SavingsListProps {
   year: number;
@@ -381,21 +391,45 @@ export const SavingsList = ({
   const handleEditKept = (): void => setKeptModalOpen(true);
   const handleCloseKept = (): void => setKeptModalOpen(false);
 
+  const [fillModalOpen, setFillModalOpen] = useState(false);
+  const [fillDraft, setFillDraft] = useState<{
+    items: RecurringFillDraft[];
+    sourceLabel?: string;
+  }>({ items: [] });
+
+  // Open the preview/edit modal instead of writing immediately. A missing
+  // template (first month / already complete) opens it blank so Tom can build
+  // the list by hand.
   const handleFillRecurring = (): void => {
     const data = useFinanceStore.getState().data;
     const template = findRecurringSavingsTemplate(data, year, month);
-    if (!template) {
-      pushToast({
-        message: 'ไม่มีรายการออมประจำให้เติม (หรือเติมครบแล้ว)',
-        tone: 'info',
+    setFillDraft(
+      template != null
+        ? {
+            items: template.items.map(({ category, name, amount }) => ({
+              category,
+              name,
+              amount,
+            })),
+            sourceLabel: `จาก ${formatThaiMonth(template.sourceMonth)} ${template.sourceYear}`,
+          }
+        : { items: [], sourceLabel: undefined },
+    );
+    setFillModalOpen(true);
+  };
+
+  const handleConfirmFill = (items: ReadonlyArray<RecurringFillDraft>): void => {
+    for (const it of items) {
+      addSavings(year, month, {
+        category: it.category as SavingsCategory,
+        name: it.name,
+        amount: it.amount,
+        isRecurring: true,
       });
-      return;
     }
-    for (const item of template.items) {
-      addSavings(year, month, item);
-    }
+    setFillModalOpen(false);
     pushToast({
-      message: `เติม ${template.items.length} รายการออมจาก ${formatThaiMonth(template.sourceMonth)} ${template.sourceYear}`,
+      message: `เติม ${items.length} รายการออมแล้ว`,
       tone: 'success',
     });
   };
@@ -599,6 +633,17 @@ export const SavingsList = ({
           />
         </div>
       </Modal>
+
+      <RecurringFillModal
+        open={fillModalOpen}
+        onClose={() => setFillModalOpen(false)}
+        title="เติมรายการออมประจำ"
+        sourceLabel={fillDraft.sourceLabel}
+        initialItems={fillDraft.items}
+        categories={SAVINGS_CATEGORY_OPTIONS}
+        defaultCategory="general"
+        onConfirm={handleConfirmFill}
+      />
     </div>
   );
 };

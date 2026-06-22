@@ -33,6 +33,16 @@ import { findRecurringTemplate } from '@/utils/recurringTemplate';
 
 import ExpenseForm from './ExpenseForm';
 import InstallmentForm from './InstallmentForm';
+import RecurringFillModal, {
+  type RecurringFillDraft,
+} from './RecurringFillModal';
+
+/** Category dropdown options for the recurring-fill modal (stable order). */
+const EXPENSE_CATEGORY_OPTIONS = CATEGORY_ORDER.map((c) => ({
+  value: c,
+  label: EXPENSE_CATEGORIES[c].label,
+  icon: EXPENSE_CATEGORIES[c].icon,
+}));
 
 export interface ExpenseListProps {
   year: number;
@@ -188,21 +198,45 @@ export const ExpenseList = ({
     }
   };
 
+  const [fillModalOpen, setFillModalOpen] = useState(false);
+  const [fillDraft, setFillDraft] = useState<{
+    items: RecurringFillDraft[];
+    sourceLabel?: string;
+  }>({ items: [] });
+
+  // Open the preview/edit modal instead of writing immediately. A missing
+  // template (first month / already complete) opens it blank so Tom can build
+  // the list by hand.
   const handleFillRecurring = (): void => {
     const data = useFinanceStore.getState().data;
     const template = findRecurringTemplate(data, year, month);
-    if (!template) {
-      pushToast({
-        message: 'ไม่มีรายการประจำให้เติม (หรือเติมครบแล้ว)',
-        tone: 'info',
+    setFillDraft(
+      template != null
+        ? {
+            items: template.items.map(({ category, name, amount }) => ({
+              category,
+              name,
+              amount,
+            })),
+            sourceLabel: `จาก ${formatThaiMonth(template.sourceMonth)} ${template.sourceYear}`,
+          }
+        : { items: [], sourceLabel: undefined },
+    );
+    setFillModalOpen(true);
+  };
+
+  const handleConfirmFill = (items: ReadonlyArray<RecurringFillDraft>): void => {
+    for (const it of items) {
+      addExpense(year, month, {
+        category: it.category as ExpenseCategory,
+        name: it.name,
+        amount: it.amount,
+        isRecurring: true,
       });
-      return;
     }
-    for (const item of template.items) {
-      addExpense(year, month, item);
-    }
+    setFillModalOpen(false);
     pushToast({
-      message: `เติม ${template.items.length} รายการจาก ${formatThaiMonth(template.sourceMonth)} ${template.sourceYear}`,
+      message: `เติม ${items.length} รายการแล้ว`,
       tone: 'success',
     });
   };
@@ -364,6 +398,16 @@ export const ExpenseList = ({
             />
           </div>
         </Modal>
+        <RecurringFillModal
+          open={fillModalOpen}
+          onClose={() => setFillModalOpen(false)}
+          title="เติมรายการประจำ"
+          sourceLabel={fillDraft.sourceLabel}
+          initialItems={fillDraft.items}
+          categories={EXPENSE_CATEGORY_OPTIONS}
+          defaultCategory="other"
+          onConfirm={handleConfirmFill}
+        />
       </div>
     );
   }
@@ -560,6 +604,17 @@ export const ExpenseList = ({
           </div>
         )}
       </Modal>
+
+      <RecurringFillModal
+        open={fillModalOpen}
+        onClose={() => setFillModalOpen(false)}
+        title="เติมรายการประจำ"
+        sourceLabel={fillDraft.sourceLabel}
+        initialItems={fillDraft.items}
+        categories={EXPENSE_CATEGORY_OPTIONS}
+        defaultCategory="other"
+        onConfirm={handleConfirmFill}
+      />
     </div>
   );
 };
