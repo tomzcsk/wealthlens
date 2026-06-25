@@ -202,13 +202,26 @@ const validateExpenseItem = (
     ok = false;
   }
   if (!ok) return null;
-  return {
+  const item: ExpenseItem = {
     id: raw.id as string,
     category: raw.category as ExpenseCategory,
     name: raw.name as string,
     amount: raw.amount as number,
     isRecurring: raw.isRecurring as boolean,
   };
+  // Preserve the optional fields shape-as-is when present. Without this the
+  // import/restore path would silently drop date, reimbursement, and
+  // installment metadata — losing real data on every round-trip.
+  if (isString(raw.date)) {
+    item.date = raw.date;
+  }
+  if (isObject(raw.reimbursement)) {
+    item.reimbursement = raw.reimbursement as unknown as ExpenseItem['reimbursement'];
+  }
+  if (isObject(raw.installment)) {
+    item.installment = raw.installment as unknown as ExpenseItem['installment'];
+  }
+  return item;
 };
 
 const validateExpenseRow = (

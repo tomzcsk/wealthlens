@@ -28,7 +28,7 @@ import {
   EXPENSE_CATEGORIES,
 } from '@/types/expense-categories';
 import type { ExpenseCategory, ExpenseItem } from '@/types';
-import { formatTHB } from '@/utils/formatters';
+import { formatTHB, formatThaiDate } from '@/utils/formatters';
 import { buildRecurringExpenseLibrary } from '@/utils/recurringTemplate';
 
 import ExpenseForm from './ExpenseForm';
@@ -123,6 +123,11 @@ const ExpenseRow = ({
             </button>
           )}
         </p>
+        {item.date != null && item.date !== '' && (
+          <p className="text-[11px] text-slate-400 tabular-nums">
+            🗓️ {formatThaiDate(item.date)}
+          </p>
+        )}
       </div>
       <span className="text-sm financial-number text-slate-900 tabular-nums">
         {formatTHB(item.amount)}
@@ -212,12 +217,16 @@ export const ExpenseList = ({
   };
 
   const handleConfirmFill = (items: ReadonlyArray<RecurringFillDraft>): void => {
+    // Newly created rows default to today's date (same rule as the entry form);
+    // Tom can edit any row afterwards to set the real day.
+    const today = new Date().toISOString().slice(0, 10);
     for (const it of items) {
       addExpense(year, month, {
         category: it.category as ExpenseCategory,
         name: it.name,
         amount: it.amount,
         isRecurring: true,
+        date: today,
       });
     }
     setFillModalOpen(false);

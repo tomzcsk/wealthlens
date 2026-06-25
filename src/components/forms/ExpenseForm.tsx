@@ -139,6 +139,12 @@ export const ExpenseForm = ({
     initialValues?.category ?? defaultCategory ?? 'housing',
   );
   const [name, setName] = useState<string>(initialValues?.name ?? '');
+  // วันที่จ่าย (yyyy-mm-dd). New rows default to today; editing an existing
+  // row keeps its stored date, or stays blank for legacy rows that never had
+  // one (Tom opts in by picking a date — we never back-fill silently).
+  const [dateText, setDateText] = useState<string>(
+    initialValues != null ? (initialValues.date ?? '') : todayIso(),
+  );
   // The amount field holds a *delta* to apply to the existing amount (or to
   // ฿0 for new rows) — positive = เพิ่ม, negative = ลด. It always starts empty
   // so an edit that only touches category/name keeps the amount untouched.
@@ -167,6 +173,7 @@ export const ExpenseForm = ({
   const categoryId = useId();
   const nameId = useId();
   const amountId = useId();
+  const dateId = useId();
   const recurringId = useId();
   const reimbursableId = useId();
 
@@ -217,6 +224,8 @@ export const ExpenseForm = ({
     if (!isValid) return;
 
     const trimmedName = name.trim();
+    // Empty date field → omit the field entirely (don't store "").
+    const date = dateText.trim() === '' ? undefined : dateText;
     // Build reimbursement payload only when checked. Preserve `receivedDate`
     // from the existing record when status is unchanged so we don't lose
     // the original reimbursement-day stamp on unrelated edits.
@@ -237,6 +246,7 @@ export const ExpenseForm = ({
         name: trimmedName,
         amount: newAmount,
         isRecurring,
+        date,
         reimbursement,
       });
       onSaved?.(
@@ -246,6 +256,7 @@ export const ExpenseForm = ({
           name: trimmedName,
           amount: newAmount,
           isRecurring,
+          date,
           reimbursement,
         },
         false,
@@ -258,6 +269,7 @@ export const ExpenseForm = ({
       name: trimmedName,
       amount: newAmount,
       isRecurring,
+      date,
       reimbursement,
     });
 
@@ -271,6 +283,7 @@ export const ExpenseForm = ({
         name: trimmedName,
         amount: newAmount,
         isRecurring,
+        date,
         reimbursement,
       },
       continueAdding,
@@ -465,6 +478,26 @@ export const ExpenseForm = ({
             {errors.amount}
           </p>
         )}
+      </div>
+
+      {/* วันที่จ่าย — defaults to today on a new row, editable. Clearing it is
+          allowed (legacy rows have no date). */}
+      <div>
+        <label htmlFor={dateId} className={labelClass}>
+          วันที่จ่าย
+        </label>
+        <input
+          id={dateId}
+          type="date"
+          value={dateText}
+          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+            setDateText(e.target.value)
+          }
+          className={inputBaseClass}
+        />
+        <p className="mt-1 text-xs text-slate-500">
+          เว้นว่างได้ — ปล่อยว่างถ้าไม่อยากระบุวันที่
+        </p>
       </div>
 
       {/* Recurring toggle */}

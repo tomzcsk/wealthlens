@@ -237,6 +237,15 @@ export interface ExpenseItem {
   amount: number;
   isRecurring: boolean;
   /**
+   * ISO yyyy-mm-dd date the expense was actually made. Optional and
+   * backward-compatible: legacy rows (and any month-only entries) simply
+   * omit it and the UI shows no date. New rows default to the day they're
+   * created, but Tom can edit it. The owning `MonthlyExpense.month` /
+   * year key remain the source of truth for which month a row belongs to —
+   * `date` is finer-grained context only, never used in month bucketing.
+   */
+  date?: string;
+  /**
    * Out-of-pocket expense awaiting (or already received) company
    * reimbursement. Absent when the expense is not reimbursable. Tom uses
    * this for Claude AI subscriptions he pays personally then claims back
