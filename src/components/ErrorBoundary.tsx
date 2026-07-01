@@ -1,4 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { useFinanceStore } from '../stores/financeStore';
+import { clearAuthData } from '../auth/useGoogleAuth';
 
 interface ErrorBoundaryState {
   error: Error | null;
@@ -30,8 +32,10 @@ export class ErrorBoundary extends Component<
 
   handleClearStorage = (): void => {
     try {
-      localStorage.removeItem('wealthlens_data');
-      localStorage.removeItem('wealthlens_auth');
+      // Route through each store's own reset so the storage key/engine stays
+      // an implementation detail of the persist layer, not this component.
+      useFinanceStore.getState().clearPersistedData();
+      clearAuthData();
     } catch {
       /* ignore */
     }

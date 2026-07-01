@@ -342,6 +342,12 @@ export interface FinanceState {
   // --- Bulk operations ----------------------------------------------------
   /** Wholesale replacement — used by import / restore-from-Drive. */
   replaceAllData: (data: WealthLensData) => void;
+  /**
+   * Wipe the persisted snapshot and reset in-memory state to empty. The
+   * single storage-clearing entry point so no component has to know the
+   * storage key or engine — used by the ErrorBoundary recovery path.
+   */
+  clearPersistedData: () => void;
 }
 
 /**
@@ -1415,6 +1421,15 @@ export const useFinanceStore = create<FinanceState>()(
             lastUpdated: stamp,
           };
         }),
+
+      clearPersistedData: () => {
+        // Delegate to the persist middleware so this follows the storage
+        // engine wherever it goes (LocalStorage today, IndexedDB/SQLite
+        // tomorrow) — no hardcoded key here. Then reset in-memory state so
+        // the UI is clean even before the caller reloads the page.
+        void useFinanceStore.persist.clearStorage();
+        set(() => ({ ...buildInitialState() }));
+      },
     }),
     {
       name: STORAGE_KEY,

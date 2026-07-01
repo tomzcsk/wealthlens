@@ -146,6 +146,16 @@ const useAuthStore = create<AuthStoreState>((set) => {
   };
 });
 
+/**
+ * Non-hook auth reset for callers outside React (e.g. the ErrorBoundary
+ * recovery button). Clears the persisted token and the shared in-memory
+ * auth store so no component has to know the auth storage key.
+ */
+export const clearAuthData = (): void => {
+  clearPersistedAuth();
+  useAuthStore.getState().clearAuth();
+};
+
 // ---------------------------------------------------------------------------
 // Configured implementation — talks to Google
 // ---------------------------------------------------------------------------
