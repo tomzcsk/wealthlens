@@ -56,6 +56,7 @@ interface RowTotals {
   salary: number;
   bonus: number;
   commission: number;
+  otherIncome: number;
   totalDeductions: number;
   netSalary: number;
   netAll: number;
@@ -71,6 +72,7 @@ const COLUMN_HEADERS = [
   'เงินเดือน',
   'โบนัส',
   'คอม',
+  'รายได้อื่น',
   'หัก',
   'Net',
   'Net.All',
@@ -315,6 +317,15 @@ const MonthRow = ({ payload, year, onSelect }: MonthRowProps) => {
       >
         {formatNumber(income?.commission ?? 0)}
       </td>
+      <td
+        className={clsx(
+          BODY_CELL_BASE,
+          'text-right',
+          dimZero(income?.otherIncome ?? 0),
+        )}
+      >
+        {formatNumber(income?.otherIncome ?? 0)}
+      </td>
       <td className={clsx(BODY_CELL_BASE, 'text-right', deductionsTone)}>
         {formatNumber(summary.totalDeductions)}
       </td>
@@ -402,6 +413,9 @@ const TotalsRow = ({ totals }: TotalsRowProps) => {
       <td className={clsx(BODY_CELL_BASE, 'text-right text-slate-900')}>
         {formatNumber(totals.commission)}
       </td>
+      <td className={clsx(BODY_CELL_BASE, 'text-right text-slate-900')}>
+        {formatNumber(totals.otherIncome)}
+      </td>
       <td className={clsx(BODY_CELL_BASE, 'text-right text-slate-500')}>
         {formatNumber(totals.totalDeductions)}
       </td>
@@ -460,6 +474,7 @@ const computeTotals = (payloads: MonthPayload[]): RowTotals => {
   let salary = 0;
   let bonus = 0;
   let commission = 0;
+  let otherIncome = 0;
   let totalDeductions = 0;
   let netSalary = 0;
   let netAll = 0;
@@ -480,6 +495,7 @@ const computeTotals = (payloads: MonthPayload[]): RowTotals => {
       salary += income.salary;
       bonus += income.bonus;
       commission += income.commission;
+      otherIncome += income.otherIncome ?? 0;
     }
     totalDeductions += summary.totalDeductions;
     netSalary += summary.netSalary;
@@ -495,6 +511,7 @@ const computeTotals = (payloads: MonthPayload[]): RowTotals => {
     salary,
     bonus,
     commission,
+    otherIncome,
     totalDeductions,
     netSalary,
     netAll,
@@ -528,6 +545,7 @@ const buildCsv = (
       income?.salary ?? 0,
       income?.bonus ?? 0,
       income?.commission ?? 0,
+      income?.otherIncome ?? 0,
       summary.totalDeductions,
       summary.netSalary,
       summary.netAll,
@@ -546,6 +564,7 @@ const buildCsv = (
     totals.salary,
     totals.bonus,
     totals.commission,
+    totals.otherIncome,
     totals.totalDeductions,
     totals.netSalary,
     totals.netAll,

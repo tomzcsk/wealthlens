@@ -86,6 +86,7 @@ type SummaryNumericKey =
   | 'salary'
   | 'bonus'
   | 'commission'
+  | 'otherIncome'
   | 'totalDeductions'
   | 'netAll'
   | 'totalExpenses'
@@ -101,6 +102,7 @@ const METRIC_ROWS: readonly MetricRowDef[] = [
   { key: 'salary', label: 'เงินเดือน' },
   { key: 'bonus', label: 'โบนัส' },
   { key: 'commission', label: 'คอม' },
+  { key: 'otherIncome', label: 'รายได้อื่น' },
   { key: 'totalDeductions', label: 'รวมหัก' },
   { key: 'netAll', label: 'Net All' },
   { key: 'totalExpenses', label: 'รวมจ่าย' },

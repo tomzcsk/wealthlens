@@ -43,7 +43,7 @@ export const KpiCardGrid = (): ReactNode => {
   // selector intentionally keeps each income source separate — the UI
   // composes them only when it wants the headline "รายรับรวม" number.
   const grossIncome =
-    summary.salary + summary.bonus + summary.commission;
+    summary.salary + summary.bonus + summary.commission + summary.otherIncome;
 
   // YoY deltas — `salary`, `bonus`, `commission` aren't a single combined
   // metric in the selector, but each individual line is. We approximate the
@@ -120,10 +120,10 @@ const useGrossYoY = (): number | null =>
     const prior = s.data.years[String(year - 1)];
     if (!prior) return null;
     const prev = selectYearSummary(s, year - 1);
-    const prevGross = prev.salary + prev.bonus + prev.commission;
+    const prevGross = prev.salary + prev.bonus + prev.commission + prev.otherIncome;
     if (prevGross === 0) return null;
     const curr = selectYearSummary(s, year);
-    const currGross = curr.salary + curr.bonus + curr.commission;
+    const currGross = curr.salary + curr.bonus + curr.commission + curr.otherIncome;
     return ((currGross - prevGross) / Math.abs(prevGross)) * 100;
   });
 

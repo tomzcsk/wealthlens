@@ -12,6 +12,7 @@ interface YearRow {
   salary: number;
   bonus: number;
   commission: number;
+  otherIncome: number;
   tax: number;
   socialSecurity: number;
   providentFund: number;
@@ -31,6 +32,7 @@ const ZERO_TOTALS = (year: number): YearRow => ({
   salary: 0,
   bonus: 0,
   commission: 0,
+  otherIncome: 0,
   tax: 0,
   socialSecurity: 0,
   providentFund: 0,
@@ -52,6 +54,7 @@ const buildYearRow = (data: WealthLensData, year: number): YearRow => {
     row.salary += income.salary;
     row.bonus += income.bonus;
     row.commission += income.commission;
+    row.otherIncome += income.otherIncome ?? 0;
     row.tax += income.deductions.tax;
     row.socialSecurity += income.deductions.socialSecurity;
     row.providentFund += income.deductions.providentFund;
@@ -82,6 +85,7 @@ const sumRows = (rows: ReadonlyArray<YearRow>): YearRow => {
     total.salary += r.salary;
     total.bonus += r.bonus;
     total.commission += r.commission;
+    total.otherIncome += r.otherIncome;
     total.tax += r.tax;
     total.socialSecurity += r.socialSecurity;
     total.providentFund += r.providentFund;
@@ -176,7 +180,7 @@ export const AllYearsSummary = (): ReactNode => {
                 ปี
               </th>
               <th
-                colSpan={3}
+                colSpan={4}
                 className="px-3 py-2 text-center font-semibold border-r border-amber-200"
               >
                 เงินได้
@@ -197,13 +201,14 @@ export const AllYearsSummary = (): ReactNode => {
             <tr className="bg-amber-50 text-amber-900 border-b border-amber-200 text-xs">
               <th className="px-3 py-2 text-right font-semibold">เงินเดือน</th>
               <th className="px-3 py-2 text-right font-semibold">โบนัส</th>
+              <th className="px-3 py-2 text-right font-semibold">คอม</th>
               <th className="px-3 py-2 text-right font-semibold border-r border-amber-200">
-                คอม
+                รายได้อื่น
               </th>
               <th className="px-3 py-2 text-right font-semibold">ภาษี</th>
               <th className="px-3 py-2 text-right font-semibold">ประกันสังคม</th>
               <th className="px-3 py-2 text-right font-semibold">กองทุน</th>
-              <th className="px-3 py-2 text-right font-semibold">กยศ</th>
+              <th className="px-3 py-2 text-right font-semibold">อื่นๆ</th>
               <th className="px-3 py-2 text-right font-semibold border-r border-amber-200">
                 รวมหัก
               </th>
@@ -239,6 +244,7 @@ export const AllYearsSummary = (): ReactNode => {
                 <MoneyCell value={r.salary} />
                 <MoneyCell value={r.bonus} muted />
                 <MoneyCell value={r.commission} />
+                <MoneyCell value={r.otherIncome} muted />
                 <MoneyCell value={r.tax} muted />
                 <MoneyCell value={r.socialSecurity} muted />
                 <MoneyCell value={r.providentFund} muted />
@@ -304,6 +310,7 @@ export const AllYearsSummary = (): ReactNode => {
               <MoneyCell value={totals.salary} bold />
               <MoneyCell value={totals.bonus} bold />
               <MoneyCell value={totals.commission} bold />
+              <MoneyCell value={totals.otherIncome} bold />
               <MoneyCell value={totals.tax} bold />
               <MoneyCell value={totals.socialSecurity} bold />
               <MoneyCell value={totals.providentFund} bold />

@@ -761,7 +761,7 @@ import { useFinanceStore } from '@/stores/financeStore';
 import { useToastStore } from '@/stores/toastStore';
 import type { LoanType } from '@/types';
 import { formatTHB } from '@/utils/formatters';
-import { getScheduleTotal } from '@/utils/loanCalculations';
+import { getRemainingBalance } from '@/utils/loanCalculations';
 
 const TYPE_LABEL: Record<LoanType, string> = {
   gsl: 'กยศ',
@@ -958,9 +958,9 @@ export const LoansPage = (): ReactNode => {
             <p className="text-sm text-slate-700">
               ลบ{' '}
               <span className="font-semibold">{pendingLoan.name}</span>{' '}
-              (คงเหลือตามตาราง{' '}
+              (ยอดคงเหลือ{' '}
               <span className="financial-number tabular-nums">
-                {formatTHB(getScheduleTotal(pendingLoan), { decimals: 0 })}
+                {formatTHB(getRemainingBalance(pendingLoan), { decimals: 0 })}
               </span>
               ) และประวัติโปะทั้งหมด — พร้อม revert ค่าใช้จ่ายที่ลิงก์ไว้
             </p>

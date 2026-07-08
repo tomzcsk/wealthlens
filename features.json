@@ -1013,6 +1013,56 @@
             "completedAt": "2026-06-15",
             "notes": "Spec: docs/superpowers/specs/2026-06-15-car-installment-plan-design.md | Plan: docs/superpowers/plans/2026-06-15-car-installment-plan.md | Verified: scripts/verify-car-installment.ts (31 assertions) + typecheck + build"
           }
+        },
+        {
+          "id": "F31",
+          "name": "Multi-loan + User-created Loans (หนี้สินหลายก้อน + เพิ่มเอง)",
+          "description": "สร้าง/แก้/ลบ หนี้ได้ทุกประเภท เก็บได้หลายก้อน — รองรับผู้ใช้ที่ไม่มี กยศ โดยไม่ยัดข้อมูลของ Tom",
+          "status": "completed",
+          "priority": "P1",
+          "phase": "phase_4",
+          "acceptanceCriteria": [
+            "LoanForm สร้าง/แก้ หนี้ทุกประเภท (gsl/mortgage/auto/other) — กรอกตารางงวดเอง ต้น/ดอก แยก",
+            "scaffoldSchedule ไล่วันที่ให้ (รายเดือน/รายปี) + clamp สิ้นเดือน, finalizeSchedule คิด totalAmount/principalRatio",
+            "LoanForm ใช้ text input กันปัญหาพิมพ์ทศนิยม + validate ยอด > 0 + stable row id",
+            "LoansPage หลายก้อน: pills เลือกก้อน (button group) + ปุ่มเพิ่ม/แก้/ลบ ต่อก้อน",
+            "แตก LoanDetail ออกจาก LoansPage (1 component = 1 ก้อน)",
+            "Empty state ปุ่มหลัก '+ เพิ่มหนี้', ปุ่มรอง 'โหลด กยศ ตัวอย่าง (ของ Tom)' ตัวเล็ก",
+            "delete-confirm แสดงยอดคงเหลือจริง (getRemainingBalance)",
+            "ไม่แตะ schema — seed กยศ เดิมของ Tom คำนวณเท่าเดิม (verify-multi-loan.ts)"
+          ],
+          "estimatedHours": 6,
+          "dependencies": ["F26"],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-07-08",
+            "notes": "Spec: docs/superpowers/specs/2026-07-08-multi-loan-user-created-design.md | Plan: docs/superpowers/plans/2026-07-08-multi-loan-user-created.md | Store actions (addLoan/updateLoan/deleteLoan) มีอยู่ก่อนแล้ว — งานนี้ต่อ UI (utils/loanForm.ts, components/loans/{LoanForm,LoanDetail}.tsx, pages/LoansPage.tsx). Verified: scripts/verify-multi-loan.ts + typecheck + build"
+          }
+        },
+        {
+          "id": "F32",
+          "name": "รายได้อื่นๆ (otherIncome — income source ที่ 4)",
+          "description": "เพิ่ม field 'รายได้อื่นๆ' ในรายได้รายเดือน พฤติกรรมเหมือน Commission (บวกเข้า Net.All หลังหัก + นับใน รายรับรวม + taxable)",
+          "status": "completed",
+          "priority": "P1",
+          "phase": "phase_4",
+          "acceptanceCriteria": [
+            "MonthlyIncome.otherIncome?: number (optional, backward-compat — ข้อมูลเดิมยอดไม่เพี้ยน)",
+            "Net.All = (เงินเดือน+โบนัส−หัก) + คอม + อื่นๆ (calculateNetAll + selectors)",
+            "IncomeForm มีช่อง 'รายได้อื่นๆ' ต่อจากคอม",
+            "โชว์เป็น column/row ทุกที่: MonthlySummaryTable (+CSV), AllYearsSummary, MonthlyPage, PrintReport (PDF)",
+            "KPI รายรับรวม + YoY รวม otherIncome, hasIncome guard นับเดือนที่มีแต่ otherIncome",
+            "TaxCalculator: taxable + toggle mirror commission, MultiYearComparison metric",
+            "Export/Import round-trip เก็บค่า, backup เก่าไม่มี field ยัง import ได้",
+            "Verified: scripts/verify-income-totals.ts (seed netAll 2023-2026 ไม่เพี้ยน + otherIncome ไหลเข้า netAll/gross)"
+          ],
+          "estimatedHours": 5,
+          "dependencies": [],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-07-08",
+            "notes": "Files: types/index.ts, utils/calculations.ts, stores/selectors.ts, components/forms/IncomeForm.tsx, components/dashboard/{KpiCardGrid,MonthlySummaryTable}.tsx, components/analytics/{AllYearsSummary,MultiYearComparison}.tsx, hooks/useFinanceData.ts, utils/exportImport.ts, pages/{MonthlyPage,PrintReportPage,TaxCalculatorPage}.tsx | Verified: scripts/verify-income-totals.ts + typecheck + build. หมายเหตุ: CLAUDE.md decision #5 อัปเดต 3→4 sources"
+          }
         }
       ]
     }
@@ -1102,12 +1152,12 @@
     }
   },
   "progressSummary": {
-    "totalFeatures": 38,
-    "completed": 38,
+    "totalFeatures": 40,
+    "completed": 40,
     "inProgress": 0,
     "pending": 0,
     "overallProgress": "100%",
     "currentPhase": "shipped",
-    "nextMilestone": "Phase 5 (optional): dark mode, mobile UX polish, additional analytics, multi-loan UI (mortgage/auto)"
+    "nextMilestone": "Phase 5 (optional): dark mode, mobile UX polish, additional analytics"
   }
 }

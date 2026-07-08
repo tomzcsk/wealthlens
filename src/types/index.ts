@@ -208,6 +208,8 @@ export interface MonthlyIncome {
   salary: number;
   bonus: number;
   commission: number;
+  /** รายได้อื่นๆ — extra income added to Net.All like commission (post-deduction). Optional for backward-compat. */
+  otherIncome?: number;
   deductions: MonthlyDeductions;
 }
 

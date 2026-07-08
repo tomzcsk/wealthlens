@@ -161,7 +161,7 @@ const PrintReportPage = (): ReactNode => {
     const yr = dataYears[String(safeYear)];
     const map = new Map<
       number,
-      { salary: number; bonus: number; commission: number }
+      { salary: number; bonus: number; commission: number; otherIncome: number }
     >();
     if (!yr) return map;
     for (const inc of yr.income) {
@@ -169,6 +169,7 @@ const PrintReportPage = (): ReactNode => {
         salary: inc.salary,
         bonus: inc.bonus,
         commission: inc.commission,
+        otherIncome: inc.otherIncome ?? 0,
       });
     }
     return map;
@@ -263,6 +264,7 @@ const PrintReportPage = (): ReactNode => {
             <SummaryLine label="เงินเดือน" value={summary.salary} />
             <SummaryLine label="โบนัส" value={summary.bonus} />
             <SummaryLine label="คอมมิชชั่น" value={summary.commission} />
+            <SummaryLine label="รายได้อื่นๆ" value={summary.otherIncome} />
             <SummaryLine label="รวมหัก" value={summary.totalDeductions} />
             <SummaryLine label="เหลือจริง (Kept)" value={summary.remaining} accent="kept" />
             <SummaryLine label="รายได้สุทธิเฉลี่ย" value={avgMonthlyNet} />
@@ -284,6 +286,7 @@ const PrintReportPage = (): ReactNode => {
                 <th className={HEADER_CELL}>เงินเดือน</th>
                 <th className={HEADER_CELL}>โบนัส</th>
                 <th className={HEADER_CELL}>คอม</th>
+                <th className={HEADER_CELL}>รายได้อื่น</th>
                 <th className={HEADER_CELL}>หัก</th>
                 <th className={HEADER_CELL}>Net.All</th>
                 <th className={HEADER_CELL}>จ่าย</th>
@@ -299,6 +302,7 @@ const PrintReportPage = (): ReactNode => {
                     <td className={BODY_CELL}>{inc ? formatNumber(inc.salary) : '—'}</td>
                     <td className={BODY_CELL}>{inc ? formatNumber(inc.bonus) : '—'}</td>
                     <td className={BODY_CELL}>{inc ? formatNumber(inc.commission) : '—'}</td>
+                    <td className={BODY_CELL}>{inc ? formatNumber(inc.otherIncome) : '—'}</td>
                     <td className={BODY_CELL}>{formatNumber(row.totalDeductions)}</td>
                     <td className={BODY_CELL}>{formatNumber(row.netAll)}</td>
                     <td className={BODY_CELL}>{formatNumber(row.totalExpenses)}</td>
@@ -313,6 +317,7 @@ const PrintReportPage = (): ReactNode => {
                 <td className={BODY_CELL}>{formatNumber(summary.salary)}</td>
                 <td className={BODY_CELL}>{formatNumber(summary.bonus)}</td>
                 <td className={BODY_CELL}>{formatNumber(summary.commission)}</td>
+                <td className={BODY_CELL}>{formatNumber(summary.otherIncome)}</td>
                 <td className={BODY_CELL}>{formatNumber(tableTotals.totalDeductions)}</td>
                 <td className={BODY_CELL}>{formatNumber(tableTotals.netAll)}</td>
                 <td className={BODY_CELL}>{formatNumber(tableTotals.totalExpenses)}</td>

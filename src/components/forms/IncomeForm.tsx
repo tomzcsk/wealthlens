@@ -70,6 +70,7 @@ interface IncomeFormState {
   salary: FieldValue;
   bonus: FieldValue;
   commission: FieldValue;
+  otherIncome: FieldValue;
   tax: FieldValue;
   socialSecurity: FieldValue;
   providentFund: FieldValue;
@@ -80,6 +81,7 @@ const EMPTY_STATE: IncomeFormState = {
   salary: '',
   bonus: '',
   commission: '',
+  otherIncome: '',
   tax: '',
   socialSecurity: '',
   providentFund: '',
@@ -90,6 +92,7 @@ const fromIncome = (income: MonthlyIncome): IncomeFormState => ({
   salary: income.salary,
   bonus: income.bonus,
   commission: income.commission,
+  otherIncome: income.otherIncome ?? 0,
   tax: income.deductions.tax,
   socialSecurity: income.deductions.socialSecurity,
   providentFund: income.deductions.providentFund,
@@ -338,12 +341,13 @@ export const IncomeForm = ({
     const out: Partial<Record<keyof IncomeFormState, string>> = {};
     // บางเดือนเป็นโบนัสล้วน หรือคอมล้วน (เงินเดือน 0) ก็ต้องเซฟได้ —
     // ขอแค่มีรายได้อย่างน้อยหนึ่งช่อง ไม่บังคับเงินเดือนอย่างเดียว
-    const totalIncome = num(form.salary) + num(form.bonus) + num(form.commission);
+    const totalIncome =
+      num(form.salary) + num(form.bonus) + num(form.commission) + num(form.otherIncome);
     if (totalIncome <= 0) {
-      out.salary = 'กรอกรายได้อย่างน้อยหนึ่งช่อง (เงินเดือน/โบนัส/คอม)';
+      out.salary = 'กรอกรายได้อย่างน้อยหนึ่งช่อง (เงินเดือน/โบนัส/คอม/อื่นๆ)';
     }
     return out;
-  }, [form.salary, form.bonus, form.commission]);
+  }, [form.salary, form.bonus, form.commission, form.otherIncome]);
 
   const isValid = Object.keys(errors).length === 0;
 
@@ -352,17 +356,19 @@ export const IncomeForm = ({
     const salary = num(form.salary);
     const bonus = num(form.bonus);
     const commission = num(form.commission);
+    const otherIncome = num(form.otherIncome);
     const totalDeductions =
       num(form.tax) +
       num(form.socialSecurity) +
       num(form.providentFund) +
       num(form.gsl);
-    const grossIncome = salary + bonus + commission;
+    const grossIncome = salary + bonus + commission + otherIncome;
     const netSalary = salary + bonus - totalDeductions;
     const netAll = calculateNetAll({
       salary,
       bonus,
       commission,
+      otherIncome,
       totalDeductions,
     });
     return { grossIncome, totalDeductions, netSalary, netAll };
@@ -408,6 +414,7 @@ export const IncomeForm = ({
       salary: num(form.salary),
       bonus: num(form.bonus),
       commission: num(form.commission),
+      otherIncome: num(form.otherIncome),
       deductions,
     };
 
@@ -507,6 +514,12 @@ export const IncomeForm = ({
           value={form.commission}
           onChange={setField('commission')}
         />
+        <NumberInput
+          id="income-otherIncome"
+          label="รายได้อื่นๆ"
+          value={form.otherIncome}
+          onChange={setField('otherIncome')}
+        />
       </div>
 
       {/* --- Deductions section --- */}
@@ -533,7 +546,7 @@ export const IncomeForm = ({
         />
         <NumberInput
           id="deduction-gsl"
-          label="กยศ"
+          label="อื่นๆ"
           value={form.gsl}
           onChange={setField('gsl')}
         />

@@ -28,6 +28,7 @@ export const TaxCalculatorPage = (): ReactNode => {
 
   const [includeBonus, setIncludeBonus] = useState(false);
   const [includeCommission, setIncludeCommission] = useState(false);
+  const [includeOtherIncome, setIncludeOtherIncome] = useState(false);
 
   const summary = useYearSummary(selectedYear);
   const data = useFinanceStore((s) => s.data);
@@ -61,7 +62,8 @@ export const TaxCalculatorPage = (): ReactNode => {
   const grossIncome =
     summary.salary +
     (includeBonus ? summary.bonus : 0) +
-    (includeCommission ? summary.commission : 0);
+    (includeCommission ? summary.commission : 0) +
+    (includeOtherIncome ? summary.otherIncome : 0);
 
   const resolvedAllowances = useMemo(
     () =>
@@ -143,6 +145,21 @@ export const TaxCalculatorPage = (): ReactNode => {
               รวมคอม{' '}
               <span className="text-slate-400 tabular-nums">
                 ({formatTHB(summary.commission)})
+              </span>
+            </span>
+          </label>
+
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={includeOtherIncome}
+              onChange={(e) => setIncludeOtherIncome(e.target.checked)}
+              className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+            />
+            <span className="text-sm text-slate-700">
+              รายได้อื่นๆ{' '}
+              <span className="text-slate-400 tabular-nums">
+                ({formatTHB(summary.otherIncome)})
               </span>
             </span>
           </label>

@@ -470,7 +470,8 @@ export const use48MonthTrend = (): TrendPoint[] => {
           income !== null &&
           (income.salary !== 0 ||
             income.bonus !== 0 ||
-            income.commission !== 0);
+            income.commission !== 0 ||
+            (income.otherIncome ?? 0) !== 0);
         const hasExpense = CATEGORY_ORDER.some((c) => byCategory[c] !== 0);
         points.push({
           year,

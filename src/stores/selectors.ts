@@ -153,10 +153,10 @@ export const selectMonthSummary = (
     };
   }
 
-  const gross = income.salary + income.bonus + income.commission;
+  const gross = income.salary + income.bonus + income.commission + (income.otherIncome ?? 0);
   const totalDeductions = sumDeductions(income.deductions);
   const netSalary = income.salary + income.bonus - totalDeductions;
-  const netAll = netSalary + income.commission;
+  const netAll = netSalary + income.commission + (income.otherIncome ?? 0);
   const totalExpenses = sumExpenseItems(items);
   const remaining = netAll - totalExpenses;
 
@@ -180,6 +180,7 @@ export interface YearSummary {
   salary: number;
   bonus: number;
   commission: number;
+  otherIncome: number;
   totalDeductions: number;
   /** Sum of monthly netSalary across the year */
   netSalary: number;
@@ -197,6 +198,7 @@ const ZERO_YEAR_SUMMARY: YearSummary = {
   salary: 0,
   bonus: 0,
   commission: 0,
+  otherIncome: 0,
   totalDeductions: 0,
   netSalary: 0,
   netAll: 0,
@@ -221,6 +223,7 @@ export const selectYearSummary = (
   let salary = 0;
   let bonus = 0;
   let commission = 0;
+  let otherIncome = 0;
   let totalDeductions = 0;
   let netSalary = 0;
   let netAll = 0;
@@ -234,6 +237,7 @@ export const selectYearSummary = (
       salary += income.salary;
       bonus += income.bonus;
       commission += income.commission;
+      otherIncome += income.otherIncome ?? 0;
     }
     const summary = selectMonthSummary(state, year, month);
     totalDeductions += summary.totalDeductions;
@@ -248,6 +252,7 @@ export const selectYearSummary = (
     salary,
     bonus,
     commission,
+    otherIncome,
     totalDeductions,
     netSalary,
     netAll,
@@ -267,6 +272,7 @@ export type YoYMetric =
   | 'salary'
   | 'bonus'
   | 'commission'
+  | 'otherIncome'
   | 'totalDeductions'
   | 'netSalary'
   | 'netAll'

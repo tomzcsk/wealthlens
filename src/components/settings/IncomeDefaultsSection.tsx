@@ -15,7 +15,7 @@ const FIELDS: ReadonlyArray<FieldConfig> = [
   { key: 'tax', label: 'ภาษี', hint: 'ภาษีหัก ณ ที่จ่ายต่อเดือน (เปลี่ยนได้ในเดือนที่มีโบนัส)' },
   { key: 'socialSecurity', label: 'ประกันสังคม', hint: 'ปกติ 750/เดือน' },
   { key: 'providentFund', label: 'กองทุนสำรองเลี้ยงชีพ', hint: 'ปกติ 2,400/เดือน' },
-  { key: 'gsl', label: 'กยศ', hint: 'ผ่อนชำระเงินกู้' },
+  { key: 'gsl', label: 'อื่นๆ', hint: 'หักอื่นๆ ตามสลิป' },
 ];
 
 const ZERO_DEFAULTS: IncomeDefaults = {

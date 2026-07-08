@@ -91,7 +91,7 @@ npm run lint       # ESLint check
 2. **Zustand ไม่ใช่ Redux** — ง่ายกว่า boilerplate น้อยกว่า ทรงพลังพอ
 3. **Recharts ไม่ใช่ Chart.js** — React-native, TypeScript support ดีกว่า
 4. **Thai month names** — ใช้ `ม.ค.–ธ.ค.` บน chart axes เสมอ
-5. **Income = Salary + Bonus + Commission** — 3 sources เท่านั้น
+5. **Income = Salary + Bonus + Commission + รายได้อื่นๆ (otherIncome)** — `otherIncome` เพิ่มภายหลัง (F32) พฤติกรรมเหมือน Commission: บวกเข้า Net.All หลังหัก, นับใน รายรับรวม, optional (`otherIncome?: number`) เพื่อ backward-compat กับข้อมูลเดิม
 
 ---
 

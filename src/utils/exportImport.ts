@@ -163,6 +163,7 @@ const validateIncomeRow = (
     salary: raw.salary as number,
     bonus: raw.bonus as number,
     commission: raw.commission as number,
+    otherIncome: isNonNegativeNumber(raw.otherIncome) ? (raw.otherIncome as number) : 0,
     deductions,
   };
 };

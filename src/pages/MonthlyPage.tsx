@@ -108,6 +108,7 @@ export const MonthlyPage = (): ReactNode => {
             <Stat label="เงินเดือน" amount={income.salary} />
             <Stat label="โบนัส" amount={income.bonus} />
             <Stat label="คอม" amount={income.commission} tone="income" />
+            <Stat label="รายได้อื่นๆ" amount={income.otherIncome ?? 0} tone="income" />
             <Stat label="ภาษี" amount={income.deductions.tax} tone="muted" />
             <Stat
               label="ประกันสังคม"
@@ -119,7 +120,7 @@ export const MonthlyPage = (): ReactNode => {
               amount={income.deductions.providentFund}
               tone="muted"
             />
-            <Stat label="กยศ" amount={income.deductions.gsl} tone="muted" />
+            <Stat label="อื่นๆ" amount={income.deductions.gsl} tone="muted" />
             <Stat
               label="รวมหัก"
               amount={summary.totalDeductions}

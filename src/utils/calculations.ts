@@ -18,20 +18,22 @@ export interface NetAllInputs {
   commission: number;
   /** Pre-computed total of all deduction lines for the period. */
   totalDeductions: number;
+  /** Extra income, added post-deduction like commission. */
+  otherIncome?: number;
 }
 
 /**
  * Canonical "Net All" formula — duplicated intentionally from selectors.ts
  * so any UI component can verify against this single source of truth.
  *
- *   Net All = (salary + bonus - totalDeductions) + commission
+ *   Net All = (salary + bonus - totalDeductions) + commission + otherIncome
  *
  * Commission is added AFTER deductions because deductions
  * (tax/social-security/provident-fund/กยศ/Dime) are taken out of the salary
  * stream only — see prd.md §3 "Net. All".
  */
 export const calculateNetAll = (input: NetAllInputs): number =>
-  input.salary + input.bonus - input.totalDeductions + input.commission;
+  input.salary + input.bonus - input.totalDeductions + input.commission + (input.otherIncome ?? 0);
 
 // ---------------------------------------------------------------------------
 // Comparisons
