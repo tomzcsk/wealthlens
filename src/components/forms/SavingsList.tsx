@@ -10,30 +10,21 @@
  *   - 🗑️ confirms via `window.confirm` then calls `deleteSavings`.
  */
 
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type FormEvent,
-  type ReactNode,
-} from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 
+import BankAvatar from '@/components/accounts/BankAvatar';
+import BankBalanceEditForm from '@/components/accounts/BankBalanceEditForm';
 import Modal from '@/components/ui/Modal';
 import { useFinanceStore } from '@/stores/financeStore';
-import { sumAnnualKept, useGoalsStore } from '@/stores/goalsStore';
 import { selectMonthSavings } from '@/stores/selectors';
 import { useToastStore } from '@/stores/toastStore';
 import {
   SAVINGS_CATEGORIES,
   SAVINGS_CATEGORY_ORDER,
 } from '@/types/savings-categories';
-import type { SavingsCategory, SavingsItem } from '@/types';
-import {
-  THAI_MONTHS_LONG,
-  formatNumber,
-  formatTHB,
-} from '@/utils/formatters';
+import type { BankAccount, SavingsCategory, SavingsItem } from '@/types';
+import { accountYearTotal, sumBankMonth } from '@/utils/bankAccounts';
+import { formatTHB } from '@/utils/formatters';
 import { buildRecurringSavingsLibrary } from '@/utils/recurringTemplate';
 
 import RecurringFillModal, {
@@ -120,222 +111,45 @@ const SavingsRow = ({
 };
 
 // ---------------------------------------------------------------------------
-// Kept edit form — styled twin of SavingsForm for one number field
-// ---------------------------------------------------------------------------
-
-interface KeptEditFormProps {
-  year: number;
-  month: number;
-  /** Current persisted value, or `undefined` if no entry yet for this month. */
-  initialAmount: number | undefined;
-  onSave: (amount: number) => void;
-  onClear: () => void;
-  onCancel: () => void;
-}
-
-/**
- * Add/withdraw editor for the (year, month) Kept entry. Instead of asking
- * Tom to key in the new monthly *total* (which forced him to a calculator
- * whenever a month had several deposits/withdrawals), this field takes a
- * single delta — positive = ฝากเข้า, negative = ถอนออก — and folds it into
- * the running balance for him, previewing the result live before save.
- *
- * Storage is unchanged: we still persist one net number per month via
- * `setKeptBalance`; we just compute `current + delta` here. To fix a wrong
- * entry, clear the month (🗑️) and start fresh.
- */
-const KeptEditForm = ({
-  year,
-  month,
-  initialAmount,
-  onSave,
-  onClear,
-  onCancel,
-}: KeptEditFormProps): ReactNode => {
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  // The field now holds a delta to apply, never the stored total — so it
-  // always starts empty regardless of whether the month already has a value.
-  const [text, setText] = useState<string>('');
-
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
-
-  const current = initialAmount ?? 0;
-
-  const delta = useMemo<number | null>(() => {
-    const trimmed = text.trim();
-    if (trimmed === '' || trimmed === '-') return null;
-    const n = Number(trimmed.replace(/,/g, ''));
-    return Number.isFinite(n) ? n : null;
-  }, [text]);
-
-  // Nothing to save unless a non-zero delta is entered.
-  const canSubmit = delta !== null && delta !== 0;
-  const isEdit = initialAmount !== undefined;
-  const monthLabel = THAI_MONTHS_LONG[month - 1];
-  const newTotal = current + (delta ?? 0);
-
-  const fmtMoney = (n: number): string =>
-    formatTHB(n, { decimals: Number.isInteger(n) ? 0 : 2 });
-
-  const handleChange = (raw: string): void => {
-    // Allow optional leading minus, digits, single decimal, and commas
-    // during typing. Re-format with commas every keystroke so the field
-    // reads like real money — matches IncomeForm/ExpenseForm.
-    const cleaned = raw.replace(/[^\d.,-]/g, '');
-    const trimmed = cleaned.trim();
-    if (trimmed === '' || trimmed === '-') {
-      setText(trimmed);
-      return;
-    }
-    const negative = trimmed.startsWith('-');
-    const digits = trimmed.replace(/[^\d.]/g, '');
-    if (digits === '') {
-      setText(negative ? '-' : '');
-      return;
-    }
-    const [intPart, decPart] = digits.split('.');
-    const intNum = Number(intPart);
-    const intFormatted = Number.isFinite(intNum) ? formatNumber(intNum) : '';
-    const display =
-      decPart !== undefined
-        ? `${negative ? '-' : ''}${intFormatted}.${decPart}`
-        : `${negative ? '-' : ''}${intFormatted}`;
-    setText(display);
-  };
-
-  const handleSubmit = (e?: FormEvent): void => {
-    if (e) e.preventDefault();
-    if (!canSubmit) return;
-    onSave(newTotal);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label
-          htmlFor="kept-amount-input"
-          className="block text-sm font-medium text-slate-700 mb-1.5"
-        >
-          ยอด Kept (กรุงศรี) — {monthLabel} {year}
-        </label>
-
-        <div className="flex items-center justify-between rounded-md bg-slate-50 border border-slate-200 px-3 py-2 mb-3">
-          <span className="text-sm text-slate-600">ยอดปัจจุบันเดือนนี้</span>
-          <span className="text-base font-medium tabular-nums text-slate-800">
-            {fmtMoney(current)}
-          </span>
-        </div>
-
-        <input
-          id="kept-amount-input"
-          ref={inputRef}
-          type="text"
-          inputMode="decimal"
-          value={text}
-          onChange={(e) => handleChange(e.target.value)}
-          placeholder="เช่น +5,000 หรือ -3,000"
-          className="w-full px-3 py-2 text-base tabular-nums border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
-        />
-        <p className="mt-1.5 text-xs text-slate-500">
-          เพิ่ม/ถอน · บวก = ฝากเข้า · ลบ = ถอนออก
-        </p>
-
-        <div className="flex items-center justify-between rounded-md bg-primary-light border border-blue-100 px-3 py-2 mt-3">
-          <span className="text-sm text-slate-600">ยอดใหม่หลังบันทึก</span>
-          <span
-            className={`text-lg font-semibold tabular-nums ${
-              delta === null || delta === 0
-                ? 'text-slate-800'
-                : delta > 0
-                  ? 'text-income'
-                  : 'text-expense'
-            }`}
-          >
-            {fmtMoney(newTotal)}
-          </span>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between pt-2">
-        <div>
-          {isEdit && (
-            <button
-              type="button"
-              onClick={onClear}
-              className="px-3 py-2 text-sm font-medium text-expense bg-white border border-red-200 rounded-md hover:bg-red-50 transition"
-            >
-              🗑️ ลบยอดเดือนนี้
-            </button>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition"
-          >
-            ยกเลิก
-          </button>
-          <button
-            type="submit"
-            disabled={!canSubmit}
-            className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition"
-          >
-            บันทึก
-          </button>
-        </div>
-      </div>
-    </form>
-  );
-};
-
-// ---------------------------------------------------------------------------
-// Kept (Krungsri) row
+// Bank account balance row
 // ---------------------------------------------------------------------------
 
 /**
- * "Kept" lives in `preferences.keptBalances` (not in `MonthlySavings.items`)
- * but Tom thinks of it as just another savings line, so we render it inside
- * SavingsList alongside Dime / ออมเที่ยว. The row mirrors `SavingsRow`'s
- * visuals — same icon column, same right-aligned amount, same hover —
- * with a click-to-edit prompt instead of pencil/trash buttons because
- * Kept allows negative values (withdrawals) and there's only one row per
- * (year, month), so the open-modal pattern would be overkill.
+ * Bank account balances live in `data.bankAccounts` (not in
+ * `MonthlySavings.items`) but Tom thinks of them as just another savings
+ * line, so we render one row per account inside SavingsList alongside Dime /
+ * ออมเที่ยว. The row mirrors `SavingsRow`'s visuals — same icon column, same
+ * right-aligned amount, same hover — with a click-to-edit prompt instead of
+ * pencil/trash buttons because balances allow negative values (withdrawals)
+ * and there's only one row per (account, year, month), so the open-modal
+ * pattern would be overkill.
  */
-interface KeptRowProps {
-  year: number;
-  month: number;
+interface BankBalanceRowProps {
+  account: BankAccount;
   monthly: number | undefined;
   annual: number;
   onEdit: () => void;
-  showIcon?: boolean;
 }
 
-const KeptRow = ({
+const BankBalanceRow = ({
+  account,
   monthly,
   annual,
   onEdit,
-  showIcon = true,
-}: KeptRowProps): ReactNode => {
+}: BankBalanceRowProps): ReactNode => {
   const hasValue = monthly !== undefined;
   const isNegative = hasValue && monthly < 0;
   return (
     <button
       type="button"
       onClick={onEdit}
-      title="ยอด Kept (กรุงศรี) เดือนนี้ — คลิกเพื่อแก้"
+      title={`ยอด ${account.name} เดือนนี้ — คลิกเพื่อแก้`}
       className="group w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-slate-50 transition text-left"
     >
-      {showIcon && (
-        <span aria-hidden="true" className="text-base w-6 text-center">
-          💼
-        </span>
-      )}
+      <BankAvatar account={account} size="sm" />
       <div className="flex-1 min-w-0">
         <p className="text-sm text-slate-900 truncate">
-          Kept (กรุงศรี)
+          {account.name}
           <span className="ml-2 inline-block px-1.5 py-0.5 text-[10px] font-medium text-amber-800 bg-amber-100 rounded">
             รวมทั้งปี {formatTHB(annual)}
           </span>
@@ -380,16 +194,11 @@ export const SavingsList = ({
   const addSavings = useFinanceStore((s) => s.addSavings);
   const pushToast = useToastStore((s) => s.push);
 
-  // Kept (Krungsri) — manual per-month entry. Treated as a savings line.
-  const keptYearBucket = useGoalsStore((s) => s.keptBalances[String(year)]);
-  const keptMonthly = keptYearBucket?.[String(month)];
-  const keptAnnual = sumAnnualKept(keptYearBucket);
-  const setKeptBalance = useGoalsStore((s) => s.setKeptBalance);
-  const clearKeptBalance = useGoalsStore((s) => s.clearKeptBalance);
+  // Bank accounts — manual per-month balance entry per account. Treated as
+  // savings lines (one row each), same as the legacy Kept row.
+  const accounts = useFinanceStore((s) => s.data.bankAccounts ?? []);
 
-  const [keptModalOpen, setKeptModalOpen] = useState(false);
-  const handleEditKept = (): void => setKeptModalOpen(true);
-  const handleCloseKept = (): void => setKeptModalOpen(false);
+  const [editAccountId, setEditAccountId] = useState<string | null>(null);
 
   const [fillModalOpen, setFillModalOpen] = useState(false);
   const [fillItems, setFillItems] = useState<RecurringFillItem[]>([]);
@@ -434,11 +243,13 @@ export const SavingsList = ({
     return map;
   }, [items]);
 
-  // Total includes Kept's monthly value. Negative Kept entries net out
-  // (matches Tom's Sheet behaviour — "ออม" column is signed).
+  // Total includes every bank account's monthly balance. Negative entries
+  // net out (matches Tom's Sheet behaviour — "ออม" column is signed).
   const total = useMemo(
-    () => items.reduce((acc, it) => acc + it.amount, 0) + (keptMonthly ?? 0),
-    [items, keptMonthly],
+    () =>
+      items.reduce((acc, it) => acc + it.amount, 0) +
+      sumBankMonth(accounts, year, month),
+    [items, accounts, year, month],
   );
 
   const openAdd = (cat?: SavingsCategory): void => {
@@ -488,32 +299,36 @@ export const SavingsList = ({
       )}
 
       <div className="bg-white rounded-lg border border-slate-200 divide-y divide-slate-100">
-        {/* Kept (Krungsri) — always rendered, always editable. Sits as its
-            own pseudo-category above Dime / ออมเที่ยว / etc. so Tom sees one
-            unified savings list per month. */}
-        <div className="py-2">
-          <div className="flex items-center justify-between px-3 py-1.5">
-            <div className="flex items-center gap-2">
-              <span aria-hidden="true">💼</span>
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Kept (กรุงศรี)
-              </h3>
+        {/* Bank accounts — always rendered, always editable, one row each.
+            Sits as its own pseudo-category above Dime / ออมเที่ยว / etc. so
+            Tom sees one unified savings list per month. */}
+        {accounts.length > 0 && (
+          <div className="py-2">
+            <div className="flex items-center justify-between px-3 py-1.5">
+              <div className="flex items-center gap-2">
+                <span aria-hidden="true">💼</span>
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  บัญชีธนาคาร
+                </h3>
+              </div>
             </div>
-            <span className="text-xs financial-number text-slate-500 tabular-nums">
-              {keptAnnual !== 0 ? `รวมทั้งปี ${formatTHB(keptAnnual)}` : ''}
-            </span>
+            <div className="px-1">
+              {accounts.map((account) => {
+                const monthly = account.balances[String(year)]?.[String(month)];
+                const annual = accountYearTotal(account, year);
+                return (
+                  <BankBalanceRow
+                    key={account.id}
+                    account={account}
+                    monthly={monthly}
+                    annual={annual}
+                    onEdit={() => setEditAccountId(account.id)}
+                  />
+                );
+              })}
+            </div>
           </div>
-          <div className="px-1">
-            <KeptRow
-              year={year}
-              month={month}
-              monthly={keptMonthly}
-              annual={keptAnnual}
-              onEdit={handleEditKept}
-              showIcon={false}
-            />
-          </div>
-        </div>
+        )}
 
         {groupByCategory ? (
           [...grouped.entries()].map(([cat, rows]) => {
@@ -595,29 +410,31 @@ export const SavingsList = ({
         </div>
       </Modal>
 
-      <Modal
-        open={keptModalOpen}
-        onClose={handleCloseKept}
-        title="แก้ไข Kept (กรุงศรี)"
-        size="sm"
-      >
-        <div className="px-6 py-5">
-          <KeptEditForm
-            year={year}
-            month={month}
-            initialAmount={keptMonthly}
-            onSave={(amount) => {
-              setKeptBalance(year, month, amount);
-              handleCloseKept();
-            }}
-            onClear={() => {
-              clearKeptBalance(year, month);
-              handleCloseKept();
-            }}
-            onCancel={handleCloseKept}
-          />
-        </div>
-      </Modal>
+      {editAccountId &&
+        (() => {
+          const acct = accounts.find((a) => a.id === editAccountId);
+          if (!acct) return null;
+          const current = acct.balances[String(year)]?.[String(month)];
+          return (
+            <Modal
+              open
+              onClose={() => setEditAccountId(null)}
+              title={`ยอด ${acct.name} — เดือนนี้`}
+              size="sm"
+            >
+              <div className="px-6 py-5">
+                <BankBalanceEditForm
+                  accountId={acct.id}
+                  year={year}
+                  month={month}
+                  current={current}
+                  onSaved={() => setEditAccountId(null)}
+                  onCancel={() => setEditAccountId(null)}
+                />
+              </div>
+            </Modal>
+          );
+        })()}
 
       <RecurringFillModal
         open={fillModalOpen}

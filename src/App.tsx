@@ -26,6 +26,7 @@ const MonthlyPage = lazy(() => import('@/pages/MonthlyPage'));
 const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage'));
 const InstallmentsPage = lazy(() => import('@/pages/InstallmentsPage'));
 const LoansPage = lazy(() => import('@/pages/LoansPage'));
+const BankAccountsPage = lazy(() => import('@/pages/BankAccountsPage'));
 const GoldPage = lazy(() => import('@/pages/GoldPage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 const TaxCalculatorPage = lazy(() => import('@/pages/TaxCalculatorPage'));
@@ -55,6 +56,7 @@ function App(): ReactNode {
             <Route path="analytics" element={<AnalyticsPage />} />
             <Route path="installments" element={<InstallmentsPage />} />
             <Route path="loans" element={<LoansPage />} />
+            <Route path="accounts" element={<BankAccountsPage />} />
             <Route path="gold" element={<GoldPage />} />
             <Route path="tax" element={<TaxCalculatorPage />} />
             <Route path="settings" element={<SettingsPage />} />

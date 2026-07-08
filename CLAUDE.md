@@ -100,8 +100,9 @@ npm run lint       # ESLint check
 - **ปี 2023:** มีแค่ income data ไม่มี itemized expenses (ดู @prd.md#7-data-inventory)
 - **ปี 2026 เพิ่ม `ลงทุน Dime`** ใน deductions — field นี้ optional ในปีอื่น
 - **`Net.`** = take-home เฉพาะเงินเดือน หลังหักทุกอย่าง
-- **`Net. All`** = Net. + Commission ทั้งหมด (ตัวเลข KPI หลัก)
+- **`Net. All`** = Net. + Commission + รายได้อื่นๆ (F32) (ตัวเลข KPI หลัก)
 - **`เหลือจริง`** = Net.All - จ่าย (สิ่งที่ Tom เหลือในบัญชีจริงๆ)
+- **Kept → บัญชีธนาคาร (F33):** "Kept (กรุงศรี)" กลายเป็น `bankAccounts` แบบ generic (card-first, หลายบัญชี, ยอดต่อเดือน) — Kept เดิม migrate เป็นบัญชี "กรุงศรี" (`acct-krungsri`) อัตโนมัติตอน rehydrate. `keptBalances` คงไว้เป็น backward-compat (แหล่ง migrate เท่านั้น ไม่อ่านที่อื่นแล้ว). **เป้าหมายออม (savings goal) ถูกตัดออก**. gold 'kept' ตัดยอดบัญชีกรุงศรี
 
 ---
 

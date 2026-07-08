@@ -3,10 +3,10 @@
  *
  * Captures one physical-gold transaction and writes BOTH halves of the
  * dual entry: a `GoldHolding` on the asset ledger and either a
- * `SavingsItem` (paymentMethod=cash) or a `keptBalances` decrement
- * (paymentMethod=kept) on the cashflow ledger. The store does the
- * actual writes; this form just collects the inputs and previews the
- * effect before save.
+ * `SavingsItem` (paymentMethod=cash) or a bank-account balance decrement
+ * on the migrated กรุงศรี account (paymentMethod=kept) on the cashflow
+ * ledger. The store does the actual writes; this form just collects the
+ * inputs and previews the effect before save.
  *
  * Edit mode is metadata-only — totalCost / weightBaht / paymentMethod /
  * purchaseDate are NOT editable post-create. Changing those would
@@ -24,6 +24,7 @@ import {
 } from 'react';
 
 import { useFinanceStore } from '@/stores/financeStore';
+import { KRUNGSRI_ACCOUNT_ID } from '@/utils/bankAccounts';
 import type {
   GoldHolding,
   GoldPaymentMethod,
@@ -109,6 +110,9 @@ export const GoldForm = ({
 }: GoldFormProps): ReactNode => {
   const addGoldHolding = useFinanceStore((s) => s.addGoldHolding);
   const updateGoldHolding = useFinanceStore((s) => s.updateGoldHolding);
+  const hasKrungsri = useFinanceStore((s) =>
+    (s.data.bankAccounts ?? []).some((a) => a.id === KRUNGSRI_ACCOUNT_ID),
+  );
 
   const isEdit = initialValues != null;
 
@@ -131,8 +135,11 @@ export const GoldForm = ({
       ? formatNumber(initialValues.spotPriceAtPurchase)
       : '',
   );
-  const [paymentMethod, setPaymentMethod] =
-    useState<GoldPaymentMethod>(initialValues?.paymentMethod ?? 'cash');
+  const [paymentMethod, setPaymentMethod] = useState<GoldPaymentMethod>(
+    (initialValues?.paymentMethod ?? 'cash') === 'kept' && !hasKrungsri
+      ? 'cash'
+      : initialValues?.paymentMethod ?? 'cash',
+  );
   const [notes, setNotes] = useState<string>(initialValues?.notes ?? '');
   const [touched, setTouched] = useState<FormTouched>({});
 
@@ -410,15 +417,17 @@ export const GoldForm = ({
           >
             💸 เงินสด / เงินเดือน
           </button>
-          <button
-            type="button"
-            onClick={() => setPaymentMethod('kept')}
-            disabled={isEdit}
-            className={`${radioBtnClass(paymentMethod === 'kept')} ${isEdit ? 'opacity-60 cursor-not-allowed' : ''}`}
-            aria-pressed={paymentMethod === 'kept'}
-          >
-            🏦 หัก Kept
-          </button>
+          {hasKrungsri && (
+            <button
+              type="button"
+              onClick={() => setPaymentMethod('kept')}
+              disabled={isEdit}
+              className={`${radioBtnClass(paymentMethod === 'kept')} ${isEdit ? 'opacity-60 cursor-not-allowed' : ''}`}
+              aria-pressed={paymentMethod === 'kept'}
+            >
+              🏦 หักจากบัญชีกรุงศรี
+            </button>
+          )}
         </div>
       </div>
 
@@ -473,7 +482,7 @@ export const GoldForm = ({
                 <>
                   🏦 จะหัก{' '}
                   <span className="font-semibold text-amber-900">
-                    Kept {formatTHB(totalCost)}
+                    บัญชีกรุงศรี {formatTHB(totalCost)}
                   </span>{' '}
                   ของเดือน {preview.monthLabel}
                 </>

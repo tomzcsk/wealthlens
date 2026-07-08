@@ -8,7 +8,6 @@ import { LoanSummaryCard } from '@/components/dashboard/LoanSummaryCard';
 import { MonthlySummaryTable } from '@/components/dashboard/MonthlySummaryTable';
 import { ReimbursementCard } from '@/components/dashboard/ReimbursementCard';
 import { SavingsCategoryCard } from '@/components/dashboard/SavingsCategoryCard';
-import { SavingsGoalCard } from '@/components/dashboard/SavingsGoalCard';
 import { TravelSavingsCard } from '@/components/dashboard/TravelSavingsCard';
 import {
   useSavingsCategoryTotals,
@@ -24,7 +23,6 @@ export const OverviewPage = (): ReactNode => {
       <KpiCardGrid />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <SavingsGoalCard />
         <DimeInvestmentCard />
         <TravelSavingsCard />
         {savingsCategoryTotals.map((t) => (

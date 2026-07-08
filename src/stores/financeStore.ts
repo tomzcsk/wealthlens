@@ -20,6 +20,7 @@ import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
 
 import { gslLoan as seedGslLoan } from '@/data/seedData';
+import { KRUNGSRI_ACCOUNT_ID, migrateKeptToBankAccounts } from '@/utils/bankAccounts';
 import {
   advanceMonth,
   applyCarInstallmentTags,
@@ -29,6 +30,7 @@ import {
   round2,
 } from '@/utils/installments';
 import type {
+  BankAccount,
   ExpenseCategory,
   ExpenseItem,
   ExtraPayment,
@@ -312,6 +314,33 @@ export interface FinanceState {
     extraId: string,
     options: { revertExpenseSideEffect: boolean },
   ) => void;
+
+  // --- Bank accounts --------------------------------------------------------
+  addBankAccount: (name: string, bankKey?: string) => string;
+  /**
+   * Patch an account's name and/or bank brand. `bankKey: null` clears the
+   * explicit brand link (falls back to name-based `resolveBank` matching);
+   * `undefined` leaves the current value untouched.
+   */
+  updateBankAccount: (
+    id: string,
+    patch: { name?: string; bankKey?: string | null },
+  ) => void;
+  setBankBalance: (id: string, year: number, month: number, amount: number) => void;
+  clearBankBalance: (id: string, year: number, month: number) => void;
+  /**
+   * Move `amount` from one account to another within the same (year, month):
+   * source balance −amount, destination +amount, atomically. No-op when an id
+   * is unknown, `fromId === toId`, or `amount <= 0`.
+   */
+  transferBankBalance: (
+    fromId: string,
+    toId: string,
+    year: number,
+    month: number,
+    amount: number,
+  ) => void;
+  deleteBankAccount: (id: string) => void;
 
   // --- Tax allowances ------------------------------------------------------
   /**
@@ -680,7 +709,8 @@ export const useFinanceStore = create<FinanceState>()(
           };
 
           let nextYears = state.data.years;
-          let nextPrefs = ensurePreferences(state.data.preferences);
+          const nextPrefs = ensurePreferences(state.data.preferences);
+          let nextBankAccounts = state.data.bankAccounts;
 
           if (input.paymentMethod === 'cash') {
             // Dual-write: mirror the purchase as a SavingsItem in the
@@ -715,26 +745,37 @@ export const useFinanceStore = create<FinanceState>()(
               savingsMonth: month,
             };
           } else {
-            // Kept decrement: read the absolute balance and subtract.
+            // Kept decrement: subtract from the migrated กรุงศรี bank
+            // account's balance for this year/month.
             const yearKey = String(year);
             const monthKey = String(month);
-            const currentKept = nextPrefs.keptBalances[yearKey]?.[monthKey] ?? 0;
-            const nextKept = currentKept - input.totalCost;
-            nextPrefs = {
-              ...nextPrefs,
-              keptBalances: {
-                ...nextPrefs.keptBalances,
-                [yearKey]: {
-                  ...(nextPrefs.keptBalances[yearKey] ?? {}),
-                  [monthKey]: nextKept,
-                },
-              },
-            };
-            holding.sideEffects = {
-              keptYear: year,
-              keptMonth: month,
-              keptAmount: input.totalCost,
-            };
+            const accounts = state.data.bankAccounts ?? [];
+            const acct = accounts.find((a) => a.id === KRUNGSRI_ACCOUNT_ID);
+            if (acct) {
+              const current = acct.balances[yearKey]?.[monthKey] ?? 0;
+              nextBankAccounts = accounts.map((a) =>
+                a.id === KRUNGSRI_ACCOUNT_ID
+                  ? {
+                      ...a,
+                      balances: {
+                        ...a.balances,
+                        [yearKey]: {
+                          ...(a.balances[yearKey] ?? {}),
+                          [monthKey]: current - input.totalCost,
+                        },
+                      },
+                    }
+                  : a,
+              );
+              holding.sideEffects = {
+                accountId: KRUNGSRI_ACCOUNT_ID,
+                keptYear: year,
+                keptMonth: month,
+                keptAmount: input.totalCost,
+              };
+            }
+            // If no กรุงศรี account exists, create the holding with no
+            // balance side-effect (GoldForm hides 'kept' in that case).
           }
 
           const stamp = nowIso();
@@ -743,6 +784,7 @@ export const useFinanceStore = create<FinanceState>()(
               ...state.data,
               years: nextYears,
               preferences: nextPrefs,
+              bankAccounts: nextBankAccounts,
               goldHoldings: [...(state.data.goldHoldings ?? []), holding],
               lastUpdated: stamp,
             },
@@ -786,7 +828,8 @@ export const useFinanceStore = create<FinanceState>()(
 
           const nextHoldings = holdings.filter((h) => h.id !== id);
           let nextYears = state.data.years;
-          let nextPrefs = ensurePreferences(state.data.preferences);
+          const nextPrefs = ensurePreferences(state.data.preferences);
+          let nextBankAccounts = state.data.bankAccounts;
 
           if (revertSideEffects && target.sideEffects) {
             const se = target.sideEffects;
@@ -821,20 +864,34 @@ export const useFinanceStore = create<FinanceState>()(
               se.keptMonth != null &&
               se.keptAmount != null
             ) {
-              // Restore Kept by re-adding the subtracted amount.
+              // Restore the bank account balance by re-adding the
+              // subtracted amount. `accountId` is only present on holdings
+              // created after F33 task 6; older holdings fall back to the
+              // migrated กรุงศรี account id.
+              const accountId = se.accountId ?? KRUNGSRI_ACCOUNT_ID;
               const yearKey = String(se.keptYear);
               const monthKey = String(se.keptMonth);
-              const current = nextPrefs.keptBalances[yearKey]?.[monthKey] ?? 0;
-              nextPrefs = {
-                ...nextPrefs,
-                keptBalances: {
-                  ...nextPrefs.keptBalances,
-                  [yearKey]: {
-                    ...(nextPrefs.keptBalances[yearKey] ?? {}),
-                    [monthKey]: current + se.keptAmount,
-                  },
-                },
-              };
+              const keptAmount = se.keptAmount;
+              const accounts = state.data.bankAccounts ?? [];
+              const acct = accounts.find((a) => a.id === accountId);
+              if (acct) {
+                const current = acct.balances[yearKey]?.[monthKey] ?? 0;
+                nextBankAccounts = accounts.map((a) =>
+                  a.id === accountId
+                    ? {
+                        ...a,
+                        balances: {
+                          ...a.balances,
+                          [yearKey]: {
+                            ...(a.balances[yearKey] ?? {}),
+                            [monthKey]: current + keptAmount,
+                          },
+                        },
+                      }
+                    : a,
+                );
+              }
+              // If the target account no longer exists, skip silently.
             }
           }
 
@@ -845,6 +902,7 @@ export const useFinanceStore = create<FinanceState>()(
               goldHoldings: nextHoldings,
               years: nextYears,
               preferences: nextPrefs,
+              bankAccounts: nextBankAccounts,
               lastUpdated: stamp,
             },
             lastUpdated: stamp,
@@ -1277,6 +1335,161 @@ export const useFinanceStore = create<FinanceState>()(
           };
         }),
 
+      addBankAccount: (name, bankKey) => {
+        const id = uuidv4();
+        set((state) => {
+          const stamp = nowIso();
+          const account = {
+            id,
+            name: name.trim(),
+            balances: {},
+            ...(bankKey ? { bankKey } : {}),
+          };
+          return {
+            data: {
+              ...state.data,
+              bankAccounts: [...(state.data.bankAccounts ?? []), account],
+              lastUpdated: stamp,
+            },
+            lastUpdated: stamp,
+          };
+        });
+        return id;
+      },
+
+      updateBankAccount: (id, patch) =>
+        set((state) => {
+          const accounts = state.data.bankAccounts ?? [];
+          if (!accounts.some((a) => a.id === id)) return state;
+          const stamp = nowIso();
+          return {
+            data: {
+              ...state.data,
+              bankAccounts: accounts.map((a) => {
+                if (a.id !== id) return a;
+                const merged = {
+                  ...a,
+                  ...(patch.name !== undefined ? { name: patch.name.trim() } : {}),
+                };
+                if (patch.bankKey === null) {
+                  delete (merged as { bankKey?: string }).bankKey;
+                } else if (patch.bankKey !== undefined) {
+                  merged.bankKey = patch.bankKey;
+                }
+                return merged;
+              }),
+              lastUpdated: stamp,
+            },
+            lastUpdated: stamp,
+          };
+        }),
+
+      setBankBalance: (id, year, month, amount) =>
+        set((state) => {
+          const accounts = state.data.bankAccounts ?? [];
+          if (!accounts.some((a) => a.id === id)) return state;
+          const yKey = String(year);
+          const mKey = String(month);
+          const stamp = nowIso();
+          return {
+            data: {
+              ...state.data,
+              bankAccounts: accounts.map((a) =>
+                a.id === id
+                  ? {
+                      ...a,
+                      balances: {
+                        ...a.balances,
+                        [yKey]: { ...(a.balances[yKey] ?? {}), [mKey]: amount },
+                      },
+                    }
+                  : a,
+              ),
+              lastUpdated: stamp,
+            },
+            lastUpdated: stamp,
+          };
+        }),
+
+      clearBankBalance: (id, year, month) =>
+        set((state) => {
+          const accounts = state.data.bankAccounts ?? [];
+          const target = accounts.find((a) => a.id === id);
+          if (!target) return state;
+          const yKey = String(year);
+          const mKey = String(month);
+          if (target.balances[yKey]?.[mKey] === undefined) return state;
+          const stamp = nowIso();
+          return {
+            data: {
+              ...state.data,
+              bankAccounts: accounts.map((a) => {
+                if (a.id !== id) return a;
+                const nextYear = { ...(a.balances[yKey] ?? {}) };
+                delete nextYear[mKey];
+                return { ...a, balances: { ...a.balances, [yKey]: nextYear } };
+              }),
+              lastUpdated: stamp,
+            },
+            lastUpdated: stamp,
+          };
+        }),
+
+      transferBankBalance: (fromId, toId, year, month, amount) =>
+        set((state) => {
+          const accounts = state.data.bankAccounts ?? [];
+          if (
+            fromId === toId ||
+            amount <= 0 ||
+            !accounts.some((a) => a.id === fromId) ||
+            !accounts.some((a) => a.id === toId)
+          ) {
+            return state;
+          }
+          const yKey = String(year);
+          const mKey = String(month);
+          const shift = (a: BankAccount, delta: number): BankAccount => ({
+            ...a,
+            balances: {
+              ...a.balances,
+              [yKey]: {
+                ...(a.balances[yKey] ?? {}),
+                [mKey]: (a.balances[yKey]?.[mKey] ?? 0) + delta,
+              },
+            },
+          });
+          const stamp = nowIso();
+          return {
+            data: {
+              ...state.data,
+              bankAccounts: accounts.map((a) =>
+                a.id === fromId
+                  ? shift(a, -amount)
+                  : a.id === toId
+                    ? shift(a, amount)
+                    : a,
+              ),
+              lastUpdated: stamp,
+            },
+            lastUpdated: stamp,
+          };
+        }),
+
+      deleteBankAccount: (id) =>
+        set((state) => {
+          const accounts = state.data.bankAccounts ?? [];
+          if (!accounts.some((a) => a.id === id)) return state;
+          const stamp = nowIso();
+          return {
+            data: {
+              ...state.data,
+              bankAccounts: accounts.filter((a) => a.id !== id),
+              lastUpdated: stamp,
+            },
+            lastUpdated: stamp,
+          };
+        }),
+
       setTaxAllowances: (year, inputs) =>
         set((state) => {
           const stamp = nowIso();
@@ -1407,6 +1620,13 @@ export const useFinanceStore = create<FinanceState>()(
           const goldPriceHistory =
             data.goldPriceHistory ?? state.data.goldPriceHistory;
           const loans = data.loans ?? state.data.loans;
+          // Bank accounts: prefer incoming; else migrate the incoming
+          // payload's legacy keptBalances (same path as rehydrate); else
+          // preserve local so a pre-F33 payload doesn't wipe bank data.
+          const bankAccounts =
+            data.bankAccounts ??
+            migrateKeptToBankAccounts(data) ??
+            state.data.bankAccounts;
           return {
             data: {
               ...data,
@@ -1416,6 +1636,7 @@ export const useFinanceStore = create<FinanceState>()(
               goldHoldings,
               goldPriceHistory,
               loans,
+              ...(bankAccounts ? { bankAccounts } : {}),
               lastUpdated: stamp,
             },
             lastUpdated: stamp,
@@ -1533,10 +1754,17 @@ export const useFinanceStore = create<FinanceState>()(
           }
           return { ...l, scheduledPayments: l.scheduledPayments ?? [] };
         });
+        const bankAccounts = data.bankAccounts ?? migrateKeptToBankAccounts(data);
+
         return {
           ...currentState,
           ...persisted,
-          data: { ...data, years, ...(loans ? { loans } : {}) },
+          data: {
+            ...data,
+            years,
+            ...(loans ? { loans } : {}),
+            ...(bankAccounts ? { bankAccounts } : {}),
+          },
         };
       },
     },

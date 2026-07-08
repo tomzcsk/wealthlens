@@ -427,6 +427,9 @@ export const validateBackup = (parsed: unknown): ValidationResult => {
   const loans = Array.isArray(parsed.loans)
     ? (parsed.loans as WealthLensData['loans'])
     : undefined;
+  const bankAccounts = Array.isArray(parsed.bankAccounts)
+    ? (parsed.bankAccounts as WealthLensData['bankAccounts'])
+    : undefined;
   const preferences = isObject(parsed.preferences)
     ? (parsed.preferences as unknown as WealthLensData['preferences'])
     : undefined;
@@ -441,6 +444,7 @@ export const validateBackup = (parsed: unknown): ValidationResult => {
       ...(goldHoldings ? { goldHoldings } : {}),
       ...(goldPriceHistory ? { goldPriceHistory } : {}),
       ...(loans ? { loans } : {}),
+      ...(bankAccounts ? { bankAccounts } : {}),
       ...(preferences ? { preferences } : {}),
     },
   };
@@ -536,6 +540,7 @@ export const mergeData = (
   const goldHoldings = imported.goldHoldings ?? local.goldHoldings;
   const goldPriceHistory = imported.goldPriceHistory ?? local.goldPriceHistory;
   const loans = imported.loans ?? local.loans;
+  const bankAccounts = imported.bankAccounts ?? local.bankAccounts;
   const preferences = imported.preferences ?? local.preferences;
   return {
     version: local.version,
@@ -545,6 +550,7 @@ export const mergeData = (
     ...(goldHoldings ? { goldHoldings } : {}),
     ...(goldPriceHistory ? { goldPriceHistory } : {}),
     ...(loans ? { loans } : {}),
+    ...(bankAccounts ? { bankAccounts } : {}),
     ...(preferences ? { preferences } : {}),
   };
 };

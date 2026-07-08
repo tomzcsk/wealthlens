@@ -6,10 +6,8 @@
  * values, per CLAUDE.md). Clicking a row navigates to the monthly-detail
  * page with the chosen month preselected via query param.
  *
- * The "Kept" column currently mirrors "เหลือ" — once F11 (Savings Goal
- * Tracker) ships, this will read from a dedicated savings/goal store. Until
- * then we keep the column visible (per UXUI.md §5.2 spec) but visually muted
- * to communicate it's a soft signal, not a tracked commitment.
+ * The "ธนาคาร" column sums every entry in `data.bankAccounts` for that
+ * month (F33) — it replaced the old single-account "Kept (กรุงศรี)" figure.
  */
 
 import { useCallback, useMemo } from 'react';
@@ -17,15 +15,15 @@ import { useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 
 import { useFinanceStore } from '@/stores/financeStore';
-import { useGoalsStore } from '@/stores/goalsStore';
 import {
   selectMonthIncome,
   selectMonthlySummariesForYear,
   type MonthlySummaryRow,
 } from '@/stores/selectors';
 import { useSelectedYear } from '@/hooks/useFinanceData';
+import { sumBankMonth } from '@/utils/bankAccounts';
 import { formatNumber, formatThaiMonth } from '@/utils/formatters';
-import type { MonthlyIncome, WealthLensData } from '@/types';
+import type { BankAccount, MonthlyIncome, WealthLensData } from '@/types';
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -48,7 +46,7 @@ interface MonthPayload {
   dime: number;
   /** Sum of savings items for category 'travel' this month. */
   travel: number;
-  /** Per-month Krungsri Kept entry (signed; negative = withdrawal). */
+  /** Sum across every `bankAccounts` entry for this month (signed; negative = withdrawal). */
   kept: number;
 }
 
@@ -79,7 +77,7 @@ const COLUMN_HEADERS = [
   'จ่าย',
   'ลงทุน Dime',
   'ออมเที่ยว',
-  'Kept',
+  'ธนาคาร',
   'เหลือ',
 ] as const;
 
@@ -100,7 +98,7 @@ const UTF8_BOM = '﻿';
 const buildPayloads = (
   data: WealthLensData,
   year: number,
-  keptYearBucket: { [month: string]: number } | undefined,
+  accounts: readonly BankAccount[],
 ): MonthPayload[] => {
   const snapshot = { data };
   const summaries = selectMonthlySummariesForYear(snapshot, year);
@@ -124,7 +122,7 @@ const buildPayloads = (
     income: selectMonthIncome(snapshot, year, summary.month),
     dime: dimeByMonth.get(summary.month) ?? 0,
     travel: travelByMonth.get(summary.month) ?? 0,
-    kept: keptYearBucket?.[String(summary.month)] ?? 0,
+    kept: sumBankMonth(accounts, year, summary.month),
   }));
 };
 
@@ -141,12 +139,10 @@ export const MonthlySummaryTable = ({ year }: MonthlySummaryTableProps) => {
   // changes when state.data mutates. Then derive payloads lazily so we
   // avoid creating new arrays on unrelated re-renders.
   const data = useFinanceStore((s) => s.data);
-  const keptYearBucket = useGoalsStore(
-    (s) => s.keptBalances[String(activeYear)],
-  );
+  const accounts = useFinanceStore((s) => s.data.bankAccounts ?? []);
   const payloads = useMemo(
-    () => buildPayloads(data, activeYear, keptYearBucket),
-    [data, activeYear, keptYearBucket],
+    () => buildPayloads(data, activeYear, accounts),
+    [data, activeYear, accounts],
   );
 
   const totals: RowTotals = useMemo(() => computeTotals(payloads), [payloads]);
@@ -374,7 +370,7 @@ const MonthRow = ({ payload, year, onSelect }: MonthRowProps) => {
               ? 'text-expense'
               : 'text-savings',
         )}
-        title="ยอด Kept (กรุงศรี) เดือนนี้ — ติดลบ = ถอนออก"
+        title="ยอดบัญชีธนาคาร (รวมทุกบัญชี) เดือนนี้ — ติดลบ = ถอนออก"
       >
         {formatNumber(kept)}
       </td>

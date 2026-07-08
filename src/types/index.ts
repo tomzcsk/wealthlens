@@ -56,6 +56,14 @@ export interface WealthLensData {
    * so payloads written before this feature still hydrate.
    */
   taxAllowances?: { [year: string]: TaxAllowanceInputs };
+  /**
+   * Generic bank accounts (F33) — replaces the Tom-specific single "Kept
+   * (กรุงศรี)" balance with an arbitrary list of accounts, each carrying
+   * its own per-month net-balance map. Optional so older Drive payloads
+   * without the field still hydrate; `migrateKeptToBankAccounts` in
+   * utils/bankAccounts.ts one-time-migrates legacy `preferences.keptBalances`.
+   */
+  bankAccounts?: BankAccount[];
 }
 
 /**
@@ -373,10 +381,10 @@ export type GoldPurity = '96.5' | '99.99';
  *   - `cash`  → create a `SavingsItem` (category 'gold') in the savings
  *                row of the purchase month. Tom sees the money leave via
  *                the "ออม/ลงทุน" column of that month.
- *   - `kept`  → decrement `preferences.keptBalances[year][month]` by
- *                `totalCost`. Tom sees his Kept account shrink; no
- *                impact on monthly Net.All (the cash already left months
- *                ago when he funded Kept).
+ *   - `kept`  → decrement the migrated กรุงศรี bank account's
+ *                `balances[year][month]` by `totalCost` (F33). Tom sees
+ *                that account shrink; no impact on monthly Net.All (the
+ *                cash already left months ago when he funded the account).
  */
 export type GoldPaymentMethod = 'cash' | 'kept';
 
@@ -396,6 +404,13 @@ export interface GoldSideEffectRefs {
   keptMonth?: number;
   /** Amount subtracted from Kept (so we can re-add the same value on revert). */
   keptAmount?: number;
+  /**
+   * Bank account (F33) that absorbed the debit, when paymentMethod ===
+   * 'kept'. Defaults to KRUNGSRI_ACCOUNT_ID for legacy refs written before
+   * generic bank accounts existed. Kept alongside keptYear/keptMonth/
+   * keptAmount for backward-compat — those still identify the month/amount.
+   */
+  accountId?: string;
 }
 
 /**
@@ -546,4 +561,19 @@ export interface Loan {
    * `scheduledPayments` above.
    */
   linkedDeductionField?: LoanDeductionField;
+}
+
+// ---------------------------------------------------------------------------
+// Bank Accounts (F33) — generic replacement for the Tom-specific "Kept"
+// ---------------------------------------------------------------------------
+
+export interface BankAccount {
+  /** UUID v4, or KRUNGSRI_ACCOUNT_ID for the migrated Kept account. */
+  id: string;
+  /** Free-form label, e.g. "กรุงศรี". */
+  name: string;
+  /** Optional reference into the curated Thai-bank list (F33), for brand avatar rendering. */
+  bankKey?: string;
+  /** Net balance per month (+deposit / −withdraw). */
+  balances: { [year: string]: { [month: string]: number } };
 }

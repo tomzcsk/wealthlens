@@ -6,18 +6,12 @@
  * speaks to the store; `KpiCard` itself stays purely presentational.
  *
  * Cards (UXUI.md §5.2):
- *   1. รายรับรวม   — gross income (salary + bonus + commission)
- *   2. ค่าใช้จ่าย  — totalExpenses
- *   3. Net Income  — netAll (the headline KPI per CLAUDE.md)
- *   4. Kept        — remaining (Net.All − จ่าย)
+ *   1. รายรับรวม     — gross income (salary + bonus + commission)
+ *   2. ค่าใช้จ่าย    — totalExpenses
+ *   3. Net Income    — netAll (the headline KPI per CLAUDE.md)
+ *   4. เงินออมธนาคาร — sum across `data.bankAccounts` for the year (F33)
  *
- * Naming note (per CLAUDE.md "Data Quirks"):
- *   The 4th card is labelled "Kept" in the UXUI mock but the underlying
- *   number is what the source spreadsheets call "เหลือ" / "เหลือจริง"
- *   (Net.All minus expenses). True "Kept" (actual savings deposited) is a
- *   separate concept Tom hasn't tracked granularly yet — when he does, we
- *   swap the source field here without touching the visual layer.
- *
+
  * YoY note:
  *   `selectYoYChange` returns a value in *percentage units* (e.g. 12.3
  *   means +12.3%) and returns `null` when the prior year has no data.
@@ -30,8 +24,8 @@
 import type { ReactNode } from 'react';
 import { useSelectedYear, useYearSummary, useYoYChange } from '@/hooks/useFinanceData';
 import { useFinanceStore } from '@/stores/financeStore';
-import { sumAnnualKept, useGoalsStore } from '@/stores/goalsStore';
 import { selectYearSummary } from '@/stores/selectors';
+import { sumBankYear } from '@/utils/bankAccounts';
 import { KpiCard } from './KpiCard';
 
 export const KpiCardGrid = (): ReactNode => {
@@ -54,12 +48,12 @@ export const KpiCardGrid = (): ReactNode => {
   const expensesDelta = useYoYChange('totalExpenses');
   const netAllDelta = useYoYChange('netAll');
 
-  // Kept = manually-tracked Krungsri savings (per-month deposits/withdrawals).
-  // Annual figure shown on the card is the sum across the year. YoY compares
-  // the two annual sums.
-  const keptBalances = useGoalsStore((s) => s.keptBalances);
-  const keptThisYear = sumAnnualKept(keptBalances[String(year)]);
-  const keptLastYear = sumAnnualKept(keptBalances[String(year - 1)]);
+  // เงินออมธนาคาร = sum across every tracked bank account (F33). Annual
+  // figure shown on the card is the sum across the year. YoY compares the
+  // two annual sums.
+  const accounts = useFinanceStore((s) => s.data.bankAccounts ?? []);
+  const keptThisYear = sumBankYear(accounts, year);
+  const keptLastYear = sumBankYear(accounts, year - 1);
   const keptDelta =
     keptLastYear > 0
       ? ((keptThisYear - keptLastYear) / Math.abs(keptLastYear)) * 100
@@ -90,7 +84,7 @@ export const KpiCardGrid = (): ReactNode => {
           icon="📊"
         />
         <KpiCard
-          label="Kept (กรุงศรี)"
+          label="เงินออมธนาคาร"
           amount={keptThisYear}
           delta={keptDelta}
           tone="savings"
