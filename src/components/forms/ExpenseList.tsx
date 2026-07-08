@@ -27,7 +27,7 @@ import {
   CATEGORY_ORDER,
   EXPENSE_CATEGORIES,
 } from '@/types/expense-categories';
-import type { ExpenseCategory, ExpenseItem } from '@/types';
+import type { BankAccount, ExpenseCategory, ExpenseItem } from '@/types';
 import { formatTHB, formatThaiDate } from '@/utils/formatters';
 import { buildRecurringExpenseLibrary } from '@/utils/recurringTemplate';
 
@@ -63,6 +63,8 @@ interface ExpenseRowProps {
   onToggleReimbursement: (item: ExpenseItem) => void;
   /** Show the leading category icon. Suppressed inside grouped view. */
   showIcon?: boolean;
+  /** Bank accounts for resolving `item.paymentAccountId` → display name. */
+  accounts: BankAccount[];
 }
 
 const ExpenseRow = ({
@@ -71,10 +73,16 @@ const ExpenseRow = ({
   onDelete,
   onToggleReimbursement,
   showIcon = true,
+  accounts,
 }: ExpenseRowProps): ReactNode => {
   const meta = EXPENSE_CATEGORIES[item.category];
   const reimbursement = item.reimbursement;
   const installment = item.installment;
+  // Installment rows never deduct (F34), so don't imply a payment source on them.
+  const paymentAccount =
+    item.paymentAccountId != null && installment == null
+      ? accounts.find((a) => a.id === item.paymentAccountId)
+      : undefined;
   return (
     <div className="group flex items-center gap-3 px-3 py-2 rounded-md hover:bg-slate-50 transition">
       {showIcon && (
@@ -122,6 +130,14 @@ const ExpenseRow = ({
               {reimbursement.status === 'pending' ? '🟡 รอเบิก' : '🟢 เบิกแล้ว'}
             </button>
           )}
+          {paymentAccount != null && (
+            <span
+              title={`จ่ายผ่าน ${paymentAccount.name}`}
+              className="ml-2 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium text-slate-600 bg-slate-100"
+            >
+              💳 {paymentAccount.name}
+            </span>
+          )}
         </p>
         {item.date != null && item.date !== '' && (
           <p className="text-[11px] text-slate-400 tabular-nums">
@@ -168,6 +184,7 @@ export const ExpenseList = ({
     () => selectMonthExpenses({ data }, year, month),
     [data, year, month],
   );
+  const accounts = useFinanceStore((s) => s.data.bankAccounts ?? []);
   const deleteExpense = useFinanceStore((s) => s.deleteExpense);
   const deleteInstallmentPlan = useFinanceStore((s) => s.deleteInstallmentPlan);
   const untagInstallmentPlan = useFinanceStore((s) => s.untagInstallmentPlan);
@@ -463,6 +480,7 @@ export const ExpenseList = ({
                       onDelete={handleDelete}
                       onToggleReimbursement={handleToggleReimbursement}
                       showIcon={false}
+                      accounts={accounts}
                     />
                   ))}
                 </div>
@@ -478,6 +496,7 @@ export const ExpenseList = ({
                 onEdit={openEdit}
                 onDelete={handleDelete}
                 onToggleReimbursement={handleToggleReimbursement}
+                accounts={accounts}
               />
             ))}
           </div>

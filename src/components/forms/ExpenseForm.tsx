@@ -132,8 +132,12 @@ export const ExpenseForm = ({
 }: ExpenseFormProps): ReactNode => {
   const addExpense = useFinanceStore((s) => s.addExpense);
   const updateExpense = useFinanceStore((s) => s.updateExpense);
+  const accounts = useFinanceStore((s) => s.data.bankAccounts ?? []);
 
   const isEdit = initialValues != null;
+  // Installment rows never deduct from a bank account — don't offer the
+  // payment-source choice when editing one.
+  const isInstallmentRow = initialValues?.installment != null;
 
   const [category, setCategory] = useState<ExpenseCategory>(
     initialValues?.category ?? defaultCategory ?? 'housing',
@@ -158,6 +162,9 @@ export const ExpenseForm = ({
   const [reimbursementStatus, setReimbursementStatus] = useState<
     'pending' | 'received'
   >(initialValues?.reimbursement?.status ?? 'pending');
+  const [paymentAccountId, setPaymentAccountId] = useState<string>(
+    initialValues?.paymentAccountId ?? '',
+  );
   const [touched, setTouched] = useState<FormTouched>({});
   const [showFlash, setShowFlash] = useState(false);
 
@@ -171,6 +178,7 @@ export const ExpenseForm = ({
 
   // Stable IDs for label/input pairing.
   const categoryId = useId();
+  const paymentAccountIdFieldId = useId();
   const nameId = useId();
   const amountId = useId();
   const dateId = useId();
@@ -248,6 +256,7 @@ export const ExpenseForm = ({
         isRecurring,
         date,
         reimbursement,
+        paymentAccountId: paymentAccountId || undefined,
       });
       onSaved?.(
         {
@@ -258,6 +267,7 @@ export const ExpenseForm = ({
           isRecurring,
           date,
           reimbursement,
+          paymentAccountId: paymentAccountId || undefined,
         },
         false,
       );
@@ -271,6 +281,7 @@ export const ExpenseForm = ({
       isRecurring,
       date,
       reimbursement,
+      paymentAccountId: paymentAccountId || undefined,
     });
 
     // Best-effort callback — we don't have the new id since addExpense
@@ -285,6 +296,7 @@ export const ExpenseForm = ({
         isRecurring,
         date,
         reimbursement,
+        paymentAccountId: paymentAccountId || undefined,
       },
       continueAdding,
     );
@@ -379,6 +391,31 @@ export const ExpenseForm = ({
           })}
         </select>
       </div>
+
+      {/* จ่ายผ่าน — which bank account (or เงินสด) to deduct from. Hidden for
+          installment rows since those never deduct. */}
+      {!isInstallmentRow && (
+        <div>
+          <label htmlFor={paymentAccountIdFieldId} className={labelClass}>
+            จ่ายผ่าน
+          </label>
+          <select
+            id={paymentAccountIdFieldId}
+            value={paymentAccountId}
+            onChange={(e: ChangeEvent<HTMLSelectElement>) =>
+              setPaymentAccountId(e.target.value)
+            }
+            className={inputBaseClass}
+          >
+            <option value="">ไม่ระบุ (ไม่หักบัญชี)</option>
+            {accounts.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Name */}
       <div>

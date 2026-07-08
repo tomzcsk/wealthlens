@@ -20,7 +20,11 @@ import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
 
 import { gslLoan as seedGslLoan } from '@/data/seedData';
-import { KRUNGSRI_ACCOUNT_ID, migrateKeptToBankAccounts } from '@/utils/bankAccounts';
+import {
+  KRUNGSRI_ACCOUNT_ID,
+  migrateKeptToBankAccounts,
+  reconcileBankDeduction,
+} from '@/utils/bankAccounts';
 import {
   advanceMonth,
   applyCarInstallmentTags,
@@ -33,6 +37,7 @@ import type {
   BankAccount,
   ExpenseCategory,
   ExpenseItem,
+  ExpenseSideEffectRefs,
   ExtraPayment,
   GoldHolding,
   GoldPaymentMethod,
@@ -189,6 +194,21 @@ const DEFAULT_PREFERENCES: UserPreferences = {
 const ensurePreferences = (
   prefs: UserPreferences | undefined,
 ): UserPreferences => prefs ?? DEFAULT_PREFERENCES;
+
+/** The deduction an expense SHOULD have (none for no-account or installment rows). */
+const expenseDeductionOf = (
+  item: Pick<ExpenseItem, 'paymentAccountId' | 'amount' | 'installment'>,
+  year: number,
+  month: number,
+): ExpenseSideEffectRefs | undefined =>
+  item.paymentAccountId && !item.installment
+    ? {
+        accountId: item.paymentAccountId,
+        deductYear: year,
+        deductMonth: month,
+        deductAmount: item.amount,
+      }
+    : undefined;
 
 export interface FinanceState {
   /** Persisted finance data — everything Drive cares about. */
@@ -484,6 +504,23 @@ export const useFinanceStore = create<FinanceState>()(
           const key = String(year);
           const current = years[key];
           const newItem: ExpenseItem = { ...item, id: uuidv4() };
+          // Auto-continue the รถยนต์ installment plan — a freshly added car row
+          // in a month within the 60-งวด range is tagged automatically (joining
+          // the existing plan via its planId, computing งวด from the calendar),
+          // so the "ผ่อน X/60" badge appears without a manual re-tag. Idempotent
+          // and a no-op for every other expense. Computed BEFORE the deduction so
+          // an auto-installment car row never also deducts from a bank account.
+          const isCarInstallmentRow =
+            newItem.name === CAR_INSTALLMENT.name &&
+            newItem.category === CAR_INSTALLMENT.category &&
+            carSequenceFor(year, month) != null;
+          const newDed = isCarInstallmentRow
+            ? undefined
+            : expenseDeductionOf(newItem, year, month);
+          if (newDed) newItem.sideEffects = newDed;
+          const nextBankAccounts = newDed
+            ? reconcileBankDeduction(state.data.bankAccounts ?? [], undefined, newDed)
+            : state.data.bankAccounts;
           const monthRow = current.expenses.find((e) => e.month === month);
           const nextExpenses: MonthlyExpense[] = monthRow
             ? current.expenses.map((e) =>
@@ -494,15 +531,6 @@ export const useFinanceStore = create<FinanceState>()(
             ...years,
             [key]: { ...current, expenses: nextExpenses },
           };
-          // Auto-continue the รถยนต์ installment plan — a freshly added car row
-          // in a month within the 60-งวด range is tagged automatically (joining
-          // the existing plan via its planId, computing งวด from the calendar),
-          // so the "ผ่อน X/60" badge appears without a manual re-tag. Idempotent
-          // and a no-op for every other expense.
-          const isCarInstallmentRow =
-            newItem.name === CAR_INSTALLMENT.name &&
-            newItem.category === CAR_INSTALLMENT.category &&
-            carSequenceFor(year, month) != null;
           const finalYears = isCarInstallmentRow
             ? applyCarInstallmentTags(expensesAddedYears)
             : expensesAddedYears;
@@ -512,6 +540,7 @@ export const useFinanceStore = create<FinanceState>()(
               ...state.data,
               lastUpdated: stamp,
               years: finalYears,
+              ...(nextBankAccounts ? { bankAccounts: nextBankAccounts } : {}),
             },
             lastUpdated: stamp,
           };
@@ -522,13 +551,27 @@ export const useFinanceStore = create<FinanceState>()(
           const key = String(year);
           const current = state.data.years[key];
           if (!current) return state;
+          const monthRow = current.expenses.find((e) => e.month === month);
+          const old = monthRow?.items.find((it) => it.id === itemId);
+          if (!old) return state;
+
+          const merged: ExpenseItem = { ...old, ...patch, id: old.id };
+          const oldDed = old.sideEffects;
+          const newDed = expenseDeductionOf(merged, year, month);
+          if (newDed) merged.sideEffects = newDed;
+          else delete merged.sideEffects;
+
+          const nextBankAccounts = reconcileBankDeduction(
+            state.data.bankAccounts ?? [],
+            oldDed,
+            newDed,
+          );
+
           const nextExpenses = current.expenses.map((row) =>
             row.month === month
               ? {
                   ...row,
-                  items: row.items.map((it) =>
-                    it.id === itemId ? { ...it, ...patch, id: it.id } : it,
-                  ),
+                  items: row.items.map((it) => (it.id === itemId ? merged : it)),
                 }
               : row,
           );
@@ -541,6 +584,7 @@ export const useFinanceStore = create<FinanceState>()(
                 ...state.data.years,
                 [key]: { ...current, expenses: nextExpenses },
               },
+              ...(state.data.bankAccounts ? { bankAccounts: nextBankAccounts } : {}),
             },
             lastUpdated: stamp,
           };
@@ -551,6 +595,15 @@ export const useFinanceStore = create<FinanceState>()(
           const key = String(year);
           const current = state.data.years[key];
           if (!current) return state;
+          const monthRow = current.expenses.find((e) => e.month === month);
+          const target = monthRow?.items.find((it) => it.id === itemId);
+          const nextBankAccounts = target?.sideEffects
+            ? reconcileBankDeduction(
+                state.data.bankAccounts ?? [],
+                target.sideEffects,
+                undefined,
+              )
+            : state.data.bankAccounts;
           // Keep the (possibly empty) month row to preserve historical
           // intent that this month was tracked.
           const nextExpenses = current.expenses.map((row) =>
@@ -567,6 +620,7 @@ export const useFinanceStore = create<FinanceState>()(
                 ...state.data.years,
                 [key]: { ...current, expenses: nextExpenses },
               },
+              ...(nextBankAccounts ? { bankAccounts: nextBankAccounts } : {}),
             },
             lastUpdated: stamp,
           };

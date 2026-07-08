@@ -1086,7 +1086,32 @@
           "checkpoint": {
             "completed": true,
             "completedAt": "2026-07-08",
-            "notes": "Spec: docs/superpowers/specs/2026-07-08-bank-accounts-design.md | Plan: docs/superpowers/plans/2026-07-08-bank-accounts.md | Files: types/index.ts, utils/bankAccounts.ts, stores/financeStore.ts (actions+migration+gold), pages/BankAccountsPage.tsx, components/accounts/{BankAccountCard,BankAccountDetail,BankAccountForm,BankBalanceEditForm}.tsx, components/layout/Sidebar.tsx, App.tsx, components/forms/{SavingsList,GoldForm}.tsx, components/dashboard/{KpiCardGrid,MonthlySummaryTable}.tsx, components/analytics/AllYearsSummary.tsx, pages/OverviewPage.tsx (ลบ SavingsGoalCard) | keptBalances field คงไว้ backward-compat (แหล่ง migrate)"
+            "notes": "Spec: docs/superpowers/specs/2026-07-08-bank-accounts-design.md | Plan: docs/superpowers/plans/2026-07-08-bank-accounts.md | Files: types/index.ts, utils/bankAccounts.ts, stores/financeStore.ts (actions+migration+gold), pages/BankAccountsPage.tsx, components/accounts/{BankAccountCard,BankAccountDetail,BankAccountForm,BankBalanceEditForm}.tsx, components/layout/Sidebar.tsx, App.tsx, components/forms/{SavingsList,GoldForm}.tsx, components/dashboard/{KpiCardGrid,MonthlySummaryTable}.tsx, components/analytics/AllYearsSummary.tsx, pages/OverviewPage.tsx (ลบ SavingsGoalCard) | keptBalances field คงไว้ backward-compat (แหล่ง migrate) | เพิ่มเติม: transferBankBalance (ฝาก/ถอน/โอน), master data ธนาคารไทย + โลโก้จริง (public/banks) + preset เงินสด, hero ยอดสะสมทุกปี, footer version/build, SessionWatcher เตือน session"
+          }
+        },
+        {
+          "id": "F34",
+          "name": "จ่ายผ่านบัญชี → หักยอดอัตโนมัติ (Expense Payment Source)",
+          "description": "รายจ่ายเลือก 'จ่ายผ่าน' บัญชี (เงินสด/ธนาคาร) แบบ optional แล้วหักยอดบัญชีเดือนนั้นอัตโนมัติ (double-entry เหมือน gold 'kept')",
+          "status": "completed",
+          "priority": "P1",
+          "phase": "phase_4",
+          "acceptanceCriteria": [
+            "ExpenseItem.paymentAccountId? + sideEffects? (optional, backward-compat)",
+            "pure helpers applyBankDelta/reconcileBankDeduction (revert เก่า+apply ใหม่)",
+            "addExpense หัก · deleteExpense คืน · updateExpense reconcile (แก้ยอด/ย้ายบัญชี)",
+            "แก้สถานะเบิก (reimbursement) ไม่หักซ้ำ (old==new → net zero)",
+            "รายการผ่อน (installment + auto-tag รถยนต์) ไม่หักบัญชี",
+            "ExpenseForm dropdown 'จ่ายผ่าน' (ซ่อนในรายการผ่อน), ExpenseList badge แหล่งจ่าย",
+            "หักจากเดือน/ปีของรายจ่ายนั้น; ข้อมูลเดิมไม่มี field → ไม่หัก, ยอดเดิมไม่เพี้ยน",
+            "Verified: scripts/verify-expense-payment.ts (10 assertions) + verify อื่นไม่ regress + typecheck + build"
+          ],
+          "estimatedHours": 5,
+          "dependencies": ["F33"],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-07-08",
+            "notes": "Spec: docs/superpowers/specs/2026-07-08-expense-payment-source-design.md | Plan: docs/superpowers/plans/2026-07-08-expense-payment-source.md | Files: types/index.ts (+ExpenseSideEffectRefs), utils/bankAccounts.ts (+applyBankDelta/reconcileBankDeduction), stores/financeStore.ts (expenseDeductionOf + add/update/delete deduct/revert), components/forms/{ExpenseForm,ExpenseList}.tsx | Verified: scripts/verify-expense-payment.ts"
           }
         }
       ]
@@ -1177,8 +1202,8 @@
     }
   },
   "progressSummary": {
-    "totalFeatures": 41,
-    "completed": 41,
+    "totalFeatures": 42,
+    "completed": 42,
     "inProgress": 0,
     "pending": 0,
     "overallProgress": "100%",

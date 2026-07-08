@@ -270,6 +270,26 @@ export interface ExpenseItem {
    * `sequence` (1..totalMonths). Absent on regular one-shot expenses.
    */
   installment?: InstallmentMeta;
+  /** บัญชีที่จ่ายรายการนี้ (รวมบัญชี 'เงินสด'). ไม่ระบุ = ไม่หักบัญชี. */
+  paymentAccountId?: string;
+  /** Ref เพื่อ revert การหักยอดบัญชี. */
+  sideEffects?: ExpenseSideEffectRefs;
+}
+
+/**
+ * Mirror of the side-effect written into a `BankAccount`'s monthly balance
+ * when an expense specifies `paymentAccountId`. Stored so a later edit or
+ * delete can cleanly revert the deduction (add `deductAmount` back) before
+ * applying a new one — same pattern as `GoldSideEffectRefs`.
+ */
+export interface ExpenseSideEffectRefs {
+  /** บัญชีที่ถูกหัก (BankAccount.id). */
+  accountId: string;
+  /** ปี/เดือนที่หัก = ของ MonthlyExpense ที่รายการอยู่. */
+  deductYear: number;
+  deductMonth: number;
+  /** ยอดที่หักไป (revert = บวกกลับเท่านี้). */
+  deductAmount: number;
 }
 
 /**

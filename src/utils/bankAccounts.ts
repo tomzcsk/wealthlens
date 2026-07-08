@@ -3,7 +3,7 @@
  * Migration from the legacy per-month `keptBalances` map + aggregate sums.
  * Pure/total: no throws, no Date.now, no mutation of inputs.
  */
-import type { BankAccount, WealthLensData } from '@/types';
+import type { BankAccount, ExpenseSideEffectRefs, WealthLensData } from '@/types';
 
 /** Stable id for the account migrated from Tom's Kept (กรุงศรี). */
 export const KRUNGSRI_ACCOUNT_ID = 'acct-krungsri';
@@ -108,3 +108,72 @@ export const accountAllTimeTotal = (account: BankAccount): number => {
 /** Accumulated balance across every account, all years (grand total). */
 export const sumBankAllTime = (accounts: readonly BankAccount[]): number =>
   accounts.reduce((s, a) => s + accountAllTimeTotal(a), 0);
+
+// ---------------------------------------------------------------------------
+// Expense payment-source deduction (F34)
+// ---------------------------------------------------------------------------
+
+/**
+ * Immutably add `delta` to `accounts[accountId].balances[year][month]`.
+ * Creates the year/month entry if missing. Returns a NEW array (a shallow
+ * copy when the account isn't found — silent no-op, matching gold's revert).
+ */
+export const applyBankDelta = (
+  accounts: readonly BankAccount[],
+  accountId: string,
+  year: number,
+  month: number,
+  delta: number,
+): BankAccount[] => {
+  const yKey = String(year);
+  const mKey = String(month);
+  let found = false;
+  const next = accounts.map((a) => {
+    if (a.id !== accountId) return a;
+    found = true;
+    return {
+      ...a,
+      balances: {
+        ...a.balances,
+        [yKey]: {
+          ...(a.balances[yKey] ?? {}),
+          [mKey]: (a.balances[yKey]?.[mKey] ?? 0) + delta,
+        },
+      },
+    };
+  });
+  return found ? next : accounts.slice();
+};
+
+/**
+ * Reconcile a per-expense account deduction: revert `oldDed` (add its amount
+ * back) then apply `newDed` (subtract its amount). Either may be undefined —
+ * add = (undefined, new), delete = (old, undefined), edit = (old, new).
+ * Correct even when old and new hit the same account/month (chained deltas).
+ */
+export const reconcileBankDeduction = (
+  accounts: readonly BankAccount[],
+  oldDed: ExpenseSideEffectRefs | undefined,
+  newDed: ExpenseSideEffectRefs | undefined,
+): BankAccount[] => {
+  let next: BankAccount[] = accounts.slice();
+  if (oldDed) {
+    next = applyBankDelta(
+      next,
+      oldDed.accountId,
+      oldDed.deductYear,
+      oldDed.deductMonth,
+      +oldDed.deductAmount,
+    );
+  }
+  if (newDed) {
+    next = applyBankDelta(
+      next,
+      newDed.accountId,
+      newDed.deductYear,
+      newDed.deductMonth,
+      -newDed.deductAmount,
+    );
+  }
+  return next;
+};

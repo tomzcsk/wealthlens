@@ -222,6 +222,14 @@ const validateExpenseItem = (
   if (isObject(raw.installment)) {
     item.installment = raw.installment as unknown as ExpenseItem['installment'];
   }
+  // F34 payment-source: keep the account link AND its revert-ref, else a
+  // restore would orphan the deduction (balance drifts on later edit/delete).
+  if (isString(raw.paymentAccountId)) {
+    item.paymentAccountId = raw.paymentAccountId;
+  }
+  if (isObject(raw.sideEffects)) {
+    item.sideEffects = raw.sideEffects as unknown as ExpenseItem['sideEffects'];
+  }
   return item;
 };
 
