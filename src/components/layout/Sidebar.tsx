@@ -10,6 +10,8 @@
 import { useState, type ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 
+import BuildInfo from './BuildInfo';
+
 interface NavItem {
   to: string;
   label: string;
@@ -91,6 +93,7 @@ export const Sidebar = (): ReactNode => {
       >
         <Brand />
         <NavList />
+        <BuildInfo />
       </aside>
 
       {/* Mobile drawer + backdrop */}

@@ -1,6 +1,20 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'node:path';
+import { execSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+
+/** Build-time metadata shown in the sidebar footer (version · hash · time). */
+const pkg = JSON.parse(
+  readFileSync(path.resolve(__dirname, 'package.json'), 'utf-8'),
+) as { version: string };
+let gitCommit = 'local';
+try {
+  gitCommit = execSync('git rev-parse --short HEAD').toString().trim();
+} catch {
+  /* not a git checkout (e.g. some CI) — fall back to 'local' */
+}
+const buildTime = new Date().toISOString();
 
 /**
  * Same-origin proxy สำหรับราคาทอง — goldtraders.or.th ไม่เปิด CORS
@@ -18,6 +32,11 @@ const goldPriceProxy = {
 
 // https://vite.dev/config/
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+    __GIT_COMMIT__: JSON.stringify(gitCommit),
+    __BUILD_TIME__: JSON.stringify(buildTime),
+  },
   plugins: [react()],
   resolve: {
     alias: {
