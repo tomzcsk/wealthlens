@@ -22,6 +22,8 @@ export interface ThaiBank {
   color: string;
   /** Local logo path served from /public. */
   logo: string;
+  /** Emoji avatar instead of a logo image (e.g. เงินสด 💵). */
+  emoji?: string;
 }
 
 const bank = (
@@ -41,6 +43,15 @@ const bank = (
 
 /** Common personal banks first, then the rest. */
 export const THAI_BANKS: ThaiBank[] = [
+  {
+    key: 'cash',
+    label: 'เงินสด',
+    code: 'CASH',
+    aliases: ['cash', 'เงินสด', 'เงินสดในมือ', 'เงินสดในกระเป๋า'],
+    color: '#16a34a',
+    logo: '',
+    emoji: '💵',
+  },
   bank('kbank', 'กสิกรไทย', 'KBANK', '#138f2d', ['กสิกร', 'kasikorn']),
   bank('scb', 'ไทยพาณิชย์', 'SCB', '#4e2e7f', ['ไทยพานิชย์', 'siam commercial']),
   bank('bay', 'กรุงศรีอยุธยา', 'BAY', '#736161', ['กรุงศรี', 'krungsri']),

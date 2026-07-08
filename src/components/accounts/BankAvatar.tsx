@@ -33,6 +33,18 @@ export const BankAvatar = ({
     );
   }
 
+  if (bank.emoji) {
+    return (
+      <span
+        className={`inline-flex shrink-0 items-center justify-center rounded-lg ${box}`}
+        style={{ backgroundColor: `${bank.color}1a` }}
+        title={bank.label}
+      >
+        {bank.emoji}
+      </span>
+    );
+  }
+
   return (
     <span
       className={`inline-flex shrink-0 items-center justify-center rounded-lg bg-white border border-slate-200 overflow-hidden ${box}`}
