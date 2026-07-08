@@ -12,6 +12,7 @@ import { Modal } from '@/components/ui/Modal';
 import BankAccountCard from '@/components/accounts/BankAccountCard';
 import BankAccountDetail from '@/components/accounts/BankAccountDetail';
 import BankAccountForm from '@/components/accounts/BankAccountForm';
+import { resolveBank } from '@/data/thaiBanks';
 import { useFinanceStore } from '@/stores/financeStore';
 import { useToastStore } from '@/stores/toastStore';
 import { sumBankAllTime, sumBankYear } from '@/utils/bankAccounts';
@@ -184,14 +185,20 @@ export const BankAccountsPage = (): ReactNode => {
           })()}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {accounts.map((a) => (
-              <BankAccountCard
-                key={a.id}
-                account={a}
-                year={year}
-                onOpen={() => setOpenId(a.id)}
-              />
-            ))}
+            {[...accounts]
+              .sort(
+                (a, b) =>
+                  (resolveBank(a)?.key === 'cash' ? 0 : 1) -
+                  (resolveBank(b)?.key === 'cash' ? 0 : 1),
+              )
+              .map((a) => (
+                <BankAccountCard
+                  key={a.id}
+                  account={a}
+                  year={year}
+                  onOpen={() => setOpenId(a.id)}
+                />
+              ))}
           </div>
         </>
       )}
