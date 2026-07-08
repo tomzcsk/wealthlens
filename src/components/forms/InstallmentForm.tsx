@@ -123,6 +123,7 @@ export const InstallmentForm = ({
   onCancel,
 }: InstallmentFormProps): ReactNode => {
   const addInstallmentPlan = useFinanceStore((s) => s.addInstallmentPlan);
+  const accounts = useFinanceStore((s) => s.data.bankAccounts ?? []);
 
   const [name, setName] = useState('');
   const [category, setCategory] = useState<ExpenseCategory>('other');
@@ -134,6 +135,7 @@ export const InstallmentForm = ({
   const [reimbursementStatus, setReimbursementStatus] =
     useState<'pending' | 'received'>('pending');
   const [isRecurring, setIsRecurring] = useState(false);
+  const [paymentAccountId, setPaymentAccountId] = useState<string>('');
   const [touched, setTouched] = useState<FormTouched>({});
 
   const nameId = useId();
@@ -144,6 +146,7 @@ export const InstallmentForm = ({
   const startMonthId = useId();
   const recurringId = useId();
   const reimbursableId = useId();
+  const paymentAccountIdField = useId();
 
   const totalAmount = useMemo(() => parseAmount(totalAmountInput), [
     totalAmountInput,
@@ -199,6 +202,7 @@ export const InstallmentForm = ({
       startMonth,
       isRecurring,
       reimbursement,
+      paymentAccountId: paymentAccountId || undefined,
     });
     onSaved?.(planId);
   };
@@ -260,6 +264,31 @@ export const InstallmentForm = ({
             );
           })}
         </select>
+      </div>
+
+      {/* Payment account (optional) */}
+      <div>
+        <label htmlFor={paymentAccountIdField} className={labelClass}>
+          จ่ายผ่าน
+        </label>
+        <select
+          id={paymentAccountIdField}
+          value={paymentAccountId}
+          onChange={(e: ChangeEvent<HTMLSelectElement>) =>
+            setPaymentAccountId(e.target.value)
+          }
+          className={inputBaseClass}
+        >
+          <option value="">ไม่ระบุ (ไม่หักบัญชี)</option>
+          {accounts.map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.name}
+            </option>
+          ))}
+        </select>
+        <p className="mt-1 text-xs text-slate-500">
+          แต่ละงวดจะหักยอดบัญชีนี้ในเดือนของงวด
+        </p>
       </div>
 
       {/* Total amount + months — side by side on desktop */}

@@ -135,9 +135,6 @@ export const ExpenseForm = ({
   const accounts = useFinanceStore((s) => s.data.bankAccounts ?? []);
 
   const isEdit = initialValues != null;
-  // Installment rows never deduct from a bank account — don't offer the
-  // payment-source choice when editing one.
-  const isInstallmentRow = initialValues?.installment != null;
 
   const [category, setCategory] = useState<ExpenseCategory>(
     initialValues?.category ?? defaultCategory ?? 'housing',
@@ -392,30 +389,27 @@ export const ExpenseForm = ({
         </select>
       </div>
 
-      {/* จ่ายผ่าน — which bank account (or เงินสด) to deduct from. Hidden for
-          installment rows since those never deduct. */}
-      {!isInstallmentRow && (
-        <div>
-          <label htmlFor={paymentAccountIdFieldId} className={labelClass}>
-            จ่ายผ่าน
-          </label>
-          <select
-            id={paymentAccountIdFieldId}
-            value={paymentAccountId}
-            onChange={(e: ChangeEvent<HTMLSelectElement>) =>
-              setPaymentAccountId(e.target.value)
-            }
-            className={inputBaseClass}
-          >
-            <option value="">ไม่ระบุ (ไม่หักบัญชี)</option>
-            {accounts.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
+      {/* จ่ายผ่าน — which bank account (or เงินสด) to deduct from. */}
+      <div>
+        <label htmlFor={paymentAccountIdFieldId} className={labelClass}>
+          จ่ายผ่าน
+        </label>
+        <select
+          id={paymentAccountIdFieldId}
+          value={paymentAccountId}
+          onChange={(e: ChangeEvent<HTMLSelectElement>) =>
+            setPaymentAccountId(e.target.value)
+          }
+          className={inputBaseClass}
+        >
+          <option value="">ไม่ระบุ (ไม่หักบัญชี)</option>
+          {accounts.map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.name}
+            </option>
+          ))}
+        </select>
+      </div>
 
       {/* Name */}
       <div>

@@ -92,5 +92,19 @@ const restored = res.ok
 eq('restore เก็บ paymentAccountId', restored?.paymentAccountId, 'A');
 eq('restore เก็บ sideEffects.deductAmount', restored?.sideEffects?.deductAmount, 500);
 
+// --- F35: per-งวด deduction distributes across months ---
+let accts3: BankAccount[] = [{ id: 'C', name: 'C', balances: {} }];
+for (const [y, m, amt] of [[2026, 7, 1000], [2026, 8, 1000], [2026, 9, 500]] as const) {
+  accts3 = reconcileBankDeduction(accts3, undefined, {
+    accountId: 'C',
+    deductYear: y,
+    deductMonth: m,
+    deductAmount: amt,
+  });
+}
+eq('งวด1 ก.ค.', bal(accts3, 'C', 2026, 7), -1000);
+eq('งวด2 ส.ค.', bal(accts3, 'C', 2026, 8), -1000);
+eq('งวด3 ก.ย.', bal(accts3, 'C', 2026, 9), -500);
+
 console.log(failures === 0 ? '\n✅ ALL PASS' : `\n❌ ${failures} FAIL`);
 process.exit(failures === 0 ? 0 : 1);

@@ -78,9 +78,8 @@ const ExpenseRow = ({
   const meta = EXPENSE_CATEGORIES[item.category];
   const reimbursement = item.reimbursement;
   const installment = item.installment;
-  // Installment rows never deduct (F34), so don't imply a payment source on them.
   const paymentAccount =
-    item.paymentAccountId != null && installment == null
+    item.paymentAccountId != null
       ? accounts.find((a) => a.id === item.paymentAccountId)
       : undefined;
   return (

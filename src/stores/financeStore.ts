@@ -121,6 +121,8 @@ export interface InstallmentPlanInput {
   startMonth: number;
   isRecurring?: boolean;
   reimbursement?: Reimbursement;
+  /** When set, each งวด deducts from this account in its own งวด month. */
+  paymentAccountId?: string;
 }
 
 /**
@@ -195,13 +197,13 @@ const ensurePreferences = (
   prefs: UserPreferences | undefined,
 ): UserPreferences => prefs ?? DEFAULT_PREFERENCES;
 
-/** The deduction an expense SHOULD have (none for no-account or installment rows). */
+/** The deduction an expense SHOULD have (none when no payment account is set). */
 const expenseDeductionOf = (
-  item: Pick<ExpenseItem, 'paymentAccountId' | 'amount' | 'installment'>,
+  item: Pick<ExpenseItem, 'paymentAccountId' | 'amount'>,
   year: number,
   month: number,
 ): ExpenseSideEffectRefs | undefined =>
-  item.paymentAccountId && !item.installment
+  item.paymentAccountId
     ? {
         accountId: item.paymentAccountId,
         deductYear: year,
@@ -508,15 +510,12 @@ export const useFinanceStore = create<FinanceState>()(
           // in a month within the 60-งวด range is tagged automatically (joining
           // the existing plan via its planId, computing งวด from the calendar),
           // so the "ผ่อน X/60" badge appears without a manual re-tag. Idempotent
-          // and a no-op for every other expense. Computed BEFORE the deduction so
-          // an auto-installment car row never also deducts from a bank account.
+          // and a no-op for every other expense.
           const isCarInstallmentRow =
             newItem.name === CAR_INSTALLMENT.name &&
             newItem.category === CAR_INSTALLMENT.category &&
             carSequenceFor(year, month) != null;
-          const newDed = isCarInstallmentRow
-            ? undefined
-            : expenseDeductionOf(newItem, year, month);
+          const newDed = expenseDeductionOf(newItem, year, month);
           if (newDed) newItem.sideEffects = newDed;
           const nextBankAccounts = newDed
             ? reconcileBankDeduction(state.data.bankAccounts ?? [], undefined, newDed)
@@ -637,6 +636,7 @@ export const useFinanceStore = create<FinanceState>()(
           startMonth,
           isRecurring,
           reimbursement,
+          paymentAccountId,
         } = input;
 
         // Per-งวด amount with the last งวด absorbing the rounding remainder
@@ -650,6 +650,7 @@ export const useFinanceStore = create<FinanceState>()(
           // Work on a single mutable years map so all งวด land in one
           // state update — atomic and only bumps `lastUpdated` once.
           let years: WealthLensData['years'] = state.data.years;
+          let nextBankAccounts = state.data.bankAccounts;
 
           for (let seq = 1; seq <= totalMonths; seq++) {
             const { year, month } = advanceMonth(startYear, startMonth, seq - 1);
@@ -674,6 +675,21 @@ export const useFinanceStore = create<FinanceState>()(
               installment,
               ...(reimbursement ? { reimbursement } : {}),
             };
+            if (paymentAccountId) {
+              const ded: ExpenseSideEffectRefs = {
+                accountId: paymentAccountId,
+                deductYear: year,
+                deductMonth: month,
+                deductAmount: amount,
+              };
+              newItem.paymentAccountId = paymentAccountId;
+              newItem.sideEffects = ded;
+              nextBankAccounts = reconcileBankDeduction(
+                nextBankAccounts ?? [],
+                undefined,
+                ded,
+              );
+            }
             const monthRow = current.expenses.find((e) => e.month === month);
             const nextExpenses: MonthlyExpense[] = monthRow
               ? current.expenses.map((e) =>
@@ -690,7 +706,12 @@ export const useFinanceStore = create<FinanceState>()(
 
           const stamp = nowIso();
           return {
-            data: { ...state.data, lastUpdated: stamp, years },
+            data: {
+              ...state.data,
+              lastUpdated: stamp,
+              years,
+              ...(nextBankAccounts ? { bankAccounts: nextBankAccounts } : {}),
+            },
             lastUpdated: stamp,
           };
         });
@@ -701,15 +722,28 @@ export const useFinanceStore = create<FinanceState>()(
       deleteInstallmentPlan: (planId) =>
         set((state) => {
           let touched = false;
+          let nextBankAccounts = state.data.bankAccounts;
           const nextYears: WealthLensData['years'] = {};
           for (const [yearKey, yr] of Object.entries(state.data.years)) {
             let yearTouched = false;
             const nextExpenses = yr.expenses.map((row) => {
+              const removed = row.items.filter(
+                (it) => it.installment?.planId === planId,
+              );
+              if (removed.length === 0) return row;
+              yearTouched = true;
+              for (const it of removed) {
+                if (it.sideEffects) {
+                  nextBankAccounts = reconcileBankDeduction(
+                    nextBankAccounts ?? [],
+                    it.sideEffects,
+                    undefined,
+                  );
+                }
+              }
               const filtered = row.items.filter(
                 (it) => it.installment?.planId !== planId,
               );
-              if (filtered.length === row.items.length) return row;
-              yearTouched = true;
               return { ...row, items: filtered };
             });
             if (yearTouched) {
@@ -722,7 +756,12 @@ export const useFinanceStore = create<FinanceState>()(
           if (!touched) return state;
           const stamp = nowIso();
           return {
-            data: { ...state.data, lastUpdated: stamp, years: nextYears },
+            data: {
+              ...state.data,
+              lastUpdated: stamp,
+              years: nextYears,
+              ...(nextBankAccounts ? { bankAccounts: nextBankAccounts } : {}),
+            },
             lastUpdated: stamp,
           };
         }),

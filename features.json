@@ -1113,6 +1113,29 @@
             "completedAt": "2026-07-08",
             "notes": "Spec: docs/superpowers/specs/2026-07-08-expense-payment-source-design.md | Plan: docs/superpowers/plans/2026-07-08-expense-payment-source.md | Files: types/index.ts (+ExpenseSideEffectRefs), utils/bankAccounts.ts (+applyBankDelta/reconcileBankDeduction), stores/financeStore.ts (expenseDeductionOf + add/update/delete deduct/revert), components/forms/{ExpenseForm,ExpenseList}.tsx | Verified: scripts/verify-expense-payment.ts"
           }
+        },
+        {
+          "id": "F35",
+          "name": "ผ่อนหักรายงวด (optional) — Installment per-งวด deduction",
+          "description": "แผนผ่อนเลือก 'จ่ายผ่าน' บัญชีได้ (optional) แล้วแต่ละงวดหักยอดบัญชีในเดือนของงวดนั้น — เปิดสิ่งที่ F34 defer ไว้",
+          "status": "completed",
+          "priority": "P2",
+          "phase": "phase_4",
+          "acceptanceCriteria": [
+            "expenseDeductionOf ตัด guard !installment → หักเมื่อมี paymentAccountId (ผ่อนหรือไม่ก็ได้)",
+            "InstallmentPlanInput + paymentAccountId?; addInstallmentPlan หักแต่ละงวดเข้าเดือนของงวด (ยอดต่องวด, งวดสุดท้ายรับเศษ)",
+            "deleteInstallmentPlan คืนยอดทุกงวด; แก้/ลบงวดเดี่ยว reconcile (F34 machinery)",
+            "InstallmentForm dropdown 'จ่ายผ่าน' optional; ExpenseForm/ExpenseList โชว์ payment บนรายการผ่อน",
+            "ไม่เลือกบัญชี = ไม่หัก (optional, backward-compat); ข้อมูลเดิมไม่เพี้ยน",
+            "Verified: scripts/verify-installment-deduction.ts (store-level: addPlan หัก + deletePlan คืน round-trip) + verify-expense-payment + typecheck + build"
+          ],
+          "estimatedHours": 3,
+          "dependencies": ["F33", "F34"],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-07-08",
+            "notes": "Spec: docs/superpowers/specs/2026-07-08-installment-deduction-design.md | Files: stores/financeStore.ts (expenseDeductionOf, InstallmentPlanInput, addInstallmentPlan/deleteInstallmentPlan หัก/คืน, addExpense เอา car gate ออก), components/forms/{InstallmentForm,ExpenseForm,ExpenseList}.tsx | หมายเหตุ: หักทุกงวดเข้าเดือนของมัน (รวมงวดอนาคต = planned outflow); หักงวดเฉพาะที่ถึงกำหนด = นอก scope"
+          }
         }
       ]
     }
@@ -1202,8 +1225,8 @@
     }
   },
   "progressSummary": {
-    "totalFeatures": 42,
-    "completed": 42,
+    "totalFeatures": 43,
+    "completed": 43,
     "inProgress": 0,
     "pending": 0,
     "overallProgress": "100%",
