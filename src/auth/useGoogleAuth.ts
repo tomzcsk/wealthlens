@@ -105,6 +105,8 @@ export interface UseGoogleAuthResult {
   isSignedIn: boolean;
   accessToken: string | null;
   user: GoogleUser | null;
+  /** ms epoch when the current token expires, or null when signed out. */
+  expiresAt: number | null;
   signIn: () => void;
   signOut: () => void;
   /** True only when `VITE_GOOGLE_CLIENT_ID` is configured. */
@@ -132,7 +134,8 @@ const useTokenExpiryListener = (onExpire: () => void): void => {
 interface AuthStoreState {
   accessToken: string | null;
   user: GoogleUser | null;
-  setAuth: (accessToken: string, user: GoogleUser) => void;
+  expiresAt: number | null;
+  setAuth: (accessToken: string, user: GoogleUser, expiresAt: number) => void;
   clearAuth: () => void;
 }
 
@@ -141,8 +144,10 @@ const useAuthStore = create<AuthStoreState>((set) => {
   return {
     accessToken: persisted?.accessToken ?? null,
     user: persisted?.user ?? null,
-    setAuth: (accessToken, user) => set({ accessToken, user }),
-    clearAuth: () => set({ accessToken: null, user: null }),
+    expiresAt: persisted?.expiresAt ?? null,
+    setAuth: (accessToken, user, expiresAt) =>
+      set({ accessToken, user, expiresAt }),
+    clearAuth: () => set({ accessToken: null, user: null, expiresAt: null }),
   };
 });
 
@@ -163,6 +168,7 @@ export const clearAuthData = (): void => {
 const useConfiguredAuth = (): UseGoogleAuthResult => {
   const accessToken = useAuthStore((s) => s.accessToken);
   const user = useAuthStore((s) => s.user);
+  const expiresAt = useAuthStore((s) => s.expiresAt);
   const setAuth = useAuthStore((s) => s.setAuth);
   const clearAuth = useAuthStore((s) => s.clearAuth);
 
@@ -186,7 +192,7 @@ const useConfiguredAuth = (): UseGoogleAuthResult => {
           user: profile,
           expiresAt,
         });
-        setAuth(tokenResponse.access_token, profile);
+        setAuth(tokenResponse.access_token, profile, expiresAt);
       } catch (err) {
         console.error('[WealthLens] failed to fetch Google profile', err);
       }
@@ -207,11 +213,12 @@ const useConfiguredAuth = (): UseGoogleAuthResult => {
       isSignedIn: Boolean(accessToken),
       accessToken,
       user,
+      expiresAt,
       signIn,
       signOut,
       isReady: true,
     }),
-    [accessToken, user, signIn, signOut],
+    [accessToken, user, expiresAt, signIn, signOut],
   );
 };
 
@@ -232,6 +239,7 @@ const useStubAuth = (): UseGoogleAuthResult => {
       isSignedIn: false,
       accessToken: null,
       user: null,
+      expiresAt: null,
       signIn: noop,
       signOut: noop,
       isReady: false,

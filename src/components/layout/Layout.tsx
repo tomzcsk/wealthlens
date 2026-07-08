@@ -27,6 +27,7 @@ import useDriveSyncCoordinator from '@/hooks/useDriveSyncCoordinator';
 import LoginPage from '@/pages/LoginPage';
 
 import Header from './Header';
+import SessionWatcher from './SessionWatcher';
 import Sidebar from './Sidebar';
 
 export const Layout = (): ReactNode => {
@@ -59,6 +60,7 @@ export const Layout = (): ReactNode => {
               <Outlet />
             </main>
           </div>
+          <SessionWatcher />
         </div>
       )}
       <Toaster />
