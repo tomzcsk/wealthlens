@@ -27,7 +27,20 @@ interface BankActionFormProps {
   onCancel: () => void;
 }
 
-const toDigits = (s: string): string => s.replace(/[^\d.]/g, '');
+/**
+ * Sanitize a money input while PRESERVING a decimal point the user is typing
+ * (thousand-separate the integer part, keep the fractional part verbatim).
+ * e.g. "1500.5" → "1,500.5", "1500." → "1,500."
+ */
+const formatAmountInput = (raw: string): string => {
+  const digits = raw.replace(/[^\d.]/g, '');
+  if (digits === '') return '';
+  const [intPart, ...rest] = digits.split('.');
+  const intFmt =
+    intPart === '' ? '' : formatNumber(Number(intPart), { decimals: 0 });
+  // Only the first dot counts; join any extra fractional chars after it.
+  return rest.length > 0 ? `${intFmt}.${rest.join('')}` : intFmt;
+};
 
 const MODE_META: Record<
   BankActionMode,
@@ -75,13 +88,7 @@ export const BankActionForm = ({
   const meta = MODE_META[mode];
 
   const handleAmount = (e: ChangeEvent<HTMLInputElement>): void => {
-    const cleaned = toDigits(e.target.value);
-    if (cleaned === '' || cleaned.endsWith('.')) {
-      setAmountText(cleaned);
-      return;
-    }
-    const n = Number(cleaned);
-    setAmountText(Number.isFinite(n) ? formatNumber(n, { decimals: 0 }) : cleaned);
+    setAmountText(formatAmountInput(e.target.value));
   };
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>): void => {
