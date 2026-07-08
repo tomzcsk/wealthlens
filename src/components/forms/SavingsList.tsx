@@ -199,6 +199,7 @@ export const SavingsList = ({
   const accounts = useFinanceStore((s) => s.data.bankAccounts ?? []);
 
   const [editAccountId, setEditAccountId] = useState<string | null>(null);
+  const [bankCollapsed, setBankCollapsed] = useState(false);
 
   const [fillModalOpen, setFillModalOpen] = useState(false);
   const [fillItems, setFillItems] = useState<RecurringFillItem[]>([]);
@@ -304,29 +305,49 @@ export const SavingsList = ({
             Tom sees one unified savings list per month. */}
         {accounts.length > 0 && (
           <div className="py-2">
-            <div className="flex items-center justify-between px-3 py-1.5">
+            <button
+              type="button"
+              onClick={() => setBankCollapsed((c) => !c)}
+              aria-expanded={!bankCollapsed}
+              className="w-full flex items-center justify-between px-3 py-1.5 rounded-md hover:bg-slate-50 transition"
+            >
               <div className="flex items-center gap-2">
+                <span
+                  aria-hidden="true"
+                  className="w-3 text-[10px] text-slate-400"
+                >
+                  {bankCollapsed ? '▸' : '▾'}
+                </span>
                 <span aria-hidden="true">💼</span>
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   บัญชีธนาคาร
                 </h3>
+                <span className="text-[10px] text-slate-400">
+                  ({accounts.length})
+                </span>
               </div>
-            </div>
-            <div className="px-1">
-              {accounts.map((account) => {
-                const monthly = account.balances[String(year)]?.[String(month)];
-                const annual = accountYearTotal(account, year);
-                return (
-                  <BankBalanceRow
-                    key={account.id}
-                    account={account}
-                    monthly={monthly}
-                    annual={annual}
-                    onEdit={() => setEditAccountId(account.id)}
-                  />
-                );
-              })}
-            </div>
+              <span className="text-xs financial-number tabular-nums text-slate-500">
+                {formatTHB(sumBankMonth(accounts, year, month))}
+              </span>
+            </button>
+            {!bankCollapsed && (
+              <div className="px-1">
+                {accounts.map((account) => {
+                  const monthly =
+                    account.balances[String(year)]?.[String(month)];
+                  const annual = accountYearTotal(account, year);
+                  return (
+                    <BankBalanceRow
+                      key={account.id}
+                      account={account}
+                      monthly={monthly}
+                      annual={annual}
+                      onEdit={() => setEditAccountId(account.id)}
+                    />
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
