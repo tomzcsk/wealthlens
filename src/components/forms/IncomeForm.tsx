@@ -700,7 +700,10 @@ export const IncomeForm = ({
   );
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-6 max-w-2xl w-full">
+    // ไม่มี card chrome ของตัวเอง (bg/border/rounded) — ฟอร์มนี้ถูกวางใน Modal
+    // ซึ่งเป็นเจ้าของกรอบอยู่แล้ว การใส่ซ้ำทำให้เห็นการ์ดซ้อนการ์ด. และไม่ล็อก
+    // max-width ปล่อยให้เต็มความกว้างที่ Modal จัดให้ ไม่งั้นเหลือขาวข้างขวา.
+    <div className="w-full px-6 py-5">
       {/* Month header — fixed, not editable. The form is always scoped
           to one year+month chosen by the parent. */}
       <div className="mb-5 flex items-end justify-between gap-3">
@@ -730,74 +733,88 @@ export const IncomeForm = ({
         </p>
       )}
 
-      {/* --- Income section --- */}
+      {/* --- Income section ---
+          แต่ละช่องจับคู่กับ checkbox ของตัวเองใน <div> เดียว: ระยะห่างภายในคู่
+          (space-y-1) แคบกว่าระยะระหว่างคู่ (space-y-4) มาก สายตาจึงอ่านออกทันที
+          ว่า "ลงเงินสด" เป็นของช่องบน ไม่ใช่ช่องล่าง (Gestalt: proximity). */}
       <SectionHeader title="รายได้" />
-      <div className="space-y-3">
-        <NumberInput
-          id="income-salary"
-          label="เงินเดือน"
-          value={form.salary}
-          onChange={setField('salary')}
-          onBlur={markTouched('salary')}
-          error={touched.salary ? errors.salary : undefined}
-          autoFocus={!isEdit}
-        />
-        <DepositCheckbox
-          label="ลงบัญชีเงินเดือน"
-          ariaLabel="ลงบัญชีเงินเดือน"
-          checked={checks.salary}
-          disabled={!salaryAccount}
-          onChange={toggleSalaryDeposit}
-          helper={
-            !salaryAccount ? (
-              <>
-                ยังไม่มีบัญชีเงินเดือน — เพิ่มก่อน{' '}
-                <Link
-                  to="/accounts"
-                  className="text-primary underline underline-offset-2 hover:text-primary-dark"
-                >
-                  ไปเพิ่มบัญชี
-                </Link>
-              </>
-            ) : undefined
-          }
-        />
-        <NumberInput
-          id="income-bonus"
-          label="โบนัส"
-          value={form.bonus}
-          onChange={setField('bonus')}
-        />
-        <DepositCheckbox
-          label="ลงเงินสด"
-          ariaLabel="ลงเงินสด (โบนัส)"
-          checked={checks.bonus}
-          onChange={(c) => toggleCashDeposit('bonus', c)}
-        />
-        <NumberInput
-          id="income-commission"
-          label="คอม"
-          value={form.commission}
-          onChange={setField('commission')}
-        />
-        <DepositCheckbox
-          label="ลงเงินสด"
-          ariaLabel="ลงเงินสด (คอม)"
-          checked={checks.commission}
-          onChange={(c) => toggleCashDeposit('commission', c)}
-        />
-        <NumberInput
-          id="income-otherIncome"
-          label="รายได้อื่นๆ"
-          value={form.otherIncome}
-          onChange={setField('otherIncome')}
-        />
-        <DepositCheckbox
-          label="ลงเงินสด"
-          ariaLabel="ลงเงินสด (รายได้อื่นๆ)"
-          checked={checks.otherIncome}
-          onChange={(c) => toggleCashDeposit('otherIncome', c)}
-        />
+      <div className="space-y-4">
+        <div className="space-y-1">
+          <NumberInput
+            id="income-salary"
+            label="เงินเดือน"
+            value={form.salary}
+            onChange={setField('salary')}
+            onBlur={markTouched('salary')}
+            error={touched.salary ? errors.salary : undefined}
+            autoFocus={!isEdit}
+          />
+          <DepositCheckbox
+            label="ลงบัญชีเงินเดือน"
+            ariaLabel="ลงบัญชีเงินเดือน"
+            checked={checks.salary}
+            disabled={!salaryAccount}
+            onChange={toggleSalaryDeposit}
+            helper={
+              !salaryAccount ? (
+                <>
+                  ยังไม่มีบัญชีเงินเดือน — เพิ่มก่อน{' '}
+                  <Link
+                    to="/accounts"
+                    className="text-primary underline underline-offset-2 hover:text-primary-dark"
+                  >
+                    ไปเพิ่มบัญชี
+                  </Link>
+                </>
+              ) : undefined
+            }
+          />
+        </div>
+
+        <div className="space-y-1">
+          <NumberInput
+            id="income-bonus"
+            label="โบนัส"
+            value={form.bonus}
+            onChange={setField('bonus')}
+          />
+          <DepositCheckbox
+            label="ลงเงินสด"
+            ariaLabel="ลงเงินสด (โบนัส)"
+            checked={checks.bonus}
+            onChange={(c) => toggleCashDeposit('bonus', c)}
+          />
+        </div>
+
+        <div className="space-y-1">
+          <NumberInput
+            id="income-commission"
+            label="คอม"
+            value={form.commission}
+            onChange={setField('commission')}
+          />
+          <DepositCheckbox
+            label="ลงเงินสด"
+            ariaLabel="ลงเงินสด (คอม)"
+            checked={checks.commission}
+            onChange={(c) => toggleCashDeposit('commission', c)}
+          />
+        </div>
+
+        <div className="space-y-1">
+          <NumberInput
+            id="income-otherIncome"
+            label="รายได้อื่นๆ"
+            value={form.otherIncome}
+            onChange={setField('otherIncome')}
+          />
+          <DepositCheckbox
+            label="ลงเงินสด"
+            ariaLabel="ลงเงินสด (รายได้อื่นๆ)"
+            checked={checks.otherIncome}
+            onChange={(c) => toggleCashDeposit('otherIncome', c)}
+          />
+        </div>
       </div>
 
       {/* --- Deductions section --- */}

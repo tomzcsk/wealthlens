@@ -181,7 +181,7 @@ export const MonthlyPage = (): ReactNode => {
         open={editingIncome}
         onClose={() => setEditingIncome(false)}
         title={`รายได้ — ${monthName}`}
-        size="lg"
+        size="md"
       >
         <IncomeForm
           year={year}
