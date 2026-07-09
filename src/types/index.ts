@@ -64,6 +64,11 @@ export interface WealthLensData {
    * utils/bankAccounts.ts one-time-migrates legacy `preferences.keptBalances`.
    */
   bankAccounts?: BankAccount[];
+  /**
+   * สมุดรายการเดินบัญชี (F40). Optional — ข้อมูลก่อนฟีเจอร์นี้ไม่มี และเดือน
+   * ที่ไม่มีรายการเลยจะแสดงยอดเฉยๆ โดยไม่ถือว่าผิด invariant.
+   */
+  bankTransactions?: BankTransaction[];
 }
 
 /**
@@ -643,4 +648,40 @@ export interface BankAccount {
   type?: BankAccountType;
   /** Net balance per month (+deposit / −withdraw). */
   balances: { [year: string]: { [month: string]: number } };
+}
+
+/**
+ * ที่มาของรายการเดินบัญชี — ใช้ทั้งแสดงผลและเป็น "คีย์" ตอน reconcile
+ * (ลบ/แทนที่บรรทัดเดิมของต้นทางเดียวกัน). Discriminated union เพราะแต่ละ
+ * ที่มามีคีย์ต่างกัน: รายได้ระบุด้วย (ปี, เดือน, ช่อง) รายจ่ายด้วย expenseId.
+ */
+export type BankTxSource =
+  | { type: 'manual' }
+  | { type: 'adjustment' }
+  | { type: 'transfer'; counterpartAccountId: string }
+  | {
+      type: 'income';
+      year: number;
+      month: number;
+      field: 'salary' | 'bonus' | 'commission' | 'otherIncome';
+    }
+  | { type: 'expense'; expenseId: string }
+  | { type: 'gold'; holdingId: string };
+
+export interface BankTransaction {
+  id: string;
+  accountId: string;
+  /**
+   * bucket เดียวกับ `BankAccount.balances` — ไม่ derive จาก `date` เพราะ
+   * ยอดถูกจัดเข้าเดือนตามที่ผู้ใช้เลือก ไม่ใช่ตามวันที่จริงเสมอ. derive
+   * เมื่อไหร่ invariant พังทันที.
+   */
+  year: number;
+  month: number;
+  /** ISO yyyy-mm-dd เมื่อรู้วันจริง (รายจ่ายมี, เงินเดือนไม่มี). */
+  date?: string;
+  /** + เข้าบัญชี, − ออกจากบัญชี. ไม่มีวันเป็น 0. */
+  amount: number;
+  label: string;
+  source: BankTxSource;
 }
