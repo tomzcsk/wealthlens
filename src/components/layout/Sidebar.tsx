@@ -24,16 +24,36 @@ interface NavItem {
   alsoActiveOn?: string[];
 }
 
-const NAV_ITEMS: NavItem[] = [
-  { to: '/', label: 'ภาพรวม', icon: '🏠', end: true },
-  { to: '/monthly', label: 'รายเดือน', icon: '📊' },
-  { to: '/analytics', label: 'วิเคราะห์', icon: '📈' },
-  { to: '/wealth', label: 'ความมั่งคั่ง', icon: '💎' },
-  { to: '/loans', label: 'หนี้สิน', icon: '💰', alsoActiveOn: ['/installments'] },
-  { to: '/accounts', label: 'บัญชีธนาคาร', icon: '🏦' },
-  { to: '/gold', label: 'ทองคำ', icon: '🪙' },
-  { to: '/tax', label: 'ภาษี', icon: '🧮' },
-  { to: '/settings', label: 'ตั้งค่า', icon: '⚙️' },
+/**
+ * เมนูแบ่ง 3 กลุ่มตามคำถามที่ผู้ใช้ถืออยู่ในหัว:
+ *   1. "วันนี้เป็นยังไง / จะบันทึกอะไร"
+ *   2. "ฐานะฉันเป็นยังไง" — ความมั่งคั่งนำหน้าเพราะเป็นบทสรุปของอีกสามอันที่
+ *      ตามมา (บัญชี + ทอง − หนี้); สามอันนั้นคือที่มาของคำตอบ
+ *   3. "เอาข้อมูลไปคิดต่อ" — วิเคราะห์/ภาษี เป็นเครื่องมือ ไม่ใช่ที่เก็บข้อมูล
+ * กลุ่มคั่นด้วยเส้นบางๆ ไม่มีหัวข้อตัวหนังสือ — 9 รายการยังไม่มากพอที่จะ
+ * คุ้มค่ากับ label เพิ่ม
+ */
+const NAV_GROUPS: NavItem[][] = [
+  [
+    { to: '/', label: 'ภาพรวม', icon: '🏠', end: true },
+    { to: '/monthly', label: 'รายเดือน', icon: '📊' },
+  ],
+  [
+    { to: '/wealth', label: 'ความมั่งคั่ง', icon: '💎' },
+    { to: '/accounts', label: 'บัญชีธนาคาร', icon: '🏦' },
+    { to: '/gold', label: 'ทองคำ', icon: '🪙' },
+    {
+      to: '/loans',
+      label: 'หนี้สิน',
+      icon: '💰',
+      alsoActiveOn: ['/installments'],
+    },
+  ],
+  [
+    { to: '/analytics', label: 'วิเคราะห์', icon: '📈' },
+    { to: '/tax', label: 'ภาษี', icon: '🧮' },
+    { to: '/settings', label: 'ตั้งค่า', icon: '⚙️' },
+  ],
 ];
 
 const linkBase =
@@ -53,26 +73,37 @@ const Brand = (): ReactNode => (
 const NavList = ({ onNavigate }: { onNavigate?: () => void }): ReactNode => {
   const { pathname } = useLocation();
   return (
-    <nav className="px-2 flex flex-col gap-1" aria-label="เมนูหลัก">
-      {NAV_ITEMS.map((item) => (
-        <NavLink
-          key={item.to}
-          to={item.to}
-          end={item.end}
-          onClick={onNavigate}
-          className={({ isActive }) => {
-            // NavLink รู้จักแค่ `to` ของตัวเอง — เติม alsoActiveOn ให้ nav
-            // อย่างหนี้สิน highlight ตอนอยู่แท็บ /installments ด้วย.
-            const active =
-              isActive || (item.alsoActiveOn?.includes(pathname) ?? false);
-            return `${linkBase} ${active ? linkActive : linkInactive}`;
-          }}
+    <nav className="px-2" aria-label="เมนูหลัก">
+      {NAV_GROUPS.map((group, groupIndex) => (
+        <div
+          key={group[0].to}
+          className={
+            groupIndex > 0
+              ? 'mt-2 flex flex-col gap-1 border-t border-slate-200 pt-2'
+              : 'flex flex-col gap-1'
+          }
         >
-          <span aria-hidden="true" className="text-base leading-none">
-            {item.icon}
-          </span>
-          <span>{item.label}</span>
-        </NavLink>
+          {group.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              onClick={onNavigate}
+              className={({ isActive }) => {
+                // NavLink รู้จักแค่ `to` ของตัวเอง — เติม alsoActiveOn ให้ nav
+                // อย่างหนี้สิน highlight ตอนอยู่แท็บ /installments ด้วย.
+                const active =
+                  isActive || (item.alsoActiveOn?.includes(pathname) ?? false);
+                return `${linkBase} ${active ? linkActive : linkInactive}`;
+              }}
+            >
+              <span aria-hidden="true" className="text-base leading-none">
+                {item.icon}
+              </span>
+              <span>{item.label}</span>
+            </NavLink>
+          ))}
+        </div>
       ))}
     </nav>
   );
