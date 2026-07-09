@@ -666,7 +666,13 @@ export type BankTxSource =
       field: 'salary' | 'bonus' | 'commission' | 'otherIncome';
     }
   | { type: 'expense'; expenseId: string }
-  | { type: 'gold'; holdingId: string };
+  | { type: 'gold'; holdingId: string }
+  /**
+   * บรรทัดที่สร้างจากยอดที่กรอกไว้ก่อนมีสมุดรายการ (F41). ตอนสร้าง **ไม่แตะ
+   * balances** — มันคือคำอธิบายของยอดที่มีอยู่แล้ว ไม่ใช่เงินก้อนใหม่.
+   * ลบเดี่ยวไม่ได้ (Σรายการ จะไม่เท่ายอด); ย้อนทั้งชุดผ่าน undoJournalBackfill.
+   */
+  | { type: 'backfill' };
 
 export interface BankTransaction {
   id: string;
