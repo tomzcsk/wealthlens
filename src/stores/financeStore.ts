@@ -21,10 +21,12 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { gslLoan as seedGslLoan } from '@/data/seedData';
 import {
+  applyBankDelta,
   KRUNGSRI_ACCOUNT_ID,
   migrateKeptToBankAccounts,
   reconcileBankDeduction,
 } from '@/utils/bankAccounts';
+import { computeIncomeDeposits } from '@/utils/incomeDeposits';
 import {
   advanceMonth,
   applyCarInstallmentTags,
@@ -45,6 +47,7 @@ import type {
   GoldPurity,
   GoldSaleRecord,
   GoldType,
+  IncomeDepositRef,
   InstallmentMeta,
   Loan,
   LoanInstallment,
@@ -254,6 +257,32 @@ const expenseDeductionOf = (
         deductAmount: item.amount,
       }
     : undefined;
+
+/**
+ * คืนยอดที่เคยฝาก แล้วลงยอดใหม่ — reconcile แบบเดียวกับ F34 (รายจ่าย).
+ *
+ * ต้อง revert ด้วย `oldRefs` (ตัวเลขที่ฝากจริงตอนบันทึกครั้งก่อน) ไม่ใช่คำนวณ
+ * ใหม่จาก income ปัจจุบัน เพราะ salary/deductions อาจเปลี่ยนไปแล้ว — ถ้าคืนด้วย
+ * ยอดใหม่ ส่วนต่างจะค้างในบัญชีถาวร. ใช้ applyBankDelta ตัวเดียวกับ F34.
+ * คืน undefined เมื่อยังไม่มีบัญชีเลย (ไม่มีอะไรให้แตะ).
+ */
+const reconcileIncomeDeposits = (
+  accounts: readonly BankAccount[] | undefined,
+  year: number,
+  month: number,
+  oldRefs: IncomeDepositRef[] | undefined,
+  newRefs: IncomeDepositRef[],
+): BankAccount[] | undefined => {
+  if (!accounts) return accounts;
+  let next: BankAccount[] = accounts.slice();
+  for (const ref of oldRefs ?? []) {
+    next = applyBankDelta(next, ref.accountId, year, month, -ref.amount);
+  }
+  for (const ref of newRefs) {
+    next = applyBankDelta(next, ref.accountId, year, month, ref.amount);
+  }
+  return next;
+};
 
 export interface FinanceState {
   /** Persisted finance data — everything Drive cares about. */
@@ -484,21 +513,41 @@ export const useFinanceStore = create<FinanceState>()(
     (set) => ({
       ...buildInitialState(),
 
+      // IncomeForm เรียก addIncome ทั้งตอนสร้างและตอนแก้ (แทนที่แถวของเดือน) —
+      // ดังนั้นนี่คือ reconcile path ไม่ใช่ insert อย่างเดียว. อ่านแถวเดิม →
+      // revert side-effect เดิม → apply ใหม่.
       addIncome: (year, income) =>
         set((state) => {
           const years = ensureYear(state.data.years, year);
           const key = String(year);
           const current = years[key];
+          const previous = current.income.find((i) => i.month === income.month);
+
+          const newRefs = computeIncomeDeposits(income);
+          const nextAccounts = reconcileIncomeDeposits(
+            state.data.bankAccounts,
+            year,
+            income.month,
+            previous?.depositSideEffects,
+            newRefs,
+          );
+          // depositSideEffects เป็นของ store ล้วนๆ — สร้างจาก newRefs เสมอ ไม่
+          // เชื่อค่าที่ติดมากับ argument (กัน stale ref ค้าง เมื่อไม่มีอะไรฝาก).
+          const nextRow: MonthlyIncome = { ...income };
+          if (newRefs.length > 0) nextRow.depositSideEffects = newRefs;
+          else delete nextRow.depositSideEffects;
+
           // Replace by month if exists, otherwise append.
-          const nextIncome = current.income.some((i) => i.month === income.month)
+          const nextIncome = previous
             ? current.income.map((i) =>
-                i.month === income.month ? income : i,
+                i.month === income.month ? nextRow : i,
               )
-            : [...current.income, income];
+            : [...current.income, nextRow];
           const stamp = nowIso();
           return {
             data: {
               ...state.data,
+              ...(nextAccounts ? { bankAccounts: nextAccounts } : {}),
               lastUpdated: stamp,
               years: {
                 ...years,
@@ -514,22 +563,39 @@ export const useFinanceStore = create<FinanceState>()(
           const key = String(year);
           const current = state.data.years[key];
           if (!current) return state;
+          const previous = current.income.find((i) => i.month === month);
+          if (!previous) return state;
+
+          const merged: MonthlyIncome = {
+            ...previous,
+            ...patch,
+            // Merge nested deductions instead of clobbering.
+            deductions: patch.deductions
+              ? { ...previous.deductions, ...patch.deductions }
+              : previous.deductions,
+          };
+          // แก้ deductions/deposits ก็ต้อง reconcile เพราะยอดฝากเงินเดือน =
+          // salary − หัก. revert ยอดที่ฝากจริงเดิม แล้ว apply ยอดใหม่.
+          const newRefs = computeIncomeDeposits(merged);
+          const nextAccounts = reconcileIncomeDeposits(
+            state.data.bankAccounts,
+            year,
+            month,
+            previous.depositSideEffects,
+            newRefs,
+          );
+          const nextRow: MonthlyIncome = { ...merged };
+          if (newRefs.length > 0) nextRow.depositSideEffects = newRefs;
+          else delete nextRow.depositSideEffects;
+
           const nextIncome = current.income.map((i) =>
-            i.month === month
-              ? {
-                  ...i,
-                  ...patch,
-                  // Merge nested deductions instead of clobbering.
-                  deductions: patch.deductions
-                    ? { ...i.deductions, ...patch.deductions }
-                    : i.deductions,
-                }
-              : i,
+            i.month === month ? nextRow : i,
           );
           const stamp = nowIso();
           return {
             data: {
               ...state.data,
+              ...(nextAccounts ? { bankAccounts: nextAccounts } : {}),
               lastUpdated: stamp,
               years: {
                 ...state.data.years,
