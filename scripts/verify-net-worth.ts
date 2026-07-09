@@ -3,7 +3,9 @@
  *   npx tsx --tsconfig tsconfig.app.json scripts/verify-net-worth.ts
  */
 import { computeNetWorth } from '../src/utils/netWorth';
-import type { WealthLensData } from '../src/types';
+import { finalizeSchedule } from '../src/utils/loanForm';
+import type { Loan, WealthLensData } from '../src/types';
+import type { InstallmentPlanSummary } from '../src/stores/selectors';
 
 let failures = 0;
 const eq = (label: string, a: unknown, b: unknown): void => {
@@ -67,6 +69,47 @@ eq('มี spot → ไม่ติดธง', nw.assets.find((l) => l.key === '
 // --- savingsByCategory ---
 eq('savingsByCategory ไม่มี gold', nw.savingsByCategory.some((s) => s.category === 'gold'), false);
 eq('savingsByCategory dime', nw.savingsByCategory.find((s) => s.category === 'investment-dime')?.amount, 200000);
+
+// --- หนี้: เงินต้นล้วน ไม่ใช่ ต้น+ดอก ---
+const schedule = finalizeSchedule([
+  { installmentNumber: 1, dueDate: '2026-08-05', principalAmount: 1000, interestAmount: 100 },
+  { installmentNumber: 2, dueDate: '2026-09-05', principalAmount: 1000, interestAmount: 100 },
+  { installmentNumber: 3, dueDate: '2026-10-05', principalAmount: 1000, interestAmount: 100 },
+]);
+const loan: Loan = {
+  id: 'l1',
+  name: 'สินเชื่อบ้าน',
+  type: 'mortgage',
+  startDate: '2026-08-05',
+  schedule,
+  scheduledPayments: [],
+  extraPayments: [],
+};
+const ref = new Date('2026-08-01T00:00:00');
+
+const plans = [
+  { remainingAmount: 5000 },
+  { remainingAmount: 0 }, // แผนที่จบแล้ว
+] as unknown as InstallmentPlanSummary[];
+
+const withDebt = computeNetWorth(emptyData, { marketValue: 0, totalInvested: 0 }, [loan], plans, ref);
+const liab = (key: string) => withDebt.liabilities.find((l) => l.key === key)?.amount;
+eq('หนี้ = เงินต้น 3,000 ไม่ใช่ 3,300', liab('loans'), 3000);
+eq('ผ่อนที่จบแล้วไม่นับ', liab('installments'), 5000);
+eq('totalLiabilities', withDebt.totalLiabilities, 8000);
+eq('netWorth ติดลบได้', withDebt.netWorth, -8000);
+eq('loanDetails ชื่อก้อน', withDebt.loanDetails[0].name, 'สินเชื่อบ้าน');
+eq('loanDetails ยอด', withDebt.loanDetails[0].principalRemaining, 3000);
+
+// --- ธนาคารติดลบ (ถอนมากกว่าฝาก) ไม่ throw ---
+const negBank = {
+  version: '1',
+  lastUpdated: '2026-07-09T00:00:00.000Z',
+  bankAccounts: [{ id: 'a', name: 'A', balances: { '2026': { '1': -50000 } } }],
+  years: {},
+} as unknown as WealthLensData;
+const neg = computeNetWorth(negBank, { marketValue: 0, totalInvested: 0 }, [], []);
+eq('ธนาคารติดลบไม่ถูก clamp', neg.totalAssets, -50000);
 
 console.log(failures === 0 ? '\n✅ ผ่านทั้งหมด' : `\n❌ ล้มเหลว ${failures} ข้อ`);
 process.exit(failures === 0 ? 0 : 1);
