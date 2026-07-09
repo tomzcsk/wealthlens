@@ -1160,6 +1160,32 @@
             "completedAt": "2026-07-09",
             "notes": "Spec: docs/superpowers/specs/2026-07-09-mortgage-amortization-design.md | Plan: docs/superpowers/plans/2026-07-09-mortgage-amortization.md | Files: utils/amortization.ts (ใหม่), utils/loanForm.ts (export stepDate), utils/loanCalculations.ts (dueInstallments + getPrincipalRemaining + referenceDate ทุก selector), types/index.ts, stores/financeStore.ts, components/loans/{LoanForm,AmortizationBuilder,LoanDetail}.tsx | หมายเหตุ: ดอกคิดรายเดือน (balance × rate/12) อัตราเดียวคงที่; ดอกลอยตัว MRR−x% = นอก scope (แก้ loan แล้วสร้างตารางใหม่)"
           }
+        },
+        {
+          "id": "F37",
+          "name": "ผูกรายจ่ายกับหนี้ (Expense → Loan payment link)",
+          "description": "รายจ่ายระบุได้ว่าไปชำระหนี้ก้อนไหน (ExpenseItem.loanId) แล้วหน้าหนี้สินหักยอดตามยอดจริงอัตโนมัติ — รายจ่ายเป็น source of truth เดียว",
+          "status": "completed",
+          "priority": "P1",
+          "phase": "phase_4",
+          "acceptanceCriteria": [
+            "ExpenseItem.loanId?: string (optional, backward-compat) + preserve ตอน import",
+            "ExpenseForm dropdown 'ชำระหนี้' (ซ่อนเมื่อไม่มีหนี้) + ExpenseList badge 💰 ชื่อหนี้",
+            "materializeLoanPayments(loan, years) → Loan (pure) — loanCalculations.ts ไม่ต้องแก้ signature; คืน object เดิมเมื่อไม่มีรายการผูก",
+            "getPrincipalRemaining เป็น waterfall (ไล่เงินลงงวด 1→N, งวดที่จ่ายไม่ครบตัดต้นตามสัดส่วน)",
+            "มีรายจ่ายผูก → assumeOnSchedule ถูกปิด (ไม่นับซ้ำ)",
+            "ลบ/แก้/ถอด link รายจ่าย → ยอดหนี้ขยับตามทันที ไม่มี reconcile",
+            "loanId กำพร้า (หนี้ถูกลบ) → ไม่ throw ไม่กระทบก้อนอื่น",
+            "LoanForm label: 'ถือว่าจ่ายตามงวดอัตโนมัติ' (เลิกใช้คำว่า 'หักบัญชี' ที่ชนกับ F34)",
+            "Verified: scripts/verify-expense-loan-link.ts (22 assertions) + verify เดิมทั้ง 11 ตัวไม่ regress + typecheck + lint + build + UI run จริง (ผูก → 100%/฿0 · ถอด link → เด้งกลับ ฿3,300)"
+          ],
+          "estimatedHours": 5,
+          "dependencies": ["F26", "F31", "F36"],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-07-09",
+            "notes": "Spec: docs/superpowers/specs/2026-07-09-expense-loan-link-design.md | Plan: docs/superpowers/plans/2026-07-09-expense-loan-link.md | Files: utils/loanPayments.ts (ใหม่), utils/loanCalculations.ts (waterfall + EXPENSE_PAYMENT_PREFIX), types/index.ts, utils/exportImport.ts, hooks/useFinanceData.ts (useResolvedLoans), components/forms/{ExpenseForm,ExpenseList}.tsx, pages/LoansPage.tsx, components/dashboard/LoanSummaryCard.tsx, components/loans/{LoanDetail,LoanForm}.tsx | หมายเหตุ: pointer ชี้จากรายจ่าย → หนี้ (ไม่ dual-write); LoanForm แก้ไขต้องใช้ data.loans ดิบ ไม่ใช่ resolved; 1 รายจ่าย = 1 หนี้ (split = นอก scope)"
+          }
         }
       ]
     }
@@ -1249,8 +1275,8 @@
     }
   },
   "progressSummary": {
-    "totalFeatures": 44,
-    "completed": 44,
+    "totalFeatures": 45,
+    "completed": 45,
     "inProgress": 0,
     "pending": 0,
     "overallProgress": "100%",
