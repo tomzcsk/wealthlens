@@ -200,7 +200,9 @@ export const SavingsList = ({
   const accounts = useFinanceStore((s) => s.data.bankAccounts ?? []);
 
   const [editAccountId, setEditAccountId] = useState<string | null>(null);
-  const [bankCollapsed, setBankCollapsed] = useState(false);
+  // ยุบไว้ก่อน: ยอดบัญชีเป็นข้อมูลอ้างอิง ไม่ใช่สิ่งที่ต้องอ่านทุกครั้งที่เปิดเดือน
+  // — หัวข้อยังโชว์ยอดรวมอยู่ กดกางเมื่อจะแก้ยอด
+  const [bankCollapsed, setBankCollapsed] = useState(true);
 
   const [fillModalOpen, setFillModalOpen] = useState(false);
   const [fillItems, setFillItems] = useState<RecurringFillItem[]>([]);
