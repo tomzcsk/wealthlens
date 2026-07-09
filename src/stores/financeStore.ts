@@ -26,6 +26,12 @@ import {
   migrateKeptToBankAccounts,
   reconcileBankDeduction,
 } from '@/utils/bankAccounts';
+import {
+  applyBankMovement,
+  reconcileBankMovements,
+  revokeBankMovements,
+  type BankLedger,
+} from '@/utils/bankMovements';
 import { computeIncomeDeposits } from '@/utils/incomeDeposits';
 import {
   advanceMonth,
@@ -38,6 +44,7 @@ import {
 import type {
   BankAccount,
   BankAccountType,
+  BankTransaction,
   ExpenseCategory,
   ExpenseItem,
   ExpenseSideEffectRefs,
@@ -285,6 +292,50 @@ const reconcileIncomeDeposits = (
   return next;
 };
 
+/**
+ * อ่าน ledger (บัญชี + รายการ) ออกจาก state, ให้ mutator ทำงานผ่านประตูเดียว
+ * ใน `utils/bankMovements`, แล้วคืนคู่ค่าไว้ spread กลับเข้า `data`. ทุก action
+ * ที่ขยับเงินต้องผ่านทางนี้ — ปรับยอดโดยลืมจด `bankTransactions` จึงเป็นไปไม่ได้
+ * เชิงโครงสร้าง ไม่ใช่แค่ "อย่าลืมนะ" ใน code review (F40).
+ */
+const withLedger = (
+  data: WealthLensData,
+  mutate: (ledger: BankLedger) => BankLedger,
+): Pick<WealthLensData, 'bankAccounts' | 'bankTransactions'> => {
+  const next = mutate({
+    accounts: data.bankAccounts ?? [],
+    transactions: data.bankTransactions ?? [],
+  });
+  return { bankAccounts: next.accounts, bankTransactions: next.transactions };
+};
+
+/**
+ * เขียนยอดสัมบูรณ์ลงเซลล์ (บัญชี, ปี, เดือน) — โค้ดเดิมของ `setBankBalance`
+ * ยกออกมาเป็น helper เพื่อไม่ก็อปซ้ำ. ใช้เฉพาะเส้นทาง "เดือนที่ยังไม่มีรายการ"
+ * (ข้อมูลเก่าก่อน F40) ที่เขียนยอดตรงๆ โดยไม่สร้างประวัติรายการย้อนหลังปลอมๆ.
+ */
+const setRawBalance = (
+  accounts: readonly BankAccount[],
+  id: string,
+  year: number,
+  month: number,
+  amount: number,
+): BankAccount[] => {
+  const yKey = String(year);
+  const mKey = String(month);
+  return accounts.map((a) =>
+    a.id === id
+      ? {
+          ...a,
+          balances: {
+            ...a.balances,
+            [yKey]: { ...(a.balances[yKey] ?? {}), [mKey]: amount },
+          },
+        }
+      : a,
+  );
+};
+
 export interface FinanceState {
   /** Persisted finance data — everything Drive cares about. */
   data: WealthLensData;
@@ -434,6 +485,26 @@ export interface FinanceState {
   ) => void;
   setBankBalance: (id: string, year: number, month: number, amount: number) => void;
   clearBankBalance: (id: string, year: number, month: number) => void;
+  /**
+   * บันทึกการฝาก/ถอนด้วยมือเป็นรายการ `manual` (F40). แยกจาก `setBankBalance`
+   * โดยเจตนา: ปุ่มฝาก/ถอนเดิมเรียก `setBankBalance(cur + delta)` ซึ่งเป็นการ
+   * เซ็ตยอดสัมบูรณ์ store จึงแยกไม่ออกว่าเป็นการฝากหรือการปรับยอด — ทุกฝากจะ
+   * ถูกจดผิดเป็น "ปรับยอดเอง". สอง action นี้บอกเจตนาชัดเจนจึงจดที่มาถูกต้อง.
+   */
+  depositBank: (
+    id: string,
+    year: number,
+    month: number,
+    amount: number,
+    label?: string,
+  ) => void;
+  withdrawBank: (
+    id: string,
+    year: number,
+    month: number,
+    amount: number,
+    label?: string,
+  ) => void;
   /**
    * Move `amount` from one account to another within the same (year, month):
    * source balance −amount, destination +amount, atomically. No-op when an id
@@ -1639,26 +1710,100 @@ export const useFinanceStore = create<FinanceState>()(
           };
         }),
 
-      setBankBalance: (id, year, month, amount) =>
+      depositBank: (id, year, month, amount, label = 'ฝากเงิน') =>
         set((state) => {
-          const accounts = state.data.bankAccounts ?? [];
-          if (!accounts.some((a) => a.id === id)) return state;
-          const yKey = String(year);
-          const mKey = String(month);
+          if (amount <= 0) return state;
+          if (!(state.data.bankAccounts ?? []).some((a) => a.id === id)) return state;
           const stamp = nowIso();
           return {
             data: {
               ...state.data,
-              bankAccounts: accounts.map((a) =>
-                a.id === id
-                  ? {
-                      ...a,
-                      balances: {
-                        ...a.balances,
-                        [yKey]: { ...(a.balances[yKey] ?? {}), [mKey]: amount },
-                      },
-                    }
-                  : a,
+              ...withLedger(state.data, (l) =>
+                applyBankMovement(l, {
+                  accountId: id,
+                  year,
+                  month,
+                  amount,
+                  label,
+                  source: { type: 'manual' },
+                }),
+              ),
+              lastUpdated: stamp,
+            },
+            lastUpdated: stamp,
+          };
+        }),
+
+      withdrawBank: (id, year, month, amount, label = 'ถอนเงิน') =>
+        set((state) => {
+          if (amount <= 0) return state;
+          if (!(state.data.bankAccounts ?? []).some((a) => a.id === id)) return state;
+          const stamp = nowIso();
+          return {
+            data: {
+              ...state.data,
+              ...withLedger(state.data, (l) =>
+                applyBankMovement(l, {
+                  accountId: id,
+                  year,
+                  month,
+                  amount: -amount,
+                  label,
+                  source: { type: 'manual' },
+                }),
+              ),
+              lastUpdated: stamp,
+            },
+            lastUpdated: stamp,
+          };
+        }),
+
+      setBankBalance: (id, year, month, amount) =>
+        set((state) => {
+          const accounts = state.data.bankAccounts ?? [];
+          if (!accounts.some((a) => a.id === id)) return state;
+          const txs = state.data.bankTransactions ?? [];
+          const isSameCell = (t: BankTransaction): boolean =>
+            t.accountId === id && t.year === year && t.month === month;
+          const stamp = nowIso();
+
+          // เดือนที่ยังไม่มีรายการเลย (ข้อมูลเก่า/เซลล์ว่าง) → เขียนยอดตรงๆ ไม่
+          // สร้างประวัติรายการย้อนหลังปลอมๆ. ตรงกับ invariant: เดือนที่ไม่มี
+          // รายการได้รับการยกเว้น.
+          if (!txs.some(isSameCell)) {
+            return {
+              data: {
+                ...state.data,
+                bankAccounts: setRawBalance(accounts, id, year, month, amount),
+                lastUpdated: stamp,
+              },
+              lastUpdated: stamp,
+            };
+          }
+
+          // เดือนที่มีรายการแล้ว → ลง/แทนที่บรรทัด 'ปรับยอดเอง' เท่ากับส่วนต่าง
+          // (ยอดใหม่ − Σ บรรทัดอื่นที่ไม่ใช่ adjustment) เพื่อให้ Σ tx = ยอด ยังจริง.
+          const others = txs
+            .filter((t) => isSameCell(t) && t.source.type !== 'adjustment')
+            .reduce((acc, t) => acc + t.amount, 0);
+          return {
+            data: {
+              ...state.data,
+              ...withLedger(state.data, (l) =>
+                reconcileBankMovements(
+                  l,
+                  (t) => isSameCell(t) && t.source.type === 'adjustment',
+                  [
+                    {
+                      accountId: id,
+                      year,
+                      month,
+                      amount: amount - others,
+                      label: 'ปรับยอดเอง',
+                      source: { type: 'adjustment' },
+                    },
+                  ],
+                ),
               ),
               lastUpdated: stamp,
             },
@@ -1675,10 +1820,21 @@ export const useFinanceStore = create<FinanceState>()(
           const mKey = String(month);
           if (target.balances[yKey]?.[mKey] === undefined) return state;
           const stamp = nowIso();
+
+          // ลำดับสำคัญ: revoke รายการของเซลล์นั้นก่อน (revoke จะปรับยอดคืน) แล้ว
+          // ค่อยลบ key เดือน. ถ้าลบ key ก่อน revoke จะไป apply -delta ลงเซลล์ที่
+          // ไม่มีแล้ว → สร้างคีย์ขึ้นใหม่ค้างค่าติดลบ.
+          const revoked = withLedger(state.data, (l) =>
+            revokeBankMovements(
+              l,
+              (t) => t.accountId === id && t.year === year && t.month === month,
+            ),
+          );
           return {
             data: {
               ...state.data,
-              bankAccounts: accounts.map((a) => {
+              bankTransactions: revoked.bankTransactions,
+              bankAccounts: (revoked.bankAccounts ?? []).map((a) => {
                 if (a.id !== id) return a;
                 const nextYear = { ...(a.balances[yKey] ?? {}) };
                 delete nextYear[mKey];
@@ -1701,29 +1857,32 @@ export const useFinanceStore = create<FinanceState>()(
           ) {
             return state;
           }
-          const yKey = String(year);
-          const mKey = String(month);
-          const shift = (a: BankAccount, delta: number): BankAccount => ({
-            ...a,
-            balances: {
-              ...a.balances,
-              [yKey]: {
-                ...(a.balances[yKey] ?? {}),
-                [mKey]: (a.balances[yKey]?.[mKey] ?? 0) + delta,
-              },
-            },
-          });
+          const fromName = accounts.find((a) => a.id === fromId)?.name ?? '';
+          const toName = accounts.find((a) => a.id === toId)?.name ?? '';
           const stamp = nowIso();
+          // โอน = สองบรรทัดคู่กัน (ขาออก + ขาเข้า) ผ่านประตูเดียว. แต่ละบรรทัด
+          // ถือ counterpartAccountId ของอีกฝั่งไว้เพื่อให้ UI จับคู่/ลบทั้งคู่ได้.
           return {
             data: {
               ...state.data,
-              bankAccounts: accounts.map((a) =>
-                a.id === fromId
-                  ? shift(a, -amount)
-                  : a.id === toId
-                    ? shift(a, amount)
-                    : a,
-              ),
+              ...withLedger(state.data, (l) => {
+                const afterOut = applyBankMovement(l, {
+                  accountId: fromId,
+                  year,
+                  month,
+                  amount: -amount,
+                  label: `โอนไป ${toName}`,
+                  source: { type: 'transfer', counterpartAccountId: toId },
+                });
+                return applyBankMovement(afterOut, {
+                  accountId: toId,
+                  year,
+                  month,
+                  amount,
+                  label: `โอนจาก ${fromName}`,
+                  source: { type: 'transfer', counterpartAccountId: fromId },
+                });
+              }),
               lastUpdated: stamp,
             },
             lastUpdated: stamp,

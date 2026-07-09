@@ -70,7 +70,8 @@ export const BankActionForm = ({
   onCancel,
 }: BankActionFormProps): ReactNode => {
   const accounts = useFinanceStore((s) => s.data.bankAccounts ?? []);
-  const setBankBalance = useFinanceStore((s) => s.setBankBalance);
+  const depositBank = useFinanceStore((s) => s.depositBank);
+  const withdrawBank = useFinanceStore((s) => s.withdrawBank);
   const transferBankBalance = useFinanceStore((s) => s.transferBankBalance);
   const pushToast = useToastStore((s) => s.push);
 
@@ -110,8 +111,10 @@ export const BankActionForm = ({
         tone: 'success',
       });
     } else {
-      const delta = mode === 'deposit' ? amount : -amount;
-      setBankBalance(account.id, curYear, curMonth, curBalance + delta);
+      // ฝาก/ถอน จดเป็นรายการ manual ผ่าน action เฉพาะ (ไม่ใช่ setBankBalance
+      // ที่เป็นการเซ็ตยอดสัมบูรณ์ = "ปรับยอดเอง") — ดู depositBank ใน store (F40).
+      if (mode === 'deposit') depositBank(account.id, curYear, curMonth, amount);
+      else withdrawBank(account.id, curYear, curMonth, amount);
       pushToast({
         message: `${meta.verb} ${formatTHB(amount)} (${monthLabel}) แล้ว`,
         tone: 'success',
