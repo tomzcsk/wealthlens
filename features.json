@@ -1266,6 +1266,31 @@
             "completedAt": "2026-07-09",
             "notes": "Spec: docs/superpowers/specs/2026-07-09-bank-transactions-design.md | Plan: docs/superpowers/plans/2026-07-09-bank-transactions.md | Files: utils/bankMovements.ts (ใหม่), components/accounts/MonthTransactionList.tsx (ใหม่), types/index.ts, stores/financeStore.ts (withLedger + rewire ทุกจุด + deleteBankTransaction), components/accounts/{BankActionForm,BankAccountDetail}.tsx, utils/exportImport.ts | หมายเหตุ: depositSideEffects (F39) / sideEffects (F34/F25) คงไว้; migrate เดือนเก่าเป็น 'ยอดยกมา' = นอก scope — UI ใช้บรรทัด 'ยอดก่อนมีรายการ' แทน"
           }
+        },
+        {
+          "id": "F41",
+          "name": "แปลงยอดเก่าเป็นรายการเดินบัญชี (Journal Backfill)",
+          "description": "ปุ่มเดียวแปลงยอดที่กรอกไว้ก่อนมีสมุดรายการ ให้กลายเป็นบรรทัด 'ยอดที่กรอกไว้เดิม' — ยอดเงินไม่ขยับ และย้อนกลับได้",
+          "status": "completed",
+          "priority": "P2",
+          "phase": "phase_4",
+          "acceptanceCriteria": [
+            "BankTxSource เพิ่ม { type: 'backfill' }",
+            "utils/journalBackfill.ts: planBackfill/buildBackfillTransactions (pure) — ส่วนต่าง = ยอดเดือน − Σ รายการที่มี",
+            "ไม่ใช้ applyBankMovement (ฟังก์ชันนั้นเขียน balances ด้วย) — backfill เขียนแค่รายการ",
+            "idempotent: รันซ้ำไม่สร้างบรรทัดเพิ่ม; เดือนผสมได้บรรทัดเท่าส่วนต่าง",
+            "undoJournalBackfill ลบทั้งชุด; deleteBankTransaction ปฏิเสธบรรทัด backfill",
+            "กฎเหล็ก: ยอดทุกบัญชีก่อน = หลัง ทุกเคส (deep snapshot เทียบใน verify + ขับ UI จริง)",
+            "UI ใน Settings (ไม่ใช่ DangerZone) พร้อม preview + inline confirm 2 จังหวะตอนย้อนกลับ",
+            "Verified: scripts/verify-journal-backfill.ts + verify เดิมทั้ง 16 ตัวไม่ regress + typecheck + lint + build + UI run จริง (29 บรรทัด, ยอด 748,372.69 ไม่ขยับ, undo กลับสภาพเดิมทุกเซลล์)"
+          ],
+          "estimatedHours": 4,
+          "dependencies": ["F40"],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-07-09",
+            "notes": "Spec: docs/superpowers/specs/2026-07-09-journal-backfill-design.md | Plan: docs/superpowers/plans/2026-07-09-journal-backfill.md | Files: utils/journalBackfill.ts (ใหม่), components/settings/JournalBackfillSection.tsx (ใหม่), types/index.ts, stores/financeStore.ts, pages/SettingsPage.tsx, components/accounts/MonthTransactionList.tsx (SOURCE_BADGE backfill: null) | หมายเหตุ: บรรทัด 'ยอดก่อนมีรายการ' ใน MonthTransactionList หายเองเมื่อ opening = 0"
+          }
         }
       ]
     }
@@ -1355,8 +1380,8 @@
     }
   },
   "progressSummary": {
-    "totalFeatures": 48,
-    "completed": 48,
+    "totalFeatures": 49,
+    "completed": 49,
     "inProgress": 0,
     "pending": 0,
     "overallProgress": "100%",
