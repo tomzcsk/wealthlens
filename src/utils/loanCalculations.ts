@@ -29,6 +29,13 @@ const toMs = (iso: string): number => {
 };
 
 /**
+ * `ScheduledPayment` ที่มี id ขึ้นต้นด้วย prefix นี้ถูก derive มาจาก
+ * `ExpenseItem` ที่ผูกกับหนี้ (F37) — ไม่ใช่รายการที่ผู้ใช้บันทึกเอง.
+ * ประกาศไว้ที่นี่เพื่อให้ dependency ชี้ทางเดียว: loanPayments → loanCalculations.
+ */
+export const EXPENSE_PAYMENT_PREFIX = 'expense:';
+
+/**
  * งวดที่ครบกำหนดแล้ว ณ `referenceDate` — ว่างเสมอเมื่อ `assumeOnSchedule`
  * ปิด/ไม่มี (หนี้ที่บันทึกการจ่ายเอง เช่น กยศ).
  */
@@ -111,11 +118,12 @@ export const getMergedPaymentLog = (
   }
 
   for (const sp of loan.scheduledPayments) {
+    const fromExpense = sp.id.startsWith(EXPENSE_PAYMENT_PREFIX);
     out.push({
       date: sp.date,
       amount: sp.amount,
       source: 'auto',
-      label: 'งวดเดือน',
+      label: fromExpense ? 'จ่ายผ่านรายจ่าย' : 'งวดเดือน',
       ...(sp.reference ? { reference: sp.reference } : {}),
       ...(sp.notes ? { notes: sp.notes } : {}),
     });

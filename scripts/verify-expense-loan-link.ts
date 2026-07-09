@@ -6,11 +6,13 @@
  */
 import { validateBackup } from '../src/utils/exportImport';
 import {
+  getMergedPaymentLog,
   getPrincipalRemaining,
   getTotalPaid,
 } from '../src/utils/loanCalculations';
 import { finalizeSchedule } from '../src/utils/loanForm';
-import type { ExpenseItem, Loan } from '../src/types';
+import { materializeLoanPayments } from '../src/utils/loanPayments';
+import type { ExpenseItem, Loan, WealthLensData } from '../src/types';
 
 let failures = 0;
 const eq = (label: string, a: unknown, b: unknown): void => {
@@ -122,6 +124,60 @@ const assumed: Loan = { ...baseLoan, assumeOnSchedule: true };
 const refAfterTwo = new Date('2026-09-20T00:00:00');
 eq('assumeOnSchedule waterfall == Σต้น 2 งวด', getPrincipalRemaining(assumed, refAfterTwo), 1000);
 eq('assumeOnSchedule totalPaid', getTotalPaid(assumed, refAfterTwo), 2200);
+
+// ---------------------------------------------------------------------------
+// Task 3 — materializeLoanPayments
+// ---------------------------------------------------------------------------
+const yearsWithLinks: WealthLensData['years'] = {
+  '2026': {
+    income: [],
+    expenses: [
+      {
+        month: 7,
+        items: [
+          { id: 'e1', category: 'housing', name: 'บ้าน', amount: 30000, isRecurring: true, date: '2026-07-02', loanId: 'loan-house' },
+          { id: 'e2', category: 'housing', name: 'ค่าไฟ', amount: 2000, isRecurring: true },
+        ],
+      },
+      {
+        month: 8,
+        items: [
+          { id: 'e3', category: 'housing', name: 'บ้าน', amount: 35000, isRecurring: true, loanId: 'loan-house' },
+          { id: 'e4', category: 'housing', name: 'บ้าน', amount: 30000, isRecurring: true, loanId: 'loan-other' },
+        ],
+      },
+    ],
+    savings: [],
+  },
+};
+
+const resolved = materializeLoanPayments(baseLoan, yearsWithLinks);
+eq('ผูก 2 รายการ → 2 payments', resolved.scheduledPayments.length, 2);
+eq('รวมยอดตามจริง (30000+35000)', getTotalPaid(resolved, refBeforeFirstDue), 65000);
+eq('รายการหนี้ก้อนอื่นไม่ถูกนับ', resolved.scheduledPayments.some((p) => p.amount === 30000 && p.date === '2026-08-01'), false);
+eq('ไม่มี date → วันที่ 1 ของเดือน', resolved.scheduledPayments.find((p) => p.amount === 35000)?.date, '2026-08-01');
+eq('มี date → ใช้ date จริง', resolved.scheduledPayments.find((p) => p.amount === 30000)?.date, '2026-07-02');
+eq('log ขึ้นเป็น auto', getMergedPaymentLog(resolved, refBeforeFirstDue)[0].source, 'auto');
+eq('log label', getMergedPaymentLog(resolved, refBeforeFirstDue)[0].label, 'จ่ายผ่านรายจ่าย');
+
+// waterfall กับเงินก้อนจริง: จ่าย 65000 เกินทั้งตาราง (3300) → ต้นเหลือ 0
+eq('เงินจากรายจ่ายไหลเข้า waterfall', getPrincipalRemaining(resolved, refBeforeFirstDue), 0);
+
+// รายจ่ายที่ผูกชนะ assumeOnSchedule (ไม่นับซ้ำ)
+const assumedAndLinked: Loan = { ...baseLoan, assumeOnSchedule: true };
+const resolvedBoth = materializeLoanPayments(assumedAndLinked, yearsWithLinks);
+eq('มีรายจ่ายผูก → assumeOnSchedule ถูกปิด', resolvedBoth.assumeOnSchedule, false);
+eq('ไม่นับซ้ำ', getTotalPaid(resolvedBoth, new Date('2026-12-31T00:00:00')), 65000);
+
+// ไม่มี loanId ที่ไหนเลย → คืน loan ตัวเดิม (referential equality)
+const noLinks: WealthLensData['years'] = {
+  '2026': { income: [], expenses: [], savings: [] },
+};
+eq('ไม่มีรายการผูก → คืน object เดิม', materializeLoanPayments(baseLoan, noLinks) === baseLoan, true);
+
+// loanId ชี้หนี้ที่ถูกลบ → ไม่ throw, ไม่กระทบก้อนอื่น
+const ghost: Loan = { ...baseLoan, id: 'loan-ghost' };
+eq('loanId กำพร้า → ไม่มี payment', materializeLoanPayments(ghost, yearsWithLinks).scheduledPayments.length, 0);
 
 console.log(failures === 0 ? '\n✅ ผ่านทั้งหมด' : `\n❌ ล้มเหลว ${failures} ข้อ`);
 process.exit(failures === 0 ? 0 : 1);
