@@ -33,9 +33,21 @@ import {
 
 import { useFinanceStore } from '@/stores/financeStore';
 import { useGoalsStore } from '@/stores/goalsStore';
-import type { MonthlyDeductions, MonthlyIncome } from '@/types';
+import { useToastStore } from '@/stores/toastStore';
+import type {
+  BankAccount,
+  IncomeDepositTargets,
+  MonthlyDeductions,
+  MonthlyIncome,
+} from '@/types';
 import { calculateNetAll } from '@/utils/calculations';
 import { formatNumber, formatTHB, formatThaiMonth } from '@/utils/formatters';
+import {
+  computeIncomeDeposits,
+  isSalaryUnderwater,
+} from '@/utils/incomeDeposits';
+
+import IncomeDepositSummary from './IncomeDepositSummary';
 
 // ---------------------------------------------------------------------------
 // Public props
@@ -100,6 +112,9 @@ const fromIncome = (income: MonthlyIncome): IncomeFormState => ({
 });
 
 const num = (v: FieldValue): number => (v === '' ? 0 : v);
+
+/** Stable empty reference so the store selector never re-triggers renders. */
+const EMPTY_ACCOUNTS: BankAccount[] = [];
 
 // ---------------------------------------------------------------------------
 // NumberInput — comma-formatted numeric input with cursor anchoring.
@@ -288,6 +303,47 @@ const SummaryRow = ({
 };
 
 // ---------------------------------------------------------------------------
+// DepositSelect — tiny per-field "เข้าบัญชี" picker (F39).
+// Aligned to the input column of NumberInput's 140px/1fr grid.
+// ---------------------------------------------------------------------------
+
+interface DepositSelectProps {
+  field: keyof IncomeDepositTargets;
+  label: string;
+  value: string | undefined;
+  accounts: ReadonlyArray<BankAccount>;
+  onChange: (field: keyof IncomeDepositTargets, accountId: string | undefined) => void;
+}
+
+const DepositSelect = ({
+  field,
+  label,
+  value,
+  accounts,
+  onChange,
+}: DepositSelectProps): ReactNode => (
+  <div className="grid grid-cols-[140px_1fr] gap-3">
+    <span aria-hidden="true" />
+    <label className="flex items-center gap-2 text-xs text-slate-500">
+      เข้าบัญชี
+      <select
+        value={value ?? ''}
+        onChange={(e) => onChange(field, e.target.value || undefined)}
+        aria-label={`บัญชีปลายทางของ ${label}`}
+        className="flex-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/30"
+      >
+        <option value="">— ไม่ลงบัญชี —</option>
+        {accounts.map((a) => (
+          <option key={a.id} value={a.id}>
+            {a.name}
+          </option>
+        ))}
+      </select>
+    </label>
+  </div>
+);
+
+// ---------------------------------------------------------------------------
 // IncomeForm
 // ---------------------------------------------------------------------------
 
@@ -303,10 +359,29 @@ export const IncomeForm = ({
 
   const addIncome = useFinanceStore((s) => s.addIncome);
   const deleteIncome = useFinanceStore((s) => s.deleteIncome);
+  const bankAccounts = useFinanceStore((s) => s.data.bankAccounts ?? EMPTY_ACCOUNTS);
   const incomeDefaults = useGoalsStore((s) => s.incomeDefaults);
+  const pushToast = useToastStore((s) => s.push);
 
   const [form, setForm] = useState<IncomeFormState>(() =>
     initialValues ? fromIncome(initialValues) : EMPTY_STATE,
+  );
+
+  // F39 — per-field deposit targets. Fresh month defaults salary → the first
+  // 'salary'-typed account; every other field stays blank (don't guess).
+  const [deposits, setDeposits] = useState<IncomeDepositTargets>(() => {
+    if (initialValues?.deposits) return initialValues.deposits;
+    if (initialValues) return {};
+    const salaryAccount = bankAccounts.find((a) => a.type === 'salary');
+    return salaryAccount ? { salary: salaryAccount.id } : {};
+  });
+  const [pending, setPending] = useState<MonthlyIncome | null>(null);
+
+  const setDepositTarget = useCallback(
+    (field: keyof IncomeDepositTargets, accountId: string | undefined): void => {
+      setDeposits((prev) => ({ ...prev, [field]: accountId }));
+    },
+    [],
   );
 
   const handleFillDefaults = useCallback((): void => {
@@ -409,6 +484,14 @@ export const IncomeForm = ({
     // `MonthlySavings` and is entered via the Savings list/form on the
     // Monthly Detail page.
 
+    // Keep only fields that actually point at an account — an all-blank
+    // selection means "no deposits", so leave the field off entirely to
+    // preserve backward-compat (rows without `deposits` never touch banks).
+    const cleanedDeposits = Object.fromEntries(
+      Object.entries(deposits).filter(([, v]) => Boolean(v)),
+    ) as IncomeDepositTargets;
+    const hasTargets = Object.keys(cleanedDeposits).length > 0;
+
     const income: MonthlyIncome = {
       month,
       salary: num(form.salary),
@@ -416,11 +499,26 @@ export const IncomeForm = ({
       commission: num(form.commission),
       otherIncome: num(form.otherIncome),
       deductions,
+      ...(hasTargets ? { deposits: cleanedDeposits } : {}),
     };
 
-    addIncome(year, income);
-    onSaved?.(income);
-  }, [addIncome, form, isValid, month, onSaved, year]);
+    // Nothing will actually land in a bank account → save straight through
+    // rather than nagging the user with an empty confirmation modal.
+    if (computeIncomeDeposits(income).length === 0) {
+      addIncome(year, income);
+      onSaved?.(income);
+      return;
+    }
+    setPending(income);
+  }, [addIncome, deposits, form, isValid, month, onSaved, year]);
+
+  const confirmSave = useCallback((): void => {
+    if (!pending) return;
+    addIncome(year, pending);
+    pushToast({ message: 'บันทึกรายได้แล้ว', tone: 'success' });
+    onSaved?.(pending);
+    setPending(null);
+  }, [addIncome, onSaved, pending, pushToast, year]);
 
   // ---- Delete -----------------------------------------------------------
   const handleDelete = useCallback((): void => {
@@ -458,6 +556,8 @@ export const IncomeForm = ({
   // ---- Render -----------------------------------------------------------
   const monthLabel = `${formatThaiMonth(month, { long: true })} ${year}`;
   const showDelete = isEdit && Boolean(onDelete);
+  const hasAccounts = bankAccounts.length > 0;
+  const pendingRefs = pending ? computeIncomeDeposits(pending) : [];
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 p-6 max-w-2xl w-full">
@@ -502,24 +602,60 @@ export const IncomeForm = ({
           error={touched.salary ? errors.salary : undefined}
           autoFocus={!isEdit}
         />
+        {hasAccounts && (
+          <DepositSelect
+            field="salary"
+            label="เงินเดือน"
+            value={deposits.salary}
+            accounts={bankAccounts}
+            onChange={setDepositTarget}
+          />
+        )}
         <NumberInput
           id="income-bonus"
           label="โบนัส"
           value={form.bonus}
           onChange={setField('bonus')}
         />
+        {hasAccounts && (
+          <DepositSelect
+            field="bonus"
+            label="โบนัส"
+            value={deposits.bonus}
+            accounts={bankAccounts}
+            onChange={setDepositTarget}
+          />
+        )}
         <NumberInput
           id="income-commission"
           label="คอม"
           value={form.commission}
           onChange={setField('commission')}
         />
+        {hasAccounts && (
+          <DepositSelect
+            field="commission"
+            label="คอม"
+            value={deposits.commission}
+            accounts={bankAccounts}
+            onChange={setDepositTarget}
+          />
+        )}
         <NumberInput
           id="income-otherIncome"
           label="รายได้อื่นๆ"
           value={form.otherIncome}
           onChange={setField('otherIncome')}
         />
+        {hasAccounts && (
+          <DepositSelect
+            field="otherIncome"
+            label="รายได้อื่นๆ"
+            value={deposits.otherIncome}
+            accounts={bankAccounts}
+            onChange={setDepositTarget}
+          />
+        )}
       </div>
 
       {/* --- Deductions section --- */}
@@ -598,6 +734,17 @@ export const IncomeForm = ({
           {isEdit ? 'อัปเดตรายได้' : 'บันทึกรายได้'} ✓
         </button>
       </div>
+
+      <IncomeDepositSummary
+        open={pending != null}
+        onClose={() => setPending(null)}
+        onConfirm={confirmSave}
+        refs={pendingRefs}
+        previousRefs={initialValues?.depositSideEffects}
+        accounts={bankAccounts}
+        salaryUnderwater={pending ? isSalaryUnderwater(pending) : false}
+        monthLabel={monthLabel}
+      />
     </div>
   );
 };
