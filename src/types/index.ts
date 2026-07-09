@@ -274,6 +274,14 @@ export interface ExpenseItem {
   paymentAccountId?: string;
   /** Ref เพื่อ revert การหักยอดบัญชี. */
   sideEffects?: ExpenseSideEffectRefs;
+  /**
+   * รายจ่ายนี้เป็นการชำระหนี้ก้อนไหน (`Loan.id`). Optional — รายการทั่วไป
+   * ไม่มี field นี้. หน้าหนี้สิน *อ่าน* field นี้เพื่อ derive ประวัติชำระ
+   * โดยไม่เขียนอะไรกลับ: รายจ่ายคือ source of truth เดียว แก้/ลบรายจ่าย
+   * แล้วยอดหนี้ขยับตามเอง ไม่มี state ให้ reconcile (ต่างจาก
+   * `paymentAccountId` ซึ่ง dual-write ยอดบัญชี).
+   */
+  loanId?: string;
 }
 
 /**

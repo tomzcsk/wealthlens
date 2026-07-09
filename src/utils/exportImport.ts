@@ -230,6 +230,11 @@ const validateExpenseItem = (
   if (isObject(raw.sideEffects)) {
     item.sideEffects = raw.sideEffects as unknown as ExpenseItem['sideEffects'];
   }
+  // F37 loan link: รายจ่ายชี้ไปหาหนี้ที่มันชำระ — ไม่ preserve = ประวัติ
+  // ชำระหนี้หายทั้งก้อนหลัง restore.
+  if (isString(raw.loanId)) {
+    item.loanId = raw.loanId;
+  }
   return item;
 };
 
