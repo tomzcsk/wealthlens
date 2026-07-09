@@ -116,5 +116,91 @@ const p7 = planBackfill(l7);
 eq('3 เซลล์', p7.cellCount, 3);
 eq('2 บัญชี', p7.accountCount, 2);
 
-console.log(failures === 0 ? '\n✅ ผ่านทั้งหมด' : `\n❌ ล้มเหลว ${failures} ข้อ`);
-process.exit(failures === 0 ? 0 : 1);
+// ════════════════════════════════════════════════════════════════════════
+// Task 2 — store-level: apply / undo / idempotent / round-trip
+// กฎเหล็ก: ยอดทุกบัญชีก่อน = หลัง ทุกเคส (deep snapshot).
+// harness เดียวกับ scripts/verify-bank-transactions.ts (localStorage shim +
+// dynamic import — static import ของ store พังใต้ node).
+// ════════════════════════════════════════════════════════════════════════
+const runStore = async (): Promise<void> => {
+  const { useFinanceStore } = await import('../src/stores/financeStore');
+  const store = useFinanceStore;
+  const snap = (): string =>
+    JSON.stringify(
+      (store.getState().data.bankAccounts ?? []).map((a) => [a.id, a.balances]),
+    );
+  const txs = (): BankTransaction[] => store.getState().data.bankTransactions ?? [];
+  const backfills = (): BankTransaction[] =>
+    txs().filter((t) => t.source.type === 'backfill');
+
+  store.setState((s) => ({
+    data: {
+      ...s.data,
+      years: {},
+      bankTransactions: [
+        // เดือนผสม: กรุงศรีมียอด 5,000 และบรรทัดทอง −100,000
+        {
+          id: 'g1',
+          accountId: 'acc-1',
+          year: 2026,
+          month: 7,
+          amount: -100000,
+          label: 'ซื้อทอง',
+          source: { type: 'gold', holdingId: 'h1' },
+        },
+      ],
+      bankAccounts: [
+        {
+          id: 'acc-1',
+          name: 'หนึ่ง',
+          balances: { '2025': { '3': 17250 }, '2026': { '7': 5000 } },
+        },
+        { id: 'acc-2', name: 'สอง', balances: { '2026': { '1': -3000 } } },
+      ],
+    },
+  }));
+
+  const before = snap();
+
+  // --- apply ---
+  store.getState().applyJournalBackfill();
+  eq('สร้าง 3 บรรทัด', backfills().length, 3);
+  eq('ยอดไม่ขยับเลย', snap(), before);
+  eq(
+    'invariant ทั้งระบบ',
+    findLedgerMismatches({
+      accounts: store.getState().data.bankAccounts ?? [],
+      transactions: txs(),
+    }).length,
+    0,
+  );
+  const mixed = backfills().find((t) => t.year === 2026 && t.month === 7);
+  eq('เดือนผสม → +105,000', mixed?.amount, 105000);
+
+  // --- idempotent ---
+  store.getState().applyJournalBackfill();
+  eq('รันซ้ำ → จำนวนบรรทัดเท่าเดิม', backfills().length, 3);
+  eq('รันซ้ำ → ยอดเท่าเดิม', snap(), before);
+
+  // --- deleteBankTransaction ปฏิเสธ backfill ---
+  const bfId = backfills()[0].id;
+  store.getState().deleteBankTransaction(bfId);
+  eq('ลบ backfill ไม่ได้', backfills().length, 3);
+
+  // --- undo ---
+  store.getState().undoJournalBackfill();
+  eq('undo → ไม่เหลือ backfill', backfills().length, 0);
+  eq('undo → บรรทัดทองยังอยู่', txs().length, 1);
+  eq('undo → ยอดเท่าเดิม', snap(), before);
+
+  // --- round-trip ---
+  store.getState().applyJournalBackfill();
+  store.getState().undoJournalBackfill();
+  store.getState().applyJournalBackfill();
+  eq('round-trip → 3 บรรทัด', backfills().length, 3);
+  eq('round-trip → ยอดเท่าเดิม', snap(), before);
+
+  console.log(failures === 0 ? '\n✅ ผ่านทั้งหมด' : `\n❌ ล้มเหลว ${failures} ข้อ`);
+  process.exit(failures === 0 ? 0 : 1);
+};
+void runStore();

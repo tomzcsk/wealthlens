@@ -30,6 +30,7 @@ import {
   revokeBankMovements,
   type BankLedger,
 } from '@/utils/bankMovements';
+import { buildBackfillTransactions, planBackfill } from '@/utils/journalBackfill';
 import { computeIncomeDeposits } from '@/utils/incomeDeposits';
 import {
   advanceMonth,
@@ -604,6 +605,14 @@ export interface FinanceState {
    * (ไม่งั้นเงินหายไปจากระบบ).
    */
   deleteBankTransaction: (txId: string) => void;
+
+  /**
+   * แปลงยอดที่กรอกไว้ก่อนมีสมุดรายการ ให้กลายเป็นบรรทัด `backfill` (F41).
+   * **ไม่แตะ balances** — ดู utils/journalBackfill. no-op เมื่อไม่มีส่วนต่าง.
+   */
+  applyJournalBackfill: () => void;
+  /** ลบบรรทัด `backfill` ทั้งหมด (F41). ไม่แตะ balances เช่นกัน. */
+  undoJournalBackfill: () => void;
 
   // --- Tax allowances ------------------------------------------------------
   /**
@@ -2062,11 +2071,14 @@ export const useFinanceStore = create<FinanceState>()(
           const tx = txs.find((t) => t.id === txId);
           // ลบได้เฉพาะรายการที่ผู้ใช้สร้างเอง. ของที่มาจากต้นทางต้องไปลบที่
           // ต้นทาง ไม่งั้นต้นทางกับสมุดรายการจะไม่ตรงกัน.
+          // backfill ลบเดี่ยวไม่ได้ — ยอดจะไม่ตรงกับผลรวมรายการทันที
+          // (ใช้ undoJournalBackfill ล้างทั้งชุดแทน).
           if (
             !tx ||
             tx.source.type === 'income' ||
             tx.source.type === 'expense' ||
-            tx.source.type === 'gold'
+            tx.source.type === 'gold' ||
+            tx.source.type === 'backfill'
           ) {
             return state;
           }
@@ -2097,6 +2109,41 @@ export const useFinanceStore = create<FinanceState>()(
               ),
               lastUpdated: stamp,
             },
+            lastUpdated: stamp,
+          };
+        }),
+
+      applyJournalBackfill: () =>
+        set((state) => {
+          const accounts = state.data.bankAccounts ?? [];
+          const transactions = state.data.bankTransactions ?? [];
+          const plan = planBackfill({ accounts, transactions });
+          if (plan.lines.length === 0) return state;
+          // ห้ามใช้ applyBankMovement ที่นี่ — ฟังก์ชันนั้นเขียน balances ด้วย
+          // จะทำให้ยอดเบิ้ล. backfill เขียน "แค่รายการ" เพราะยอดมีอยู่แล้ว —
+          // สังเกตว่าเราคืน `bankAccounts` ชุดเดิม (ref เดิม) ยอดต้องไม่ขยับ.
+          const created = buildBackfillTransactions(plan, () => uuidv4());
+          const stamp = nowIso();
+          return {
+            data: {
+              ...state.data,
+              bankTransactions: [...transactions, ...created],
+              lastUpdated: stamp,
+            },
+            lastUpdated: stamp,
+          };
+        }),
+
+      undoJournalBackfill: () =>
+        set((state) => {
+          const transactions = state.data.bankTransactions ?? [];
+          const kept = transactions.filter((t) => t.source.type !== 'backfill');
+          if (kept.length === transactions.length) return state;
+          // เช่นเดียวกัน: ไม่แตะ balances — บรรทัด backfill ไม่เคยขยับยอด
+          // ตอนสร้าง จึงไม่ต้องคืนยอดตอนลบ (ต่างจาก revokeBankMovements).
+          const stamp = nowIso();
+          return {
+            data: { ...state.data, bankTransactions: kept, lastUpdated: stamp },
             lastUpdated: stamp,
           };
         }),
