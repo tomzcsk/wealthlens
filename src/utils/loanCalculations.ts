@@ -160,22 +160,45 @@ export const getRemainingBalance = (
   Math.max(0, getScheduleTotal(loan) - getTotalPaid(loan, referenceDate));
 
 /**
- * เงินต้นที่ยังไม่ได้ชำระ = Σต้นทั้งตาราง − Σต้นของงวดที่จ่ายแล้ว − โปะ.
- * ต่างจาก `getRemainingBalance` ซึ่งรวมดอกเบี้ยที่ยังไม่เกิดด้วย — หนี้บ้าน
- * ต้องเห็นทั้งสองค่า (กยศ ไม่มีดอก ทั้งคู่เท่ากัน).
+ * เงินต้นที่ยังไม่ได้ชำระ.
+ *
+ * เงินที่จ่ายผ่านตาราง (งวดที่ถือว่าจ่ายจาก `assumeOnSchedule` +
+ * `scheduledPayments` ซึ่งรวมรายจ่ายที่ผูกไว้ผ่าน `materializeLoanPayments`)
+ * ถูกไล่ลงงวด 1→N ตามลำดับ: งวดที่จ่ายครบตัดเงินต้นเต็ม งวดที่จ่ายไม่ครบ
+ * ตัดตามสัดส่วน. เงินก้อนจากรายจ่ายจริงไม่จำเป็นต้องเท่าค่างวด — waterfall
+ * จึงถูกต้องกว่าการนับงวดที่ครบกำหนด.
+ *
+ * โปะ (`extraPayments`) ตัดเงินต้นเต็มจำนวน นอก waterfall — เป็นสิ่งที่
+ * ผู้โปะคาดหวัง (เงินลงต้นล้วน ไม่ใช่ต้น+ดอกของงวดถัดไป).
  */
 export const getPrincipalRemaining = (
   loan: Loan,
   referenceDate: Date = new Date(),
 ): number => {
-  const totalPrincipal = loan.schedule.reduce(
-    (acc, i) => acc + i.principalAmount,
-    0,
+  const sorted = [...loan.schedule].sort(
+    (a, b) => a.installmentNumber - b.installmentNumber,
   );
+  const totalPrincipal = sorted.reduce((acc, i) => acc + i.principalAmount, 0);
+
+  let pool = 0;
+  for (const i of dueInstallments(loan, referenceDate)) pool += i.totalAmount;
+  for (const sp of loan.scheduledPayments) pool += sp.amount;
+
   let paidPrincipal = 0;
-  for (const i of dueInstallments(loan, referenceDate)) {
-    paidPrincipal += i.principalAmount;
+  for (const inst of sorted) {
+    if (pool <= 0) break;
+    if (pool >= inst.totalAmount) {
+      paidPrincipal += inst.principalAmount;
+      pool -= inst.totalAmount;
+    } else {
+      paidPrincipal +=
+        inst.totalAmount > 0
+          ? inst.principalAmount * (pool / inst.totalAmount)
+          : 0;
+      pool = 0;
+    }
   }
+
   for (const ep of loan.extraPayments) paidPrincipal += ep.amount;
   return Math.max(0, totalPrincipal - paidPrincipal);
 };
