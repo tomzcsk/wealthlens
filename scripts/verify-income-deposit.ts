@@ -10,7 +10,8 @@ import {
   computeIncomeDeposits,
   isSalaryUnderwater,
 } from '../src/utils/incomeDeposits';
-import type { BankAccount, MonthlyIncome } from '../src/types';
+import { validateBackup } from '../src/utils/exportImport';
+import type { BankAccount, MonthlyIncome, WealthLensData } from '../src/types';
 
 let failures = 0;
 const eq = (label: string, a: unknown, b: unknown): void => {
@@ -144,6 +145,47 @@ const run = async (): Promise<void> => {
   store.getState().addIncome(2026, baseIncome);
   eq('ไม่มี deposits → ยอดบัญชีไม่ขยับ', bal('acc-salary', 2026, 7), 0);
   eq('ไม่มี depositSideEffects', store.getState().data.years['2026'].income[0].depositSideEffects, undefined);
+
+  // ===================================================================
+  // Task 3 — export/import round-trip preserve type/deposits/depositSideEffects
+  // ===================================================================
+  const payload: WealthLensData = {
+    version: '1.0.0',
+    lastUpdated: '2026-07-09T00:00:00.000Z',
+    bankAccounts: [
+      { id: 'acc-salary', name: 'กสิกร', type: 'salary', balances: { '2026': { '7': 60000 } } },
+    ],
+    years: {
+      '2026': {
+        income: [
+          {
+            ...baseIncome,
+            deposits: { salary: 'acc-salary', bonus: 'acc-cash' },
+            depositSideEffects: [
+              { source: 'salary', accountId: 'acc-salary', amount: 60000 },
+              { source: 'bonus', accountId: 'acc-cash', amount: 50000 },
+            ],
+          },
+        ],
+        expenses: [],
+        savings: [],
+      },
+    },
+  };
+  // ผ่าน JSON round-trip เลียนแบบ export → import จริง.
+  const result = validateBackup(JSON.parse(JSON.stringify(payload)));
+  eq('validateBackup ok', result.ok, true);
+  const importedAcct = result.ok ? result.data.bankAccounts?.[0] : undefined;
+  eq('preserve BankAccount.type', importedAcct?.type, 'salary');
+  const importedIncome = result.ok ? result.data.years['2026'].income[0] : undefined;
+  eq('preserve income.deposits.salary', importedIncome?.deposits?.salary, 'acc-salary');
+  eq('preserve income.deposits.bonus', importedIncome?.deposits?.bonus, 'acc-cash');
+  eq('preserve depositSideEffects length', importedIncome?.depositSideEffects?.length, 2);
+  eq(
+    'preserve depositSideEffects[0].amount',
+    importedIncome?.depositSideEffects?.[0]?.amount,
+    60000,
+  );
 
   console.log(failures === 0 ? '\n✅ ผ่านทั้งหมด' : `\n❌ ล้มเหลว ${failures} ข้อ`);
   process.exit(failures === 0 ? 0 : 1);

@@ -158,7 +158,7 @@ const validateIncomeRow = (
   );
   if (!deductions) ok = false;
   if (!ok || !deductions) return null;
-  return {
+  const row: MonthlyIncome = {
     month: raw.month as number,
     salary: raw.salary as number,
     bonus: raw.bonus as number,
@@ -166,6 +166,17 @@ const validateIncomeRow = (
     otherIncome: isNonNegativeNumber(raw.otherIncome) ? (raw.otherIncome as number) : 0,
     deductions,
   };
+  // F39 income→bank: ถ้าไม่ preserve ปลายทาง (deposits) และยอดที่ฝากจริง
+  // (depositSideEffects) หลัง restore จะ revert ยอดฝากไม่ได้ → ยอดบัญชีเพี้ยน
+  // ถาวรเมื่อแก้รายได้ครั้งถัดไป. (BankAccount.type รอดเองเพราะ bankAccounts
+  // ถูก copy ทั้งก้อน.)
+  if (isObject(raw.deposits)) {
+    row.deposits = raw.deposits as unknown as MonthlyIncome['deposits'];
+  }
+  if (Array.isArray(raw.depositSideEffects)) {
+    row.depositSideEffects = raw.depositSideEffects as unknown as MonthlyIncome['depositSideEffects'];
+  }
+  return row;
 };
 
 const validateExpenseItem = (
