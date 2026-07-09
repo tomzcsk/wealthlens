@@ -133,6 +133,7 @@ export const ExpenseForm = ({
   const addExpense = useFinanceStore((s) => s.addExpense);
   const updateExpense = useFinanceStore((s) => s.updateExpense);
   const accounts = useFinanceStore((s) => s.data.bankAccounts ?? []);
+  const loans = useFinanceStore((s) => s.data.loans) ?? [];
 
   const isEdit = initialValues != null;
 
@@ -162,6 +163,7 @@ export const ExpenseForm = ({
   const [paymentAccountId, setPaymentAccountId] = useState<string>(
     initialValues?.paymentAccountId ?? '',
   );
+  const [loanId, setLoanId] = useState<string>(initialValues?.loanId ?? '');
   const [touched, setTouched] = useState<FormTouched>({});
   const [showFlash, setShowFlash] = useState(false);
 
@@ -176,6 +178,7 @@ export const ExpenseForm = ({
   // Stable IDs for label/input pairing.
   const categoryId = useId();
   const paymentAccountIdFieldId = useId();
+  const loanFieldId = useId();
   const nameId = useId();
   const amountId = useId();
   const dateId = useId();
@@ -254,6 +257,7 @@ export const ExpenseForm = ({
         date,
         reimbursement,
         paymentAccountId: paymentAccountId || undefined,
+        loanId: loanId || undefined,
       });
       onSaved?.(
         {
@@ -265,6 +269,7 @@ export const ExpenseForm = ({
           date,
           reimbursement,
           paymentAccountId: paymentAccountId || undefined,
+          loanId: loanId || undefined,
         },
         false,
       );
@@ -279,6 +284,7 @@ export const ExpenseForm = ({
       date,
       reimbursement,
       paymentAccountId: paymentAccountId || undefined,
+      loanId: loanId || undefined,
     });
 
     // Best-effort callback — we don't have the new id since addExpense
@@ -294,6 +300,7 @@ export const ExpenseForm = ({
         date,
         reimbursement,
         paymentAccountId: paymentAccountId || undefined,
+        loanId: loanId || undefined,
       },
       continueAdding,
     );
@@ -388,6 +395,36 @@ export const ExpenseForm = ({
           })}
         </select>
       </div>
+
+      {/* ชำระหนี้ — link this expense to a loan (F37). Optional; the whole
+          field is hidden when there are no loans so it never clutters the form
+          for users without debt. Unlike "จ่ายผ่าน" this does NOT deduct a bank
+          balance — it only lets the Loans page derive the payment history. */}
+      {loans.length > 0 && (
+        <div>
+          <label htmlFor={loanFieldId} className={labelClass}>
+            ชำระหนี้
+          </label>
+          <select
+            id={loanFieldId}
+            value={loanId}
+            onChange={(e: ChangeEvent<HTMLSelectElement>) =>
+              setLoanId(e.target.value)
+            }
+            className={inputBaseClass}
+          >
+            <option value="">— ไม่ระบุ —</option>
+            {loans.map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.name}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-slate-500">
+            เลือกเมื่อรายจ่ายนี้คือการผ่อนชำระหนี้ก้อนนั้น — ยอดคงเหลือของหนี้จะลดตามยอดจริงที่จ่าย
+          </p>
+        </div>
+      )}
 
       {/* จ่ายผ่าน — which bank account (or เงินสด) to deduct from. */}
       <div>

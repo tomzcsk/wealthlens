@@ -27,7 +27,7 @@ import {
   CATEGORY_ORDER,
   EXPENSE_CATEGORIES,
 } from '@/types/expense-categories';
-import type { BankAccount, ExpenseCategory, ExpenseItem } from '@/types';
+import type { BankAccount, ExpenseCategory, ExpenseItem, Loan } from '@/types';
 import { formatTHB, formatThaiDate } from '@/utils/formatters';
 import { buildRecurringExpenseLibrary } from '@/utils/recurringTemplate';
 
@@ -65,6 +65,8 @@ interface ExpenseRowProps {
   showIcon?: boolean;
   /** Bank accounts for resolving `item.paymentAccountId` → display name. */
   accounts: BankAccount[];
+  /** Loans for resolving `item.loanId` → display name (F37). */
+  loans: Loan[];
 }
 
 const ExpenseRow = ({
@@ -74,6 +76,7 @@ const ExpenseRow = ({
   onToggleReimbursement,
   showIcon = true,
   accounts,
+  loans,
 }: ExpenseRowProps): ReactNode => {
   const meta = EXPENSE_CATEGORIES[item.category];
   const reimbursement = item.reimbursement;
@@ -81,6 +84,12 @@ const ExpenseRow = ({
   const paymentAccount =
     item.paymentAccountId != null
       ? accounts.find((a) => a.id === item.paymentAccountId)
+      : undefined;
+  // Resolve the linked loan — a deleted loan leaves a dangling `loanId`, so we
+  // render the badge only when the name resolves (never a ghost badge/throw).
+  const linkedLoan =
+    item.loanId != null
+      ? loans.find((l) => l.id === item.loanId)
       : undefined;
   return (
     <div className="group flex items-center gap-3 px-3 py-2 rounded-md hover:bg-slate-50 transition">
@@ -137,6 +146,14 @@ const ExpenseRow = ({
               💳 {paymentAccount.name}
             </span>
           )}
+          {linkedLoan != null && (
+            <span
+              title={`ชำระหนี้ ${linkedLoan.name}`}
+              className="ml-2 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium text-amber-700 bg-amber-50"
+            >
+              💰 {linkedLoan.name}
+            </span>
+          )}
         </p>
         {item.date != null && item.date !== '' && (
           <p className="text-[11px] text-slate-400 tabular-nums">
@@ -184,6 +201,7 @@ export const ExpenseList = ({
     [data, year, month],
   );
   const accounts = useFinanceStore((s) => s.data.bankAccounts ?? []);
+  const loans = useFinanceStore((s) => s.data.loans ?? []);
   const deleteExpense = useFinanceStore((s) => s.deleteExpense);
   const deleteInstallmentPlan = useFinanceStore((s) => s.deleteInstallmentPlan);
   const untagInstallmentPlan = useFinanceStore((s) => s.untagInstallmentPlan);
@@ -480,6 +498,7 @@ export const ExpenseList = ({
                       onToggleReimbursement={handleToggleReimbursement}
                       showIcon={false}
                       accounts={accounts}
+                      loans={loans}
                     />
                   ))}
                 </div>
@@ -496,6 +515,7 @@ export const ExpenseList = ({
                 onDelete={handleDelete}
                 onToggleReimbursement={handleToggleReimbursement}
                 accounts={accounts}
+                loans={loans}
               />
             ))}
           </div>
