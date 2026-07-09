@@ -53,6 +53,13 @@ interface DraftRow extends RecurringFillDraft {
   /** Already in this month → read-only context, excluded from confirm. */
   locked: boolean;
   status?: RecurringLibraryStatus;
+  /**
+   * The library name captured at seed time. The visible `name` field is
+   * editable, so retiring a recurring item must key off THIS original name
+   * (what the store actually stored) — not whatever Tom may have typed over
+   * it. Only set for library rows (those with a `status`).
+   */
+  originalName?: string;
 }
 
 export interface RecurringFillModalProps {
@@ -68,6 +75,13 @@ export interface RecurringFillModalProps {
   defaultCategory: string;
   /** Fires on confirm with only the kept rows (checked, unlocked, non-empty). */
   onConfirm: (items: ReadonlyArray<RecurringFillDraft>) => void;
+  /**
+   * Fires when Tom retires a LIBRARY row via 🗑️ (after inline confirm):
+   * the recurring flag for that name should be cleared everywhere so the row
+   * can't reappear next open. Receives the ORIGINAL library name. Omit to
+   * keep 🗑️ purely local (used for parents that don't own recurring state).
+   */
+  onStopRecurring?: (name: string) => void;
 }
 
 const GRID = 'grid grid-cols-[24px_1fr_140px_100px_28px] gap-2 items-center';
@@ -77,6 +91,9 @@ const seedRow = (it: RecurringFillItem, key: number): DraftRow => ({
   name: it.name,
   amount: it.amount,
   status: it.status,
+  // Capture the library name before the field becomes editable — only library
+  // rows (with a status) can be retired, so manual rows leave this undefined.
+  originalName: it.status != null ? it.name : undefined,
   key,
   // present rows are in the month already → render checked but read-only,
   // excluded from confirm via `locked`. Active + manual rows default checked.
@@ -92,8 +109,11 @@ export const RecurringFillModal = ({
   categories,
   defaultCategory,
   onConfirm,
+  onStopRecurring,
 }: RecurringFillModalProps): ReactNode => {
   const [rows, setRows] = useState<DraftRow[]>([]);
+  /** Key of the row currently showing the inline "retire?" confirm, if any. */
+  const [confirmKey, setConfirmKey] = useState<number | null>(null);
   const keyRef = useRef(0);
   const seeded = useRef(false);
 
@@ -108,6 +128,10 @@ export const RecurringFillModal = ({
     if (open && !seeded.current) {
       seeded.current = true;
       setRows(initialItems.map((it) => seedRow(it, nextKey())));
+      // Reset any lingering inline-confirm from a previous open. (Row keys are
+      // monotonic and never reused, so a stale confirmKey can't match a fresh
+      // row — but resetting here keeps the state honest.)
+      setConfirmKey(null);
     } else if (!open) {
       seeded.current = false;
     }
@@ -119,6 +143,28 @@ export const RecurringFillModal = ({
 
   const removeRow = (key: number): void => {
     setRows((prev) => prev.filter((r) => r.key !== key));
+  };
+
+  /**
+   * 🗑️ dispatch. A library row (has a `status`) means "retire this recurring
+   * item permanently" — that needs confirmation because it changes the store
+   * everywhere, so we flip the row into inline-confirm mode (NEVER
+   * `window.confirm`, which freezes this environment). A manual row is just a
+   * local scratch entry: drop it silently, no store write.
+   */
+  const handleTrash = (r: DraftRow): void => {
+    if (r.status != null) {
+      setConfirmKey(r.key);
+    } else {
+      removeRow(r.key);
+    }
+  };
+
+  /** Confirm retirement: clear the recurring flag everywhere, then drop the row. */
+  const confirmStop = (r: DraftRow): void => {
+    if (r.originalName != null) onStopRecurring?.(r.originalName);
+    removeRow(r.key);
+    setConfirmKey(null);
   };
 
   const addRow = (): void => {
@@ -183,7 +229,42 @@ export const RecurringFillModal = ({
         )}
 
         <div className="space-y-0.5">
-          {rows.map((r) => (
+          {rows.map((r) =>
+            confirmKey === r.key ? (
+              // Inline retire confirm — replaces the row in place. Speaks to
+              // what it does ("stop being recurring"), and reassures no money
+              // is removed, because 🗑️ here only clears the recurring flag.
+              <div
+                key={r.key}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-amber-50 border border-amber-200 px-3 py-2"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-amber-900 truncate">
+                    เลิกเป็นรายการประจำ “{r.originalName ?? r.name}”?
+                  </p>
+                  <p className="text-[11px] text-amber-700">
+                    เอาป้าย “ประจำ” ออกจากทุกเดือน — ไม่ลบยอดเงินหรือรายการเดิม
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => confirmStop(r)}
+                    className="rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 transition"
+                  >
+                    ✓ เลิกเป็นรายการประจำ
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmKey(null)}
+                    aria-label="ยกเลิก"
+                    className="rounded-md px-3 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-100 transition"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            ) : (
             <div
               key={r.key}
               className={`${GRID} rounded-md px-2 py-1.5 transition ${
@@ -250,20 +331,29 @@ export const RecurringFillModal = ({
                 className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm text-right text-slate-900 tabular-nums focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-light disabled:cursor-not-allowed disabled:bg-slate-50"
               />
 
-              {r.locked ? (
-                <span />
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => removeRow(r.key)}
-                  aria-label={`ลบ ${r.name || 'รายการ'}`}
-                  className="text-slate-400 hover:text-expense transition text-sm"
-                >
-                  🗑️
-                </button>
-              )}
+              {/* Trash is available on EVERY row — including locked 'present'
+                  rows — so Tom can retire an item he already has this month
+                  (e.g. บ้าน) even though the rest of the row stays read-only. */}
+              <button
+                type="button"
+                onClick={() => handleTrash(r)}
+                aria-label={
+                  r.status != null
+                    ? `เลิกเป็นรายการประจำ ${r.originalName ?? (r.name || 'รายการ')}`
+                    : `ลบ ${r.name || 'รายการ'}`
+                }
+                title={
+                  r.status != null
+                    ? 'เลิกเป็นรายการประจำ'
+                    : 'ลบรายการนี้ออกจากรายการที่จะเติม'
+                }
+                className="text-slate-400 hover:text-expense transition text-sm"
+              >
+                🗑️
+              </button>
             </div>
-          ))}
+            ),
+          )}
         </div>
 
         <button

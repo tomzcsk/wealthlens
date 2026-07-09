@@ -199,6 +199,47 @@ const ensurePreferences = (
   prefs: UserPreferences | undefined,
 ): UserPreferences => prefs ?? DEFAULT_PREFERENCES;
 
+/** Minimal shape a row item needs for recurring-flag retirement. */
+interface RecurringFlagItem {
+  name: string;
+  isRecurring: boolean;
+}
+
+/**
+ * Immutably clear `isRecurring` on every item whose normalized name matches
+ * `nameKey`, within one bucket of monthly rows (expenses or savings).
+ *
+ * WHY generic + immutable: `stopRecurring*` must sweep every month across
+ * every year without cloning rows that don't change (keeps the persisted blob
+ * churn-free and lets callers detect a genuine no-op). Only rows/years that
+ * actually contain a match are rebuilt; everything else keeps its reference.
+ * Returns `touched: false` when nothing matched so the action can bail before
+ * bumping `lastUpdated`.
+ */
+const clearRecurringInRows = <
+  I extends RecurringFlagItem,
+  R extends { items: I[] },
+>(
+  rows: R[],
+  nameKey: string,
+): { rows: R[]; touched: boolean } => {
+  let touched = false;
+  const next = rows.map((row) => {
+    let rowTouched = false;
+    const items = row.items.map((it) => {
+      if (it.isRecurring && it.name.trim().toLowerCase() === nameKey) {
+        rowTouched = true;
+        return { ...it, isRecurring: false };
+      }
+      return it;
+    });
+    if (!rowTouched) return row;
+    touched = true;
+    return { ...row, items };
+  });
+  return { rows: next, touched };
+};
+
 /** The deduction an expense SHOULD have (none when no payment account is set). */
 const expenseDeductionOf = (
   item: Pick<ExpenseItem, 'paymentAccountId' | 'amount'>,
@@ -246,6 +287,17 @@ export interface FinanceState {
     patch: Partial<ExpenseItem>,
   ) => void;
   deleteExpense: (year: number, month: number, itemId: string) => void;
+  /**
+   * Retire an expense name as a recurring item PERMANENTLY: clear
+   * `isRecurring` on every matching item across ALL months and years
+   * (matched on normalized name). Money, dates, and the rows themselves are
+   * untouched — only the flag flips. This is the only thing that actually
+   * stops the recurring-fill picker from resurrecting a "deleted" row: that
+   * library is derived fresh by walking back up to 36 months for any month
+   * that still carries the recurring flag, so a local-only delete never
+   * sticks. No-op (no write, no timestamp bump) when nothing matches.
+   */
+  stopRecurringExpense: (name: string) => void;
 
   // --- Installment plan mutations ---------------------------------------
   /**
@@ -387,6 +439,12 @@ export interface FinanceState {
     patch: Partial<SavingsItem>,
   ) => void;
   deleteSavings: (year: number, month: number, itemId: string) => void;
+  /**
+   * Savings mirror of `stopRecurringExpense` — clears `isRecurring` on every
+   * matching savings item (normalized name) in every month/year. Expenses are
+   * never touched. No-op when nothing matches.
+   */
+  stopRecurringSavings: (name: string) => void;
 
   // --- Navigation ---------------------------------------------------------
   setSelectedYear: (year: number) => void;
@@ -623,6 +681,29 @@ export const useFinanceStore = create<FinanceState>()(
               },
               ...(nextBankAccounts ? { bankAccounts: nextBankAccounts } : {}),
             },
+            lastUpdated: stamp,
+          };
+        }),
+
+      stopRecurringExpense: (name) =>
+        set((state) => {
+          const nameKey = name.trim().toLowerCase();
+          if (nameKey === '') return state;
+          let touched = false;
+          const nextYears: WealthLensData['years'] = {};
+          for (const [yearKey, yr] of Object.entries(state.data.years)) {
+            const res = clearRecurringInRows(yr.expenses, nameKey);
+            if (res.touched) {
+              touched = true;
+              nextYears[yearKey] = { ...yr, expenses: res.rows };
+            } else {
+              nextYears[yearKey] = yr;
+            }
+          }
+          if (!touched) return state;
+          const stamp = nowIso();
+          return {
+            data: { ...state.data, lastUpdated: stamp, years: nextYears },
             lastUpdated: stamp,
           };
         }),
@@ -1684,6 +1765,30 @@ export const useFinanceStore = create<FinanceState>()(
                 [key]: { ...current, savings: nextSavings },
               },
             },
+            lastUpdated: stamp,
+          };
+        }),
+
+      stopRecurringSavings: (name) =>
+        set((state) => {
+          const nameKey = name.trim().toLowerCase();
+          if (nameKey === '') return state;
+          let touched = false;
+          const nextYears: WealthLensData['years'] = {};
+          for (const [yearKey, yr] of Object.entries(state.data.years)) {
+            // savings may be absent on older year scaffolds — treat as empty.
+            const res = clearRecurringInRows(yr.savings ?? [], nameKey);
+            if (res.touched) {
+              touched = true;
+              nextYears[yearKey] = { ...yr, savings: res.rows };
+            } else {
+              nextYears[yearKey] = yr;
+            }
+          }
+          if (!touched) return state;
+          const stamp = nowIso();
+          return {
+            data: { ...state.data, lastUpdated: stamp, years: nextYears },
             lastUpdated: stamp,
           };
         }),

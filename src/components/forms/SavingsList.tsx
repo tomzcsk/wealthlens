@@ -192,6 +192,7 @@ export const SavingsList = ({
   );
   const deleteSavings = useFinanceStore((s) => s.deleteSavings);
   const addSavings = useFinanceStore((s) => s.addSavings);
+  const stopRecurringSavings = useFinanceStore((s) => s.stopRecurringSavings);
   const pushToast = useToastStore((s) => s.push);
 
   // Bank accounts — manual per-month balance entry per account. Treated as
@@ -226,6 +227,17 @@ export const SavingsList = ({
     pushToast({
       message: `เติม ${items.length} รายการออมแล้ว`,
       tone: 'success',
+    });
+  };
+
+  // Retire a recurring savings item for good — clears the flag on every
+  // matching row across all months so the picker (rebuilt from the store each
+  // open) stops resurrecting it. Amounts and rows are untouched.
+  const handleStopRecurring = (name: string): void => {
+    stopRecurringSavings(name);
+    pushToast({
+      message: `เลิกเป็นรายการประจำ: ${name}`,
+      tone: 'info',
     });
   };
 
@@ -465,6 +477,7 @@ export const SavingsList = ({
         categories={SAVINGS_CATEGORY_OPTIONS}
         defaultCategory="general"
         onConfirm={handleConfirmFill}
+        onStopRecurring={handleStopRecurring}
       />
     </div>
   );

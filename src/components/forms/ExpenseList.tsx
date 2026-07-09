@@ -207,6 +207,7 @@ export const ExpenseList = ({
   const untagInstallmentPlan = useFinanceStore((s) => s.untagInstallmentPlan);
   const addExpense = useFinanceStore((s) => s.addExpense);
   const updateExpense = useFinanceStore((s) => s.updateExpense);
+  const stopRecurringExpense = useFinanceStore((s) => s.stopRecurringExpense);
   const pushToast = useToastStore((s) => s.push);
 
   /**
@@ -267,6 +268,18 @@ export const ExpenseList = ({
     pushToast({
       message: `เติม ${items.length} รายการแล้ว`,
       tone: 'success',
+    });
+  };
+
+  // Retire a recurring item for good: clear the flag on every matching row
+  // across all months so the picker (derived fresh each open) stops offering
+  // it. The library is recomputed from the store on the next open, so this
+  // never resurrects. Money and rows are left intact — only the flag changes.
+  const handleStopRecurring = (name: string): void => {
+    stopRecurringExpense(name);
+    pushToast({
+      message: `เลิกเป็นรายการประจำ: ${name}`,
+      tone: 'info',
     });
   };
 
@@ -435,6 +448,7 @@ export const ExpenseList = ({
           categories={EXPENSE_CATEGORY_OPTIONS}
           defaultCategory="other"
           onConfirm={handleConfirmFill}
+          onStopRecurring={handleStopRecurring}
         />
       </div>
     );
@@ -645,6 +659,7 @@ export const ExpenseList = ({
         categories={EXPENSE_CATEGORY_OPTIONS}
         defaultCategory="other"
         onConfirm={handleConfirmFill}
+        onStopRecurring={handleStopRecurring}
       />
     </div>
   );
