@@ -19,12 +19,14 @@ import {
 import type {
   ExpenseCategory,
   ExpenseItem,
+  Loan,
   MonthlyIncome,
   SavingsCategory,
   SavingsItem,
 } from '@/types';
 import { CATEGORY_ORDER } from '@/types/expense-categories';
 import { THAI_MONTHS_SHORT } from '@/utils/formatters';
+import { materializeLoanPayments } from '@/utils/loanPayments';
 
 /**
  * IMPORTANT — selector hooks below MUST NOT pass selector closures that
@@ -34,6 +36,25 @@ import { THAI_MONTHS_SHORT } from '@/utils/formatters';
  * loop. Instead we subscribe to stable references (`s.data`,
  * `s.selectedYear`) and derive via `useMemo`.
  */
+
+/**
+ * Loans ที่ materialize รายจ่ายที่ผูกไว้แล้ว (F37) — ทุกหน้าที่ *แสดง* ยอดหนี้
+ * ต้องใช้ตัวนี้ ไม่ใช่ `data.loans` ดิบ ไม่งั้นยอดคงเหลือจะไม่นับรายจ่ายที่ผูก.
+ *
+ * ระวัง: ฟอร์มแก้ไขหนี้ (`LoanForm`) ต้องใช้ `data.loans` ดิบ — ถ้าเอา loan ที่
+ * resolve แล้วไปแก้ payment ที่ derive มาจะถูกเขียนกลับเป็นของจริง.
+ *
+ * Subscribes to `s.data.loans` / `s.data.years` (stable refs) แล้ว derive ผ่าน
+ * `useMemo` ตาม safety pattern บนหัวไฟล์ — ห้ามคืน array สดตรงจาก store.
+ */
+export const useResolvedLoans = (): Loan[] => {
+  const loans = useFinanceStore((s) => s.data.loans);
+  const years = useFinanceStore((s) => s.data.years);
+  return useMemo(
+    () => (loans ?? []).map((loan) => materializeLoanPayments(loan, years)),
+    [loans, years],
+  );
+};
 
 export const useSelectedYear = (): number =>
   useFinanceStore((s) => s.selectedYear);
