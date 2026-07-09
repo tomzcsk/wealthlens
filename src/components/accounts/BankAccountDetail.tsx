@@ -9,34 +9,54 @@ import { useMemo, useState, type ReactNode } from 'react';
 
 import { Modal } from '@/components/ui/Modal';
 import { useFinanceStore } from '@/stores/financeStore';
-import type { BankAccount } from '@/types';
+import type { BankAccount, BankTransaction } from '@/types';
 import { accountAllTimeTotal, accountYearTotal } from '@/utils/bankAccounts';
 import { THAI_MONTHS_LONG, formatTHB } from '@/utils/formatters';
 
 import BankActionForm, { type BankActionMode } from './BankActionForm';
 import BankAvatar from './BankAvatar';
 import BankBalanceEditForm from './BankBalanceEditForm';
+import MonthTransactionList from './MonthTransactionList';
 
 interface MonthRowProps {
   month: number;
   value: number | undefined;
+  txCount: number;
+  isOpen: boolean;
+  onToggle: () => void;
   onEdit: () => void;
 }
 
-const MonthRow = ({ month, value, onEdit }: MonthRowProps): ReactNode => {
+const MonthRow = ({
+  month,
+  value,
+  txCount,
+  isOpen,
+  onToggle,
+  onEdit,
+}: MonthRowProps): ReactNode => {
   const hasValue = value !== undefined;
   const isNegative = hasValue && value < 0;
   return (
-    <button
-      type="button"
-      onClick={onEdit}
-      className="group w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-slate-50 transition text-left"
-    >
-      <div className="flex-1 min-w-0">
-        <p className="text-sm text-slate-900 truncate">
+    <div className="group flex items-center gap-2 rounded-md px-3 py-2 transition hover:bg-slate-50">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={isOpen}
+        className="flex min-w-0 flex-1 items-center gap-2 text-left"
+      >
+        <span aria-hidden="true" className="text-xs text-slate-300">
+          {isOpen ? '▾' : '▸'}
+        </span>
+        <span className="truncate text-sm text-slate-900">
           {THAI_MONTHS_LONG[month - 1]}
-        </p>
-      </div>
+        </span>
+        {txCount > 0 && (
+          <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
+            {txCount} รายการ
+          </span>
+        )}
+      </button>
       <span
         className={`text-sm financial-number tabular-nums ${
           !hasValue
@@ -48,13 +68,15 @@ const MonthRow = ({ month, value, onEdit }: MonthRowProps): ReactNode => {
       >
         {hasValue ? formatTHB(value) : '+ ใส่ยอด'}
       </span>
-      <span
-        aria-hidden="true"
-        className="p-1 text-slate-400 group-hover:text-primary transition"
+      <button
+        type="button"
+        onClick={onEdit}
+        aria-label="แก้ไขยอด"
+        className="p-1 text-slate-400 transition hover:text-primary"
       >
         ✏️
-      </span>
-    </button>
+      </button>
+    </div>
   );
 };
 
@@ -69,7 +91,12 @@ export const BankAccountDetail = ({
   const hasOtherAccounts = useFinanceStore(
     (s) => (s.data.bankAccounts ?? []).length > 1,
   );
+  const allTransactions = useFinanceStore((s) => s.data.bankTransactions ?? []);
+  const deleteBankTransaction = useFinanceStore((s) => s.deleteBankTransaction);
+  // `openMonth` = แถวเดือนที่กางดูรายการอยู่ (accordion);
+  // `editMonth` = แถวเดือนที่เปิด modal แก้ยอด. แยกกันเพื่อให้กางดูโดยไม่เด้ง modal.
   const [openMonth, setOpenMonth] = useState<number | null>(null);
+  const [editMonth, setEditMonth] = useState<number | null>(null);
   const [action, setAction] = useState<BankActionMode | null>(null);
 
   const yearTotal = useMemo(
@@ -78,9 +105,21 @@ export const BankAccountDetail = ({
   );
   const allTimeTotal = useMemo(() => accountAllTimeTotal(account), [account]);
 
+  // จัดรายการของบัญชีนี้/ปีนี้เข้าถังตามเดือน (map month → tx[]) ครั้งเดียว.
+  const txByMonth = useMemo(() => {
+    const map = new Map<number, BankTransaction[]>();
+    for (const tx of allTransactions) {
+      if (tx.accountId !== account.id || tx.year !== year) continue;
+      const bucket = map.get(tx.month);
+      if (bucket) bucket.push(tx);
+      else map.set(tx.month, [tx]);
+    }
+    return map;
+  }, [allTransactions, account.id, year]);
+
   const yearBucket = account.balances[String(year)];
-  const currentForOpenMonth =
-    openMonth !== null ? yearBucket?.[String(openMonth)] : undefined;
+  const currentForEditMonth =
+    editMonth !== null ? yearBucket?.[String(editMonth)] : undefined;
 
   return (
     <div className="space-y-6">
@@ -138,36 +177,53 @@ export const BankAccountDetail = ({
 
       <section className="bg-white rounded-lg border border-slate-200 divide-y divide-slate-100">
         <div className="px-1 py-2">
-          {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
-            <MonthRow
-              key={month}
-              month={month}
-              value={yearBucket?.[String(month)]}
-              onEdit={() => setOpenMonth(month)}
-            />
-          ))}
+          {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
+            const monthTx = txByMonth.get(month) ?? [];
+            const isOpen = openMonth === month;
+            return (
+              <div key={month}>
+                <MonthRow
+                  month={month}
+                  value={yearBucket?.[String(month)]}
+                  txCount={monthTx.length}
+                  isOpen={isOpen}
+                  onToggle={() => setOpenMonth(isOpen ? null : month)}
+                  onEdit={() => setEditMonth(month)}
+                />
+                {isOpen && (
+                  <div className="px-3 pb-3 pt-1">
+                    <MonthTransactionList
+                      transactions={monthTx}
+                      monthTotal={yearBucket?.[String(month)] ?? 0}
+                      onDelete={deleteBankTransaction}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </section>
 
       <Modal
-        open={openMonth != null}
-        onClose={() => setOpenMonth(null)}
+        open={editMonth != null}
+        onClose={() => setEditMonth(null)}
         title={
-          openMonth != null
-            ? `แก้ไขยอด — ${THAI_MONTHS_LONG[openMonth - 1]} ${year}`
+          editMonth != null
+            ? `แก้ไขยอด — ${THAI_MONTHS_LONG[editMonth - 1]} ${year}`
             : undefined
         }
         size="sm"
       >
-        {openMonth != null && (
+        {editMonth != null && (
           <div className="px-6 py-5">
             <BankBalanceEditForm
               accountId={account.id}
               year={year}
-              month={openMonth}
-              current={currentForOpenMonth}
-              onSaved={() => setOpenMonth(null)}
-              onCancel={() => setOpenMonth(null)}
+              month={editMonth}
+              current={currentForEditMonth}
+              onSaved={() => setEditMonth(null)}
+              onCancel={() => setEditMonth(null)}
             />
           </div>
         )}

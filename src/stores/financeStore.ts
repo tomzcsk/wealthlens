@@ -596,6 +596,14 @@ export interface FinanceState {
     amount: number,
   ) => void;
   deleteBankAccount: (id: string) => void;
+  /**
+   * ลบรายการเดินบัญชี 1 บรรทัด (F40) แล้วคืนยอดที่มันเคยลงไว้. ลบได้เฉพาะ
+   * รายการที่ผู้ใช้สร้างเอง — `manual` / `transfer` / `adjustment`. รายการที่
+   * มาจากต้นทาง (`income` / `expense` / `gold`) เป็น no-op: ต้องไปแก้/ลบที่
+   * ต้นทาง ไม่งั้นต้นทางกับสมุดรายการจะไม่ตรงกัน. ลบขาโอนขาเดียว → ลบทั้งคู่
+   * (ไม่งั้นเงินหายไปจากระบบ).
+   */
+  deleteBankTransaction: (txId: string) => void;
 
   // --- Tax allowances ------------------------------------------------------
   /**
@@ -2042,6 +2050,51 @@ export const useFinanceStore = create<FinanceState>()(
             data: {
               ...state.data,
               bankAccounts: accounts.filter((a) => a.id !== id),
+              lastUpdated: stamp,
+            },
+            lastUpdated: stamp,
+          };
+        }),
+
+      deleteBankTransaction: (txId) =>
+        set((state) => {
+          const txs = state.data.bankTransactions ?? [];
+          const tx = txs.find((t) => t.id === txId);
+          // ลบได้เฉพาะรายการที่ผู้ใช้สร้างเอง. ของที่มาจากต้นทางต้องไปลบที่
+          // ต้นทาง ไม่งั้นต้นทางกับสมุดรายการจะไม่ตรงกัน.
+          if (
+            !tx ||
+            tx.source.type === 'income' ||
+            tx.source.type === 'expense' ||
+            tx.source.type === 'gold'
+          ) {
+            return state;
+          }
+          // ขาโอนคู่กัน: ลบขาเดียวจะทำให้เงินหายจากระบบ — หาขาคู่ (บัญชี
+          // ปลายทาง, เดือนเดียวกัน, จำนวนตรงข้าม, counterpart ชี้กลับมา) แล้ว
+          // ลบทั้งสองพร้อมกัน.
+          const doomedIds = new Set<string>([tx.id]);
+          if (tx.source.type === 'transfer') {
+            const counterpartAccountId = tx.source.counterpartAccountId;
+            const mate = txs.find(
+              (t) =>
+                t.id !== tx.id &&
+                t.source.type === 'transfer' &&
+                t.source.counterpartAccountId === tx.accountId &&
+                t.accountId === counterpartAccountId &&
+                t.year === tx.year &&
+                t.month === tx.month &&
+                t.amount === -tx.amount,
+            );
+            if (mate) doomedIds.add(mate.id);
+          }
+          const stamp = nowIso();
+          return {
+            data: {
+              ...state.data,
+              ...withLedger(state.data, (l) =>
+                revokeBankMovements(l, (t) => doomedIds.has(t.id)),
+              ),
               lastUpdated: stamp,
             },
             lastUpdated: stamp,

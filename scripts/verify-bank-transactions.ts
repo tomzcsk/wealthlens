@@ -395,6 +395,139 @@ const runStore = async (): Promise<void> => {
     undefined,
   );
 
+  // ════════════════════════════════════════════════════════════════════════
+  // Task 5 — deleteBankTransaction: ลบเฉพาะ manual/transfer/adjustment;
+  // ขาโอนลบแล้วหายทั้งคู่; income/expense/gold ลบไม่ได้ (no-op)
+  // ════════════════════════════════════════════════════════════════════════
+  store.setState((s) => ({
+    data: {
+      ...s.data,
+      years: {},
+      bankTransactions: [],
+      bankAccounts: [
+        { id: 'acc-1', name: 'หนึ่ง', balances: {} },
+        { id: 'acc-2', name: 'สอง', balances: {} },
+      ],
+    },
+  }));
+
+  // --- ลบ manual → บรรทัดหาย + คืนยอด ---
+  store.getState().depositBank('acc-1', 2026, 8, 500);
+  const manualTx = store
+    .getState()
+    .data.bankTransactions!.find((t) => t.source.type === 'manual')!;
+  store.getState().deleteBankTransaction(manualTx.id);
+  eq('ลบ manual → บรรทัดหาย', txCount(), 0);
+  eq('ลบ manual → ยอดคืน', balOf('acc-1', 2026, 8), 0);
+  eq('ลบ manual → invariant', findLedgerMismatches(ledgerOf()).length, 0);
+
+  // --- ลบ adjustment → คืนยอดเป็นก่อนปรับ ---
+  store.getState().depositBank('acc-1', 2026, 9, 1000);
+  store.getState().setBankBalance('acc-1', 2026, 9, 1500); // adjustment +500
+  const adjTx = store
+    .getState()
+    .data.bankTransactions!.find((t) => t.source.type === 'adjustment')!;
+  store.getState().deleteBankTransaction(adjTx.id);
+  eq(
+    'ลบ adjustment → บรรทัด adjustment หาย',
+    store
+      .getState()
+      .data.bankTransactions!.filter((t) => t.source.type === 'adjustment')
+      .length,
+    0,
+  );
+  eq('ลบ adjustment → ยอดคืนก่อนปรับ', balOf('acc-1', 2026, 9), 1000);
+  eq('ลบ adjustment → invariant', findLedgerMismatches(ledgerOf()).length, 0);
+
+  // --- ลบขาโอน → ทั้ง 2 บรรทัดหาย ยอดคืนทั้งสองบัญชี ---
+  store.setState((s) => ({
+    data: {
+      ...s.data,
+      years: {},
+      bankTransactions: [],
+      bankAccounts: [
+        { id: 'acc-1', name: 'หนึ่ง', balances: {} },
+        { id: 'acc-2', name: 'สอง', balances: {} },
+      ],
+    },
+  }));
+  store.getState().transferBankBalance('acc-1', 'acc-2', 2026, 8, 300);
+  const legs = store
+    .getState()
+    .data.bankTransactions!.filter((t) => t.source.type === 'transfer');
+  eq('โอน → 2 ขา', legs.length, 2);
+  store.getState().deleteBankTransaction(legs[0].id);
+  eq(
+    'ลบขาโอน → หายทั้งคู่',
+    store
+      .getState()
+      .data.bankTransactions!.filter((t) => t.source.type === 'transfer').length,
+    0,
+  );
+  eq('ลบขาโอน → ยอด acc-1 คืน', balOf('acc-1', 2026, 8), 0);
+  eq('ลบขาโอน → ยอด acc-2 คืน', balOf('acc-2', 2026, 8), 0);
+  eq('ลบขาโอน → invariant', findLedgerMismatches(ledgerOf()).length, 0);
+
+  // --- income ลบไม่ได้ (no-op) ---
+  store.setState((s) => ({
+    data: {
+      ...s.data,
+      years: {},
+      bankTransactions: [],
+      bankAccounts: [{ id: 'acc-1', name: 'หนึ่ง', type: 'salary', balances: {} }],
+    },
+  }));
+  store.getState().addIncome(2026, {
+    month: 7,
+    salary: 80000,
+    bonus: 0,
+    commission: 0,
+    deductions: { tax: 20000, socialSecurity: 0, providentFund: 0, gsl: 0 },
+    deposits: { salary: 'acc-1' },
+  });
+  const incTx = store
+    .getState()
+    .data.bankTransactions!.find((t) => t.source.type === 'income')!;
+  store.getState().deleteBankTransaction(incTx.id);
+  eq(
+    'ลบ income → no-op (ยังอยู่)',
+    store
+      .getState()
+      .data.bankTransactions!.filter((t) => t.source.type === 'income').length,
+    1,
+  );
+  eq('ลบ income → ยอดไม่ขยับ', balOf('acc-1', 2026, 7), 60000);
+  eq('ลบ income → invariant', findLedgerMismatches(ledgerOf()).length, 0);
+
+  // --- expense ลบไม่ได้ (no-op) ---
+  store.setState((s) => ({
+    data: {
+      ...s.data,
+      years: {},
+      bankTransactions: [],
+      bankAccounts: [{ id: 'acc-1', name: 'หนึ่ง', balances: {} }],
+    },
+  }));
+  store.getState().addExpense(2026, 7, {
+    category: 'housing',
+    name: 'ค่าบ้าน',
+    amount: 30000,
+    isRecurring: false,
+    paymentAccountId: 'acc-1',
+  });
+  const exTx = store
+    .getState()
+    .data.bankTransactions!.find((t) => t.source.type === 'expense')!;
+  store.getState().deleteBankTransaction(exTx.id);
+  eq(
+    'ลบ expense → no-op (ยังอยู่)',
+    store
+      .getState()
+      .data.bankTransactions!.filter((t) => t.source.type === 'expense').length,
+    1,
+  );
+  eq('ลบ expense → ยอดไม่ขยับ', balOf('acc-1', 2026, 7), -30000);
+
   console.log(failures === 0 ? '\n✅ ผ่านทั้งหมด' : `\n❌ ล้มเหลว ${failures} ข้อ`);
   process.exit(failures === 0 ? 0 : 1);
 };
