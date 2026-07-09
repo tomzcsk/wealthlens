@@ -24,6 +24,7 @@ import BackupSection from '@/components/settings/BackupSection';
 import DailyBackupSection from '@/components/settings/DailyBackupSection';
 import DangerZone from '@/components/settings/DangerZone';
 import IncomeDefaultsSection from '@/components/settings/IncomeDefaultsSection';
+import JournalBackfillSection from '@/components/settings/JournalBackfillSection';
 import ReportsSection from '@/components/settings/ReportsSection';
 import { useSyncStore, type SyncStatus } from '@/stores/syncStore';
 import { formatRelativeTime, formatThaiDate } from '@/utils/formatters';
@@ -183,6 +184,8 @@ export const SettingsPage = (): ReactNode => {
       <BackupSection />
 
       <DailyBackupSection />
+
+      <JournalBackfillSection />
 
       <ReportsSection />
 

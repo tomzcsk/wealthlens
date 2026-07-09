@@ -10,6 +10,7 @@ import {
   buildBackfillTransactions,
   planBackfill,
 } from '../src/utils/journalBackfill';
+import { validateBackup } from '../src/utils/exportImport';
 import type { BankAccount, BankTransaction } from '../src/types';
 
 let failures = 0;
@@ -115,6 +116,24 @@ const l7: BankLedger = {
 const p7 = planBackfill(l7);
 eq('3 เซลล์', p7.cellCount, 3);
 eq('2 บัญชี', p7.accountCount, 2);
+
+// --- Export/Import round-trip เก็บ source: {type:'backfill'} ---
+// F40 (validateBackup) preserve bankTransactions ทั้งก้อนอยู่แล้ว — บรรทัด
+// backfill จึงรอด round-trip โดยไม่ต้องแก้โค้ด exportImport. assertion นี้กันไว้
+// เผื่อวันหน้ามีใคร "validate เข้ม" แล้วเผลอ drop source ที่ไม่รู้จัก.
+const bfTx: BankTransaction = tx('bf-rt', 'a', 2025, 3, 17250, { type: 'backfill' });
+const restored = validateBackup({
+  version: '1.3.0',
+  lastUpdated: '2026-07-09T00:00:00.000Z',
+  years: {},
+  bankTransactions: [bfTx],
+});
+eq('validateBackup ok', restored.ok, true);
+const survived = restored.ok
+  ? restored.data.bankTransactions?.find((t) => t.id === 'bf-rt')
+  : undefined;
+eq('backfill รอด round-trip', survived?.source.type, 'backfill');
+eq('backfill amount รอด', survived?.amount, 17250);
 
 // ════════════════════════════════════════════════════════════════════════
 // Task 2 — store-level: apply / undo / idempotent / round-trip
