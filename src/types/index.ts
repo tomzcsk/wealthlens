@@ -210,6 +210,21 @@ export interface YearData {
   savings: MonthlySavings[];
 }
 
+/** ปลายทางของรายได้แต่ละช่อง (BankAccount.id). undefined = ไม่ลงบัญชี. */
+export interface IncomeDepositTargets {
+  salary?: string;
+  bonus?: string;
+  commission?: string;
+  otherIncome?: string;
+}
+
+/** สิ่งที่ถูกเขียนลงยอดบัญชีไปแล้วจริง — ใช้ revert ตอนแก้/ลบ. */
+export interface IncomeDepositRef {
+  source: 'salary' | 'bonus' | 'commission' | 'otherIncome';
+  accountId: string;
+  amount: number;
+}
+
 export interface MonthlyIncome {
   /** Calendar month, 1-12. */
   month: number;
@@ -219,6 +234,15 @@ export interface MonthlyIncome {
   /** รายได้อื่นๆ — extra income added to Net.All like commission (post-deduction). Optional for backward-compat. */
   otherIncome?: number;
   deductions: MonthlyDeductions;
+  /** ปลายทางที่ผู้ใช้เลือกไว้ต่อช่อง. Optional, backward-compat. */
+  deposits?: IncomeDepositTargets;
+  /**
+   * ยอดที่ฝากเข้าบัญชีไปแล้วจริง — เขียนโดย store เท่านั้น ห้ามแก้จากฟอร์ม.
+   * ต้องเก็บตัวเลขจริงไว้ เพราะ revert ต้องคืนยอด "ที่เคยฝาก" ไม่ใช่ยอดที่
+   * คำนวณใหม่จากค่าปัจจุบัน (salary/deductions อาจเปลี่ยนไปแล้ว → คืนผิด →
+   * ยอดบัญชีเพี้ยนถาวร). บทเรียนเดียวกับ ExpenseSideEffectRefs ของ F34.
+   */
+  depositSideEffects?: IncomeDepositRef[];
 }
 
 export interface MonthlyDeductions {
@@ -602,6 +626,12 @@ export interface Loan {
 // Bank Accounts (F33) — generic replacement for the Tom-specific "Kept"
 // ---------------------------------------------------------------------------
 
+/**
+ * ประเภทบัญชี — ใช้เลือก default ปลายทางของเงินเดือน และแสดง badge บนการ์ด
+ * เท่านั้น. ไม่มีผลต่อการคำนวณยอดใดๆ.
+ */
+export type BankAccountType = 'salary' | 'savings' | 'cash' | 'other';
+
 export interface BankAccount {
   /** UUID v4, or KRUNGSRI_ACCOUNT_ID for the migrated Kept account. */
   id: string;
@@ -609,6 +639,8 @@ export interface BankAccount {
   name: string;
   /** Optional reference into the curated Thai-bank list (F33), for brand avatar rendering. */
   bankKey?: string;
+  /** ประเภทบัญชี. Optional — บัญชีเดิมไม่มี field นี้ ถือเป็น 'other'. */
+  type?: BankAccountType;
   /** Net balance per month (+deposit / −withdraw). */
   balances: { [year: string]: { [month: string]: number } };
 }
