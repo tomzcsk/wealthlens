@@ -40,5 +40,69 @@ if (tom.ok) {
   eq('installmentNumber ไล่ 1..N', rows[122].installmentNumber, 123);
 }
 
+// --- guards ---
+const tooLow = generateAmortizationSchedule({
+  openingBalance: 3047222.3,
+  annualRatePercent: 3.75,
+  monthlyPayment: 9000, // < ดอกงวดแรก 9,522.57
+  firstDueDate: '2026-08-05',
+});
+eq('ค่างวดต่ำกว่าดอก → PAYMENT_TOO_LOW', tooLow.ok === false && tooLow.error, 'PAYMENT_TOO_LOW');
+
+const zeroBalance = generateAmortizationSchedule({
+  openingBalance: 0,
+  annualRatePercent: 3.75,
+  monthlyPayment: 30000,
+  firstDueDate: '2026-08-05',
+});
+eq('ยอด 0 → INVALID_INPUT', zeroBalance.ok === false && zeroBalance.error, 'INVALID_INPUT');
+
+const zeroPayment = generateAmortizationSchedule({
+  openingBalance: 100000,
+  annualRatePercent: 3.75,
+  monthlyPayment: 0,
+  firstDueDate: '2026-08-05',
+});
+eq('ค่างวด 0 → INVALID_INPUT', zeroPayment.ok === false && zeroPayment.error, 'INVALID_INPUT');
+
+const badDate = generateAmortizationSchedule({
+  openingBalance: 100000,
+  annualRatePercent: 3.75,
+  monthlyPayment: 30000,
+  firstDueDate: '',
+});
+eq('วันที่ว่าง → INVALID_INPUT', badDate.ok === false && badDate.error, 'INVALID_INPUT');
+
+const tooLong = generateAmortizationSchedule({
+  openingBalance: 10000000,
+  annualRatePercent: 5,
+  monthlyPayment: 42000, // ดอกงวดแรก 41,666.67 → ผ่อนได้แต่ยาวเกิน 600 งวด
+  firstDueDate: '2026-08-05',
+});
+eq('ยาวเกินเพดาน → TOO_MANY_PERIODS', tooLong.ok === false && tooLong.error, 'TOO_MANY_PERIODS');
+
+// --- ดอกเบี้ย 0% ---
+const zeroRate = generateAmortizationSchedule({
+  openingBalance: 100000,
+  annualRatePercent: 0,
+  monthlyPayment: 30000,
+  firstDueDate: '2026-08-05',
+});
+eq('0% สร้างได้', zeroRate.ok, true);
+if (zeroRate.ok) {
+  eq('0% → 4 งวด', zeroRate.rows.length, 4);
+  eq('0% → ดอกรวม 0', zeroRate.totalInterest, 0);
+  eq('0% → งวดสุดท้ายเป็นเศษ', zeroRate.rows[3].principalAmount, 10000);
+}
+
+// --- clamp สิ้นเดือน: 31 ม.ค. + 1 เดือน → 28 ก.พ. ---
+const clamp = generateAmortizationSchedule({
+  openingBalance: 100000,
+  annualRatePercent: 0,
+  monthlyPayment: 30000,
+  firstDueDate: '2026-01-31',
+});
+eq('งวด 2 clamp สิ้นเดือน', clamp.ok && clamp.rows[1].dueDate, '2026-02-28');
+
 console.log(failures === 0 ? '\n✅ ผ่านทั้งหมด' : `\n❌ ล้มเหลว ${failures} ข้อ`);
 process.exit(failures === 0 ? 0 : 1);
