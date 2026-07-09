@@ -367,11 +367,23 @@ export const IncomeForm = ({
     initialValues ? fromIncome(initialValues) : EMPTY_STATE,
   );
 
-  // F39 — per-field deposit targets. Fresh month defaults salary → the first
-  // 'salary'-typed account; every other field stays blank (don't guess).
+  // F39 — per-field deposit targets. เดือนที่ "ยังไม่เคยกรอก" ตั้ง default ให้
+  // เงินเดือน → บัญชีประเภท 'salary' ตัวแรก; ช่องอื่นเว้นว่าง (ไม่เดาแทน).
+  //
+  // เกณฑ์คือ "ยังไม่เคยกรอก" ไม่ใช่ "ยังไม่มีแถว" — seed สร้างแถวศูนย์ไว้ครบ
+  // ทุกเดือนอยู่แล้ว ถ้าเช็คแค่การมีแถว default จะไม่มีวันทำงาน. และเดือนที่มี
+  // ตัวเลขจริงอยู่แล้วจะไม่ถูกเดาปลายทางให้ เพราะการกดบันทึกจะเขียนเงินเข้า
+  // บัญชีจริง — เจ้าของข้อมูลต้องเป็นคนเลือกเอง.
   const [deposits, setDeposits] = useState<IncomeDepositTargets>(() => {
     if (initialValues?.deposits) return initialValues.deposits;
-    if (initialValues) return {};
+    const neverFilled =
+      initialValues == null ||
+      (initialValues.salary === 0 &&
+        initialValues.bonus === 0 &&
+        initialValues.commission === 0 &&
+        (initialValues.otherIncome ?? 0) === 0 &&
+        initialValues.depositSideEffects == null);
+    if (!neverFilled) return {};
     const salaryAccount = bankAccounts.find((a) => a.type === 'salary');
     return salaryAccount ? { salary: salaryAccount.id } : {};
   });

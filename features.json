@@ -1211,6 +1211,33 @@
             "completedAt": "2026-07-09",
             "notes": "Spec: docs/superpowers/specs/2026-07-09-net-worth-design.md | Plan: docs/superpowers/plans/2026-07-09-net-worth.md | Files: utils/netWorth.ts (ใหม่), pages/WealthPage.tsx, components/wealth/{NetWorthHero,NetWorthColumn}.tsx, App.tsx, components/layout/Sidebar.tsx | หมายเหตุ: ไม่มี manualAssets (บ้าน/รถ) — Tom เลือกติดป้ายแทน; กราฟ net worth ย้อนหลัง = นอก scope"
           }
+        },
+        {
+          "id": "F39",
+          "name": "รายได้เข้าบัญชีอัตโนมัติ + ประเภทบัญชี",
+          "description": "กรอกรายได้ครั้งเดียว → เงินเข้าบัญชีที่เลือกต่อช่อง (เงินเดือน = salary − หัก; โบนัส/คอม/อื่นๆ เต็มจำนวน) พร้อมสรุปก่อนบันทึกและ reconcile ตอนแก้",
+          "status": "completed",
+          "priority": "P1",
+          "phase": "phase_4",
+          "acceptanceCriteria": [
+            "BankAccount.type?: 'salary'|'savings'|'cash'|'other' (optional) — ใช้ default + badge เท่านั้น",
+            "MonthlyIncome.deposits? (ปลายทางต่อช่อง) + depositSideEffects? (ยอดที่ฝากจริง สำหรับ revert)",
+            "เงินเดือนฝาก salary − ยอดหักรวม; หัก > เงินเดือน → ฝาก 0 + เตือนใน modal",
+            "โบนัส/คอม/รายได้อื่นๆ ฝากเต็มจำนวนตามบัญชีที่เลือก; 'ไม่ลงบัญชี' ได้",
+            "ยอด 0 ไม่สร้าง ref (ไม่เขียน delta 0 ลงบัญชี)",
+            "addIncome/updateIncome reconcile: revert ด้วยยอดที่ฝากจริง แล้ว apply ใหม่ — แก้ deductions ก็ reconcile",
+            "modal สรุปแจกแจงก่อนบันทึก + บรรทัดส่วนต่างโหมดแก้ไข; ไม่มีช่องไหนเลือกบัญชี → ข้าม modal",
+            "default บัญชีเงินเดือนใช้เกณฑ์ 'ยังไม่เคยกรอก' (seed สร้างแถวศูนย์ไว้ครบทุกเดือน) ไม่ใช่ 'ยังไม่มีแถว'",
+            "ข้อมูลเดิมไม่มี deposits → ไม่แตะยอดบัญชี; import preserve ทุก field ใหม่",
+            "Verified: scripts/verify-income-deposit.ts (23 assertions) + verify เดิมทั้ง 13 ตัวไม่ regress + typecheck + lint + build + UI run จริง (ฝาก 60k/50k → แก้เป็น 70k ไม่บวกทบ → ถอดบัญชีคืนยอดเป็น 0)"
+          ],
+          "estimatedHours": 6,
+          "dependencies": ["F32", "F33", "F34"],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-07-09",
+            "notes": "Spec: docs/superpowers/specs/2026-07-09-income-deposit-design.md | Plan: docs/superpowers/plans/2026-07-09-income-deposit.md | Files: utils/incomeDeposits.ts (ใหม่), components/forms/IncomeDepositSummary.tsx (ใหม่), types/index.ts, stores/financeStore.ts (reconcileIncomeDeposits + addBankAccount/updateBankAccount รับ type), utils/exportImport.ts, components/accounts/{BankAccountForm,BankAccountCard}.tsx, components/forms/IncomeForm.tsx | หมายเหตุ: IncomeForm เรียก addIncome ทั้ง create/edit → reconcile อยู่ใน addIncome ด้วย; ไม่แตะสูตร calculateNetAll"
+          }
         }
       ]
     }
@@ -1300,8 +1327,8 @@
     }
   },
   "progressSummary": {
-    "totalFeatures": 46,
-    "completed": 46,
+    "totalFeatures": 47,
+    "completed": 47,
     "inProgress": 0,
     "pending": 0,
     "overallProgress": "100%",
