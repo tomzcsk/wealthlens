@@ -1238,6 +1238,34 @@
             "completedAt": "2026-07-09",
             "notes": "Spec: docs/superpowers/specs/2026-07-09-income-deposit-design.md | Plan: docs/superpowers/plans/2026-07-09-income-deposit.md | Files: utils/incomeDeposits.ts (ใหม่), components/forms/IncomeDepositSummary.tsx (ใหม่), types/index.ts, stores/financeStore.ts (reconcileIncomeDeposits + addBankAccount/updateBankAccount รับ type), utils/exportImport.ts, components/accounts/{BankAccountForm,BankAccountCard}.tsx, components/forms/IncomeForm.tsx | หมายเหตุ: IncomeForm เรียก addIncome ทั้ง create/edit → reconcile อยู่ใน addIncome ด้วย; ไม่แตะสูตร calculateNetAll"
           }
+        },
+        {
+          "id": "F40",
+          "name": "รายการเดินบัญชี (Bank Transaction Journal)",
+          "description": "ทุกการขยับเงินจดเป็นบรรทัด (ที่มา · เข้า/ออก · จำนวน) ผ่านประตูเดียว applyBankMovement — แก้ต้นทางแล้วบรรทัดเปลี่ยนตาม ไม่เพิ่มบรรทัดใหม่",
+          "status": "completed",
+          "priority": "P1",
+          "phase": "phase_4",
+          "acceptanceCriteria": [
+            "WealthLensData.bankTransactions?: BankTransaction[] (optional, backward-compat)",
+            "utils/bankMovements.ts: applyBankMovement/revokeBankMovements/reconcileBankMovements/findLedgerMismatches (pure)",
+            "Invariant: ทุก (บัญชี,ปี,เดือน) ที่มีรายการ → Σ tx.amount === balance; เดือนที่ไม่มีรายการยกเว้น",
+            "financeStore ไม่เรียก applyBankDelta ตรงๆ อีกเลย (grep = 0) — ทั้ง 6 จุดไหลผ่านประตูเดียว (รวม installment plans)",
+            "depositBank/withdrawBank actions ใหม่ — เดิมปุ่มฝาก/ถอนเรียก setBankBalance จึงแยกจาก 'ปรับยอดเอง' ไม่ได้",
+            "setBankBalance เดือนที่มีรายการ → บรรทัด 'ปรับยอดเอง' เท่าส่วนต่าง (แทนที่ของเดิม); เดือนที่ไม่มีรายการ → เขียนยอดตรงๆ",
+            "แก้เงินเดือน/ยอดรายจ่าย/งวดผ่อน → บรรทัดเดิมถูกแทนที่ ไม่เพิ่มบรรทัดใหม่",
+            "UI: เซลล์ผสม (ยอดเก่า + รายการใหม่) แสดงบรรทัด 'ยอดก่อนมีรายการ' เพื่อให้แถวรวม = ยอดเดือนเสมอ",
+            "รายการจากต้นทาง (income/expense/gold) ลบจากหน้าบัญชีไม่ได้; ลบขาโอน → หายทั้งคู่ เงินรวมทั้งระบบคงที่",
+            "gold holding ที่ซื้อก่อน F40 (ไม่มีบรรทัด) ลบแล้วคืนยอดผ่าน fallback นอกสมุด",
+            "Verified: scripts/verify-bank-transactions.ts (invariant หลังทุกเคส) + verify เดิมทั้ง 14 ตัวไม่ regress + typecheck + lint + build + UI run จริง (แก้เงินเดือน 80k→90k → 1 บรรทัด ฿70,000; โอน+ลบขาโอน → เงินรวมคงที่)"
+          ],
+          "estimatedHours": 10,
+          "dependencies": ["F25", "F33", "F34", "F35", "F39"],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-07-09",
+            "notes": "Spec: docs/superpowers/specs/2026-07-09-bank-transactions-design.md | Plan: docs/superpowers/plans/2026-07-09-bank-transactions.md | Files: utils/bankMovements.ts (ใหม่), components/accounts/MonthTransactionList.tsx (ใหม่), types/index.ts, stores/financeStore.ts (withLedger + rewire ทุกจุด + deleteBankTransaction), components/accounts/{BankActionForm,BankAccountDetail}.tsx, utils/exportImport.ts | หมายเหตุ: depositSideEffects (F39) / sideEffects (F34/F25) คงไว้; migrate เดือนเก่าเป็น 'ยอดยกมา' = นอก scope — UI ใช้บรรทัด 'ยอดก่อนมีรายการ' แทน"
+          }
         }
       ]
     }
@@ -1327,8 +1355,8 @@
     }
   },
   "progressSummary": {
-    "totalFeatures": 47,
-    "completed": 47,
+    "totalFeatures": 48,
+    "completed": 48,
     "inProgress": 0,
     "pending": 0,
     "overallProgress": "100%",
