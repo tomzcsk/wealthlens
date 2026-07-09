@@ -16,6 +16,7 @@
  */
 
 import type {
+  BankTransaction,
   ExpenseCategory,
   ExpenseItem,
   MonthlyDeductions,
@@ -454,6 +455,13 @@ export const validateBackup = (parsed: unknown): ValidationResult => {
   const bankAccounts = Array.isArray(parsed.bankAccounts)
     ? (parsed.bankAccounts as WealthLensData['bankAccounts'])
     : undefined;
+  // F40 bank journal: preserve wholesale like bankAccounts. Without this the
+  // restore path drops every line item and the source (income/expense/gold)
+  // discriminated union — the account balance survives but its "why" is lost,
+  // and the Σ tx === balance invariant breaks on the next edit.
+  const bankTransactions = Array.isArray(parsed.bankTransactions)
+    ? (parsed.bankTransactions as unknown as BankTransaction[])
+    : undefined;
   const preferences = isObject(parsed.preferences)
     ? (parsed.preferences as unknown as WealthLensData['preferences'])
     : undefined;
@@ -469,6 +477,7 @@ export const validateBackup = (parsed: unknown): ValidationResult => {
       ...(goldPriceHistory ? { goldPriceHistory } : {}),
       ...(loans ? { loans } : {}),
       ...(bankAccounts ? { bankAccounts } : {}),
+      ...(bankTransactions ? { bankTransactions } : {}),
       ...(preferences ? { preferences } : {}),
     },
   };
@@ -565,6 +574,11 @@ export const mergeData = (
   const goldPriceHistory = imported.goldPriceHistory ?? local.goldPriceHistory;
   const loans = imported.loans ?? local.loans;
   const bankAccounts = imported.bankAccounts ?? local.bankAccounts;
+  // Keep the journal in lock-step with bankAccounts: taking one from `local`
+  // and the other from `imported` would desync balances from their line items.
+  const bankTransactions = imported.bankAccounts
+    ? imported.bankTransactions
+    : local.bankTransactions;
   const preferences = imported.preferences ?? local.preferences;
   return {
     version: local.version,
@@ -575,6 +589,7 @@ export const mergeData = (
     ...(goldPriceHistory ? { goldPriceHistory } : {}),
     ...(loans ? { loans } : {}),
     ...(bankAccounts ? { bankAccounts } : {}),
+    ...(bankTransactions ? { bankTransactions } : {}),
     ...(preferences ? { preferences } : {}),
   };
 };

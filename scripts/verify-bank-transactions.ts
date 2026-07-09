@@ -335,6 +335,66 @@ const runStore = async (): Promise<void> => {
   eq('ลบทอง → คืนยอด 0', balOf(KRUNGSRI_ACCOUNT_ID, 2026, 3), 0);
   eq('ลบทอง → invariant', findLedgerMismatches(ledgerOf()).length, 0);
 
+  // ════════════════════════════════════════════════════════════════════════
+  // Task 4 — Export/Import: bankTransactions (พร้อม source union) รอด round-trip
+  // ════════════════════════════════════════════════════════════════════════
+  const { validateBackup } = await import('../src/utils/exportImport');
+
+  const payloadWithTx = {
+    version: '1.3.0',
+    lastUpdated: '2026-07-09T00:00:00.000Z',
+    years: {},
+    bankAccounts: [
+      { id: 'acc-1', name: 'หนึ่ง', balances: { '2026': { '7': 30000 } } },
+    ],
+    bankTransactions: [
+      {
+        id: 'tx-inc', accountId: 'acc-1', year: 2026, month: 7, amount: 60000,
+        label: 'เงินเดือน (หลังหัก)',
+        source: { type: 'income', year: 2026, month: 7, field: 'salary' },
+      },
+      {
+        id: 'tx-exp', accountId: 'acc-1', year: 2026, month: 7, amount: -30000,
+        label: 'ค่าบ้าน', date: '2026-07-05',
+        source: { type: 'expense', expenseId: 'exp-1' },
+      },
+    ],
+  };
+  const rt = validateBackup(payloadWithTx);
+  eq('import → validateBackup ok', rt.ok, true);
+  if (rt.ok) {
+    eq('import → 2 บรรทัดรอด', rt.data.bankTransactions?.length, 2);
+    const t0 = rt.data.bankTransactions?.[0];
+    eq('import → source income รอด', t0?.source.type, 'income');
+    eq(
+      'import → income.field รอด',
+      t0?.source.type === 'income' && t0.source.field,
+      'salary',
+    );
+    const t1 = rt.data.bankTransactions?.[1];
+    eq(
+      'import → source expense รอด',
+      t1?.source.type === 'expense' && t1.source.expenseId,
+      'exp-1',
+    );
+    eq('import → amount ติดลบรอด', t1?.amount, -30000);
+    eq('import → date รอด', t1?.date, '2026-07-05');
+  }
+
+  // legacy payload ไม่มี field → import ได้ปกติ ไม่พัง
+  const legacyPayload = {
+    version: '1.0.0',
+    lastUpdated: '2026-01-01T00:00:00.000Z',
+    years: {},
+  };
+  const rl = validateBackup(legacyPayload);
+  eq('legacy → import ok', rl.ok, true);
+  eq(
+    'legacy → ไม่มี bankTransactions',
+    rl.ok && rl.data.bankTransactions,
+    undefined,
+  );
+
   console.log(failures === 0 ? '\n✅ ผ่านทั้งหมด' : `\n❌ ล้มเหลว ${failures} ข้อ`);
   process.exit(failures === 0 ? 0 : 1);
 };
