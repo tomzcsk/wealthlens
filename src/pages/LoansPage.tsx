@@ -61,14 +61,13 @@ export const LoansPage = (): ReactNode => {
     pushToast({ message: 'ลบหนี้แล้ว', tone: 'info' });
   };
 
+  // ชื่อหน้า/แท็บเป็นของ DebtPage แล้ว — ที่นี่เหลือแค่คำบรรยาย + ปุ่มเพิ่มหนี้
+  // เพื่อไม่ให้หัวข้อซ้อนกัน.
   const header = (
     <div className="flex items-center justify-between">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">💰 หนี้สิน</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          ตารางผ่อน + ประวัติชำระ ของหนี้ระยะยาว
-        </p>
-      </div>
+      <p className="text-sm text-slate-500">
+        ตารางผ่อน + ประวัติชำระ ของหนี้ระยะยาว
+      </p>
       {loans.length > 0 && (
         <button
           type="button"

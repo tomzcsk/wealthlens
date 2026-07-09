@@ -250,13 +250,11 @@ export const InstallmentsPage = (): ReactNode => {
 
   return (
     <div className="space-y-6">
+      {/* ชื่อหน้า/แท็บเป็นของ DebtPage แล้ว — เหลือแค่คำบรรยาย + ปุ่มสร้างแผนผ่อน */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">แผนผ่อน</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            ทุกแผนผ่อน 0% หรือผ่อนหลายงวดที่กำลังทยอยจ่ายอยู่
-          </p>
-        </div>
+        <p className="text-sm text-slate-500">
+          ทุกแผนผ่อน 0% หรือผ่อนหลายงวดที่กำลังทยอยจ่ายอยู่
+        </p>
         <button
           type="button"
           onClick={() => setCreateOpen(true)}

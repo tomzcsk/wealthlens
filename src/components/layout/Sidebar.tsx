@@ -8,7 +8,7 @@
  */
 
 import { useState, type ReactNode } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 
 import BuildInfo from './BuildInfo';
 
@@ -17,14 +17,18 @@ interface NavItem {
   label: string;
   icon: string;
   end?: boolean;
+  /**
+   * URL อื่นที่ควรถือว่า nav นี้ active ด้วย. หนี้สิน (/loans) เป็นเจ้าของทั้ง
+   * แท็บ ผ่อนของ (/installments) และ หนี้ระยะยาว — highlight ต้องติดทั้งสอง url.
+   */
+  alsoActiveOn?: string[];
 }
 
 const NAV_ITEMS: NavItem[] = [
   { to: '/', label: 'ภาพรวม', icon: '🏠', end: true },
   { to: '/monthly', label: 'รายเดือน', icon: '📊' },
   { to: '/analytics', label: 'วิเคราะห์', icon: '📈' },
-  { to: '/installments', label: 'แผนผ่อน', icon: '💳' },
-  { to: '/loans', label: 'หนี้สิน', icon: '💰' },
+  { to: '/loans', label: 'หนี้สิน', icon: '💰', alsoActiveOn: ['/installments'] },
   { to: '/accounts', label: 'บัญชีธนาคาร', icon: '🏦' },
   { to: '/gold', label: 'ทองคำ', icon: '🪙' },
   { to: '/tax', label: 'ภาษี', icon: '🧮' },
@@ -45,26 +49,33 @@ const Brand = (): ReactNode => (
   </div>
 );
 
-const NavList = ({ onNavigate }: { onNavigate?: () => void }): ReactNode => (
-  <nav className="px-2 flex flex-col gap-1" aria-label="เมนูหลัก">
-    {NAV_ITEMS.map((item) => (
-      <NavLink
-        key={item.to}
-        to={item.to}
-        end={item.end}
-        onClick={onNavigate}
-        className={({ isActive }) =>
-          `${linkBase} ${isActive ? linkActive : linkInactive}`
-        }
-      >
-        <span aria-hidden="true" className="text-base leading-none">
-          {item.icon}
-        </span>
-        <span>{item.label}</span>
-      </NavLink>
-    ))}
-  </nav>
-);
+const NavList = ({ onNavigate }: { onNavigate?: () => void }): ReactNode => {
+  const { pathname } = useLocation();
+  return (
+    <nav className="px-2 flex flex-col gap-1" aria-label="เมนูหลัก">
+      {NAV_ITEMS.map((item) => (
+        <NavLink
+          key={item.to}
+          to={item.to}
+          end={item.end}
+          onClick={onNavigate}
+          className={({ isActive }) => {
+            // NavLink รู้จักแค่ `to` ของตัวเอง — เติม alsoActiveOn ให้ nav
+            // อย่างหนี้สิน highlight ตอนอยู่แท็บ /installments ด้วย.
+            const active =
+              isActive || (item.alsoActiveOn?.includes(pathname) ?? false);
+            return `${linkBase} ${active ? linkActive : linkInactive}`;
+          }}
+        >
+          <span aria-hidden="true" className="text-base leading-none">
+            {item.icon}
+          </span>
+          <span>{item.label}</span>
+        </NavLink>
+      ))}
+    </nav>
+  );
+};
 
 export const Sidebar = (): ReactNode => {
   const [mobileOpen, setMobileOpen] = useState(false);
