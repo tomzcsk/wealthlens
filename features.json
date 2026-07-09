@@ -1186,6 +1186,31 @@
             "completedAt": "2026-07-09",
             "notes": "Spec: docs/superpowers/specs/2026-07-09-expense-loan-link-design.md | Plan: docs/superpowers/plans/2026-07-09-expense-loan-link.md | Files: utils/loanPayments.ts (ใหม่), utils/loanCalculations.ts (waterfall + EXPENSE_PAYMENT_PREFIX), types/index.ts, utils/exportImport.ts, hooks/useFinanceData.ts (useResolvedLoans), components/forms/{ExpenseForm,ExpenseList}.tsx, pages/LoansPage.tsx, components/dashboard/LoanSummaryCard.tsx, components/loans/{LoanDetail,LoanForm}.tsx | หมายเหตุ: pointer ชี้จากรายจ่าย → หนี้ (ไม่ dual-write); LoanForm แก้ไขต้องใช้ data.loans ดิบ ไม่ใช่ resolved; 1 รายจ่าย = 1 หนี้ (split = นอก scope)"
           }
+        },
+        {
+          "id": "F38",
+          "name": "หน้าความมั่งคั่ง (Net Worth)",
+          "description": "สินทรัพย์ (บัญชี + ทองราคาตลาด + ออมสะสม) − หนี้ (เงินต้นคงเหลือ + ยอดผ่อนเหลือ) ในหน้าเดียว — read-only ไม่แตะ schema",
+          "status": "completed",
+          "priority": "P2",
+          "phase": "phase_4",
+          "acceptanceCriteria": [
+            "utils/netWorth.ts: computeNetWorth() pure — รับ goldValue/resolvedLoans/installmentPlans เป็น argument ไม่ผูก Zustand",
+            "ตัดหมวดออม 'gold' ออกจากสินทรัพย์ (GoldHolding dual-write ไว้แล้ว) — ทองนับจาก ledger ราคาตลาด",
+            "ทอง fallback เป็นราคาทุน + ธง isCostBasis เมื่อยังไม่ตั้ง spot price",
+            "หนี้ระยะยาวใช้เงินต้นคงเหลือ (waterfall F37) ไม่ใช่ ต้น+ดอก",
+            "ผ่อนที่จบแล้ว (remainingAmount 0) ไม่นับ",
+            "netWorth ติดลบได้ ไม่ clamp; ป้าย 'ไม่รวมมูลค่าบ้านและรถ' ใต้ตัวเลข",
+            "เมนู 💎 ความมั่งคั่ง + route /wealth",
+            "Verified: scripts/verify-net-worth.ts (21 assertions) + verify เดิมทั้ง 12 ตัวไม่ regress + typecheck + lint + build + UI run จริง (assets ฿1,914,373 ตรงกับคำนวณมือ, ออมไม่มีแถวทอง)"
+          ],
+          "estimatedHours": 4,
+          "dependencies": ["F25", "F33", "F36", "F37"],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-07-09",
+            "notes": "Spec: docs/superpowers/specs/2026-07-09-net-worth-design.md | Plan: docs/superpowers/plans/2026-07-09-net-worth.md | Files: utils/netWorth.ts (ใหม่), pages/WealthPage.tsx, components/wealth/{NetWorthHero,NetWorthColumn}.tsx, App.tsx, components/layout/Sidebar.tsx | หมายเหตุ: ไม่มี manualAssets (บ้าน/รถ) — Tom เลือกติดป้ายแทน; กราฟ net worth ย้อนหลัง = นอก scope"
+          }
         }
       ]
     }
@@ -1275,8 +1300,8 @@
     }
   },
   "progressSummary": {
-    "totalFeatures": 45,
-    "completed": 45,
+    "totalFeatures": 46,
+    "completed": 46,
     "inProgress": 0,
     "pending": 0,
     "overallProgress": "100%",
