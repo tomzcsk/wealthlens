@@ -12,7 +12,13 @@
  * path dispatches, so the auth hook's existing listener clears the session
  * and this component toasts exactly once for either trigger.
  */
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useSyncExternalStore,
+  type ReactNode,
+} from 'react';
 
 import { useGoogleAuth } from '@/auth/useGoogleAuth';
 import { useToastStore } from '@/stores/toastStore';
@@ -21,22 +27,54 @@ import { TOKEN_EXPIRED_EVENT } from '@/utils/driveSync';
 /** Show the "almost out" banner when this much time (ms) or less remains. */
 const WARN_MS = 5 * 60 * 1000;
 
+/** How often the countdown re-reads the wall clock. */
+const TICK_MS = 20_000;
+
+/**
+ * The wall clock is an external system, so we read it through
+ * `useSyncExternalStore` rather than mirroring it into state — render stays
+ * pure and no effect has to write state. Subscribing re-samples immediately,
+ * which is what makes a fresh token reset the countdown at once (the clock
+ * stops ticking while signed out, so `clockNow` would otherwise be stale).
+ */
+let clockNow = 0;
+
+const getClockNow = (): number => clockNow;
+
+const subscribeToClock = (onClockChange: () => void): (() => void) => {
+  clockNow = Date.now();
+  const id = window.setInterval(() => {
+    clockNow = Date.now();
+    onClockChange();
+  }, TICK_MS);
+  return () => window.clearInterval(id);
+};
+
+/** Signed out: no ticking, and the snapshot stays frozen. */
+const subscribeToNothing = (): (() => void) => () => {};
+
 export const SessionWatcher = (): ReactNode => {
   const { isReady, isSignedIn, expiresAt, signIn } = useGoogleAuth();
   const pushToast = useToastStore((s) => s.push);
 
-  const [now, setNow] = useState<number>(() => Date.now());
   // Guards a single soft-expiry dispatch per session (reset on new token).
   const firedRef = useRef(false);
 
-  // Tick every 20s while signed in so the countdown + expiry check stay live.
+  const isWatching = isSignedIn && expiresAt != null;
+  // Signing back in re-subscribes, which re-samples the clock — see
+  // subscribeToClock. While signed in the clock never goes stale by more than
+  // one tick, so a token refresh needs no re-subscribe of its own.
+  const subscribe = useCallback(
+    (onClockChange: () => void) =>
+      isWatching ? subscribeToClock(onClockChange) : subscribeToNothing(),
+    [isWatching],
+  );
+  const now = useSyncExternalStore(subscribe, getClockNow);
+
   useEffect(() => {
-    if (!isSignedIn || expiresAt == null) return;
+    if (!isWatching) return;
     firedRef.current = false;
-    setNow(Date.now());
-    const id = window.setInterval(() => setNow(Date.now()), 20_000);
-    return () => window.clearInterval(id);
-  }, [isSignedIn, expiresAt]);
+  }, [isWatching, expiresAt]);
 
   // Soft (time-based) expiry → dispatch the shared event (auth hook clears
   // the session; the listener below toasts). Fire once per session.
