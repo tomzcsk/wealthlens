@@ -9,7 +9,7 @@
 import { useMemo, useState, type ReactNode } from 'react';
 
 import { Modal } from '@/components/ui/Modal';
-import type { BankAccount } from '@/types';
+import type { BankAccount, BankAccountType } from '@/types';
 import { resolveBank } from '@/data/thaiBanks';
 import { useFinanceStore } from '@/stores/financeStore';
 import { accountAllTimeTotal, accountYearTotal } from '@/utils/bankAccounts';
@@ -17,6 +17,13 @@ import { formatTHB } from '@/utils/formatters';
 
 import BankActionForm, { type BankActionMode } from './BankActionForm';
 import BankAvatar from './BankAvatar';
+
+const TYPE_BADGE: Record<BankAccountType, string> = {
+  salary: '💼 เงินเดือน',
+  savings: '🏦 ออมทรัพย์',
+  cash: '💵 เงินสด',
+  other: '',
+};
 
 interface BankAccountCardProps {
   account: BankAccount;
@@ -58,8 +65,15 @@ export const BankAccountCard = ({
       >
         <div className="flex items-center gap-2.5 min-w-0">
           <BankAvatar account={account} size="md" />
-          <div className="font-semibold text-slate-900 truncate">
-            {account.name}
+          <div className="min-w-0 flex-1">
+            <div className="font-semibold text-slate-900 truncate">
+              {account.name}
+            </div>
+            {account.type != null && account.type !== 'other' && (
+              <span className="mt-0.5 inline-block rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+                {TYPE_BADGE[account.type]}
+              </span>
+            )}
           </div>
         </div>
 

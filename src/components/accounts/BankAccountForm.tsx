@@ -10,7 +10,7 @@ import { useState, type FormEvent, type ReactNode } from 'react';
 
 import { useFinanceStore } from '@/stores/financeStore';
 import { useToastStore } from '@/stores/toastStore';
-import type { BankAccount } from '@/types';
+import type { BankAccount, BankAccountType } from '@/types';
 import { THAI_BANKS, resolveBank, bankByKey } from '@/data/thaiBanks';
 import BankAvatar from './BankAvatar';
 
@@ -33,6 +33,9 @@ export const BankAccountForm = ({
     initialAccount ? resolveBank(initialAccount)?.key ?? null : null,
   );
   const [name, setName] = useState<string>(initialAccount?.name ?? '');
+  const [type, setType] = useState<BankAccountType>(
+    initialAccount?.type ?? 'other',
+  );
   const [error, setError] = useState<string | null>(null);
 
   const handlePickBank = (key: string): void => {
@@ -54,10 +57,14 @@ export const BankAccountForm = ({
     }
 
     if (initialAccount) {
-      updateBankAccount(initialAccount.id, { name: trimmed, bankKey: bankKey ?? null });
+      updateBankAccount(initialAccount.id, {
+        name: trimmed,
+        bankKey: bankKey ?? null,
+        type,
+      });
       pushToast({ message: 'แก้ไขบัญชีแล้ว', tone: 'success' });
     } else {
-      addBankAccount(trimmed, bankKey ?? undefined);
+      addBankAccount(trimmed, bankKey ?? undefined, type);
       pushToast({ message: 'เพิ่มบัญชีแล้ว', tone: 'success' });
     }
     onSaved();
@@ -116,6 +123,25 @@ export const BankAccountForm = ({
             required
             className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
+        </label>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-slate-700">
+          ประเภทบัญชี
+          <select
+            value={type}
+            onChange={(e) => setType(e.target.value as BankAccountType)}
+            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+          >
+            <option value="salary">บัญชีเงินเดือน</option>
+            <option value="savings">บัญชีออมทรัพย์</option>
+            <option value="cash">เงินสด</option>
+            <option value="other">อื่นๆ</option>
+          </select>
+          <span className="mt-1 block text-xs text-slate-500">
+            ใช้ตั้งค่าเริ่มต้นว่าเงินเดือนจะเข้าบัญชีไหน
+          </span>
         </label>
       </div>
 

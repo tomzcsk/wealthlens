@@ -37,6 +37,7 @@ import {
 } from '@/utils/installments';
 import type {
   BankAccount,
+  BankAccountType,
   ExpenseCategory,
   ExpenseItem,
   ExpenseSideEffectRefs,
@@ -421,15 +422,15 @@ export interface FinanceState {
   ) => void;
 
   // --- Bank accounts --------------------------------------------------------
-  addBankAccount: (name: string, bankKey?: string) => string;
+  addBankAccount: (name: string, bankKey?: string, type?: BankAccountType) => string;
   /**
-   * Patch an account's name and/or bank brand. `bankKey: null` clears the
-   * explicit brand link (falls back to name-based `resolveBank` matching);
+   * Patch an account's name, bank brand, and/or type. `bankKey: null` clears
+   * the explicit brand link (falls back to name-based `resolveBank` matching);
    * `undefined` leaves the current value untouched.
    */
   updateBankAccount: (
     id: string,
-    patch: { name?: string; bankKey?: string | null },
+    patch: { name?: string; bankKey?: string | null; type?: BankAccountType },
   ) => void;
   setBankBalance: (id: string, year: number, month: number, amount: number) => void;
   clearBankBalance: (id: string, year: number, month: number) => void;
@@ -1581,15 +1582,16 @@ export const useFinanceStore = create<FinanceState>()(
           };
         }),
 
-      addBankAccount: (name, bankKey) => {
+      addBankAccount: (name, bankKey, type) => {
         const id = uuidv4();
         set((state) => {
           const stamp = nowIso();
-          const account = {
+          const account: BankAccount = {
             id,
             name: name.trim(),
             balances: {},
             ...(bankKey ? { bankKey } : {}),
+            ...(type && type !== 'other' ? { type } : {}),
           };
           return {
             data: {
@@ -1621,6 +1623,13 @@ export const useFinanceStore = create<FinanceState>()(
                   delete (merged as { bankKey?: string }).bankKey;
                 } else if (patch.bankKey !== undefined) {
                   merged.bankKey = patch.bankKey;
+                }
+                if (patch.type !== undefined) {
+                  if (patch.type === 'other') {
+                    delete (merged as { type?: BankAccountType }).type;
+                  } else {
+                    merged.type = patch.type;
+                  }
                 }
                 return merged;
               }),
