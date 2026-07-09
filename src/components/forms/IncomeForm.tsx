@@ -125,6 +125,13 @@ interface IncomeDepositChecks {
 /** Stable empty reference so the store selector never re-triggers renders. */
 const EMPTY_ACCOUNTS: BankAccount[] = [];
 
+/**
+ * id ชั่วคราวของบัญชีเงินสดที่ "จะถูกสร้าง" ตอนกดยืนยัน. ใช้ระหว่างที่ modal
+ * สรุปเปิดอยู่เท่านั้น — ไม่มีวันถูกเขียนลง store เพราะ confirmSave แทนที่ด้วย
+ * id จริงก่อนบันทึก และการกดยกเลิกทิ้งมันไปพร้อมกับ pending.
+ */
+const PENDING_CASH_ID = '__pending-cash__';
+
 // ---------------------------------------------------------------------------
 // NumberInput — comma-formatted numeric input with cursor anchoring.
 // ---------------------------------------------------------------------------
@@ -394,6 +401,10 @@ export const IncomeForm = ({
     () => bankAccounts.find((a) => a.type === 'salary'),
     [bankAccounts],
   );
+  const cashAccount = useMemo(
+    () => bankAccounts.find((a) => a.type === 'cash'),
+    [bankAccounts],
+  );
 
   const [form, setForm] = useState<IncomeFormState>(() =>
     initialValues ? fromIncome(initialValues) : EMPTY_STATE,
@@ -454,12 +465,12 @@ export const IncomeForm = ({
 
   const toggleCashDeposit = useCallback(
     (field: 'bonus' | 'commission' | 'otherIncome', checked: boolean): void => {
-      // ติ๊กแล้วยังไม่มีบัญชีเงินสด → สร้างทันที (พร้อม toast) เพื่อให้ปลายทาง
-      // มีจริงตั้งแต่ตอนติ๊ก ไม่ใช่รอถึงตอนบันทึก.
-      if (checked) ensureCashAccountId();
+      // ไม่สร้างบัญชีเงินสดตรงนี้ — การติ๊ก checkbox ไม่ควรเขียนข้อมูลถาวร
+      // (ยกเลิกฟอร์มแล้วจะเหลือบัญชีเปล่าค้างไว้). บัญชีถูกสร้างตอนกด
+      // "ยืนยันบันทึก" ใน handleConfirmSave ซึ่งเป็นจุดที่ผู้ใช้ตั้งใจเขียนจริง.
       setChecks((prev) => ({ ...prev, [field]: checked }));
     },
-    [ensureCashAccountId],
+    [],
   );
 
   const handleFillDefaults = useCallback((): void => {
@@ -573,7 +584,9 @@ export const IncomeForm = ({
       cleanedDeposits.salary = salaryAccount.id;
     }
     if (checks.bonus || checks.commission || checks.otherIncome) {
-      const cashId = ensureCashAccountId();
+      // ยังไม่สร้างบัญชีเงินสดที่นี่ — ผู้ใช้ยังกดยกเลิกที่ modal ได้.
+      // ใส่ id ชั่วคราวไว้ก่อน แล้ว confirmSave จะสร้างบัญชีจริงและแทนที่ให้.
+      const cashId = cashAccount?.id ?? PENDING_CASH_ID;
       if (checks.bonus) cleanedDeposits.bonus = cashId;
       if (checks.commission) cleanedDeposits.commission = cashId;
       if (checks.otherIncome) cleanedDeposits.otherIncome = cashId;
@@ -600,8 +613,8 @@ export const IncomeForm = ({
     setPending(income);
   }, [
     addIncome,
+    cashAccount,
     checks,
-    ensureCashAccountId,
     form,
     isValid,
     month,
@@ -612,11 +625,23 @@ export const IncomeForm = ({
 
   const confirmSave = useCallback((): void => {
     if (!pending) return;
-    addIncome(year, pending);
+    // จุดเดียวที่เขียนข้อมูลถาวร — ถ้ามีช่องไหนชี้ไปที่บัญชีเงินสดที่ยังไม่มีจริง
+    // ค่อยสร้างตรงนี้ แล้วแทน id ชั่วคราวด้วย id จริงก่อนบันทึก.
+    let income = pending;
+    const targets = pending.deposits;
+    if (targets && Object.values(targets).includes(PENDING_CASH_ID)) {
+      const cashId = ensureCashAccountId();
+      const resolved: IncomeDepositTargets = { ...targets };
+      for (const key of ['bonus', 'commission', 'otherIncome'] as const) {
+        if (resolved[key] === PENDING_CASH_ID) resolved[key] = cashId;
+      }
+      income = { ...pending, deposits: resolved };
+    }
+    addIncome(year, income);
     pushToast({ message: 'บันทึกรายได้แล้ว', tone: 'success' });
-    onSaved?.(pending);
+    onSaved?.(income);
     setPending(null);
-  }, [addIncome, onSaved, pending, pushToast, year]);
+  }, [addIncome, ensureCashAccountId, onSaved, pending, pushToast, year]);
 
   // ---- Delete -----------------------------------------------------------
   const handleDelete = useCallback((): void => {
@@ -655,6 +680,24 @@ export const IncomeForm = ({
   const monthLabel = `${formatThaiMonth(month, { long: true })} ${year}`;
   const showDelete = isEdit && Boolean(onDelete);
   const pendingRefs = pending ? computeIncomeDeposits(pending) : [];
+
+  // บัญชีเงินสดที่ยังไม่ถูกสร้างต้องมีชื่อให้ modal แสดง ไม่งั้นจะขึ้นว่า
+  // "บัญชีที่ถูกลบ" ทั้งที่ความจริงคือ "กำลังจะสร้างให้".
+  const summaryAccounts = useMemo(
+    () =>
+      cashAccount
+        ? bankAccounts
+        : [
+            ...bankAccounts,
+            {
+              id: PENDING_CASH_ID,
+              name: 'เงินสด (จะสร้างให้)',
+              type: 'cash' as const,
+              balances: {},
+            },
+          ],
+    [bankAccounts, cashAccount],
+  );
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 p-6 max-w-2xl w-full">
@@ -840,7 +883,7 @@ export const IncomeForm = ({
         onConfirm={confirmSave}
         refs={pendingRefs}
         previousRefs={initialValues?.depositSideEffects}
-        accounts={bankAccounts}
+        accounts={summaryAccounts}
         salaryUnderwater={pending ? isSalaryUnderwater(pending) : false}
         monthLabel={monthLabel}
       />
