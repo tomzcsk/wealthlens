@@ -28,6 +28,7 @@ const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage'));
 const DebtPage = lazy(() => import('@/pages/DebtPage'));
 const BankAccountsPage = lazy(() => import('@/pages/BankAccountsPage'));
 const GoldPage = lazy(() => import('@/pages/GoldPage'));
+const WealthPage = lazy(() => import('@/pages/WealthPage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 const TaxCalculatorPage = lazy(() => import('@/pages/TaxCalculatorPage'));
 const PrintReportPage = lazy(() => import('@/pages/PrintReportPage'));
@@ -58,6 +59,7 @@ function App(): ReactNode {
             <Route path="loans" element={<DebtPage />} />
             <Route path="accounts" element={<BankAccountsPage />} />
             <Route path="gold" element={<GoldPage />} />
+            <Route path="wealth" element={<WealthPage />} />
             <Route path="tax" element={<TaxCalculatorPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="*" element={<NotFound />} />
