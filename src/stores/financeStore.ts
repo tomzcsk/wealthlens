@@ -21,10 +21,8 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { gslLoan as seedGslLoan } from '@/data/seedData';
 import {
-  applyBankDelta,
   KRUNGSRI_ACCOUNT_ID,
   migrateKeptToBankAccounts,
-  reconcileBankDeduction,
 } from '@/utils/bankAccounts';
 import {
   applyBankMovement,
@@ -266,30 +264,110 @@ const expenseDeductionOf = (
       }
     : undefined;
 
+/** ป้ายกำกับรายการฝากตามช่องรายได้ — โชว์ในสมุดรายการเดินบัญชี (F40). */
+const INCOME_FIELD_LABEL: Record<IncomeDepositRef['source'], string> = {
+  salary: 'เงินเดือน (หลังหัก)',
+  bonus: 'โบนัส',
+  commission: 'คอมมิชชั่น',
+  otherIncome: 'รายได้อื่นๆ',
+};
+
 /**
- * คืนยอดที่เคยฝาก แล้วลงยอดใหม่ — reconcile แบบเดียวกับ F34 (รายจ่าย).
+ * จดรายการฝากรายได้ผ่านประตูเดียว (F40) — reconcile คีย์ตาม (income, ปี, เดือน)
+ * จึงลบบรรทัดเก่าของเดือนนั้นทิ้งแล้วลงชุดใหม่: แก้เงินเดือนแล้วบรรทัดเดิม
+ * "เปลี่ยน" ไม่ใช่มีสองบรรทัด.
  *
- * ต้อง revert ด้วย `oldRefs` (ตัวเลขที่ฝากจริงตอนบันทึกครั้งก่อน) ไม่ใช่คำนวณ
- * ใหม่จาก income ปัจจุบัน เพราะ salary/deductions อาจเปลี่ยนไปแล้ว — ถ้าคืนด้วย
- * ยอดใหม่ ส่วนต่างจะค้างในบัญชีถาวร. ใช้ applyBankDelta ตัวเดียวกับ F34.
- * คืน undefined เมื่อยังไม่มีบัญชีเลย (ไม่มีอะไรให้แตะ).
+ * WHY ไม่รับ oldRefs มา revert เอง: `revokeBankMovements` คืนยอดด้วย
+ * `tx.amount` ที่บรรทัด "เคยลงไว้จริง" ไม่ใช่คำนวณใหม่จากรายได้ปัจจุบัน — ถ้า
+ * salary/หัก เปลี่ยนไปแล้วคืนด้วยยอดใหม่ ส่วนต่างจะค้างในบัญชีถาวร (บทเรียน F34/F39).
  */
-const reconcileIncomeDeposits = (
-  accounts: readonly BankAccount[] | undefined,
+const reconcileIncomeLedger = (
+  ledger: BankLedger,
   year: number,
   month: number,
-  oldRefs: IncomeDepositRef[] | undefined,
-  newRefs: IncomeDepositRef[],
-): BankAccount[] | undefined => {
-  if (!accounts) return accounts;
-  let next: BankAccount[] = accounts.slice();
-  for (const ref of oldRefs ?? []) {
-    next = applyBankDelta(next, ref.accountId, year, month, -ref.amount);
-  }
-  for (const ref of newRefs) {
-    next = applyBankDelta(next, ref.accountId, year, month, ref.amount);
-  }
-  return next;
+  refs: readonly IncomeDepositRef[],
+): BankLedger =>
+  reconcileBankMovements(
+    ledger,
+    (tx) =>
+      tx.source.type === 'income' &&
+      tx.source.year === year &&
+      tx.source.month === month,
+    refs.map((ref) => ({
+      accountId: ref.accountId,
+      year,
+      month,
+      amount: ref.amount,
+      label: INCOME_FIELD_LABEL[ref.source],
+      source: { type: 'income' as const, year, month, field: ref.source },
+    })),
+  );
+
+/**
+ * จดรายการหักรายจ่าย/งวดผ่อนผ่านประตูเดียว (F34/F35/F40) — reconcile คีย์ตาม
+ * `expenseId` เดียว: แก้ยอด/ย้ายบัญชี → บรรทัดเดิมของรายการนั้นถูกแทนที่; ลบ
+ * (deduction ว่าง) → บรรทัดหาย. amount ติดลบเพราะเงินออกจากบัญชี.
+ *
+ * WHY revert ด้วย tx.amount ที่เก็บไว้ ไม่ recompute: เหมือน income — ยอดที่หัก
+ * ไปจริงคือความจริงเดียวที่คืนได้ถูก (spec §7).
+ */
+const reconcileExpenseLedger = (
+  ledger: BankLedger,
+  expenseId: string,
+  deduction: ExpenseSideEffectRefs | undefined,
+  label: string,
+  date?: string,
+): BankLedger =>
+  reconcileBankMovements(
+    ledger,
+    (tx) => tx.source.type === 'expense' && tx.source.expenseId === expenseId,
+    deduction
+      ? [
+          {
+            accountId: deduction.accountId,
+            year: deduction.deductYear,
+            month: deduction.deductMonth,
+            amount: -deduction.deductAmount,
+            label,
+            source: { type: 'expense' as const, expenseId },
+            ...(date ? { date } : {}),
+          },
+        ]
+      : [],
+  );
+
+/**
+ * บวก `delta` เข้าเซลล์ (บัญชี, ปี, เดือน) แบบ inline โดย "ไม่จดรายการ".
+ *
+ * ใช้เฉพาะกู้ยอดของ gold holding รุ่นเก่า (ซื้อก่อน F40) ที่หักยอดแบบ inline
+ * ไม่มีบรรทัดใน journal ให้ `revokeBankMovements` ไปคืน — การหักเดิมอยู่นอก
+ * สมุดรายการ การคืนจึงต้องอยู่นอกสมุดเช่นกัน (ไม่งั้นจะเกิดบรรทัดบวกลอยๆ ที่
+ * ไม่มีคู่หัก ทำ invariant พังของเซลล์นั้น). holding ที่ซื้อหลัง F40 คืนผ่าน
+ * revoke ตามปกติ.
+ */
+const addRawBalance = (
+  accounts: readonly BankAccount[],
+  id: string,
+  year: number,
+  month: number,
+  delta: number,
+): BankAccount[] => {
+  const yKey = String(year);
+  const mKey = String(month);
+  return accounts.map((a) =>
+    a.id === id
+      ? {
+          ...a,
+          balances: {
+            ...a.balances,
+            [yKey]: {
+              ...(a.balances[yKey] ?? {}),
+              [mKey]: (a.balances[yKey]?.[mKey] ?? 0) + delta,
+            },
+          },
+        }
+      : a,
+  );
 };
 
 /**
@@ -596,13 +674,14 @@ export const useFinanceStore = create<FinanceState>()(
           const previous = current.income.find((i) => i.month === income.month);
 
           const newRefs = computeIncomeDeposits(income);
-          const nextAccounts = reconcileIncomeDeposits(
-            state.data.bankAccounts,
-            year,
-            income.month,
-            previous?.depositSideEffects,
-            newRefs,
-          );
+          // จดรายการฝากผ่านประตูเดียว (F40). ข้ามเมื่อยังไม่มีบัญชีเลย
+          // (bankAccounts === undefined) — ไม่มีที่ให้ฝาก, พฤติกรรมเดิมของ F39.
+          const ledgerPatch =
+            state.data.bankAccounts !== undefined
+              ? withLedger(state.data, (l) =>
+                  reconcileIncomeLedger(l, year, income.month, newRefs),
+                )
+              : {};
           // depositSideEffects เป็นของ store ล้วนๆ — สร้างจาก newRefs เสมอ ไม่
           // เชื่อค่าที่ติดมากับ argument (กัน stale ref ค้าง เมื่อไม่มีอะไรฝาก).
           const nextRow: MonthlyIncome = { ...income };
@@ -619,7 +698,7 @@ export const useFinanceStore = create<FinanceState>()(
           return {
             data: {
               ...state.data,
-              ...(nextAccounts ? { bankAccounts: nextAccounts } : {}),
+              ...ledgerPatch,
               lastUpdated: stamp,
               years: {
                 ...years,
@@ -647,15 +726,15 @@ export const useFinanceStore = create<FinanceState>()(
               : previous.deductions,
           };
           // แก้ deductions/deposits ก็ต้อง reconcile เพราะยอดฝากเงินเดือน =
-          // salary − หัก. revert ยอดที่ฝากจริงเดิม แล้ว apply ยอดใหม่.
+          // salary − หัก. บรรทัดเดิมของ (income, ปี, เดือน) ถูกแทนที่ด้วยชุดใหม่
+          // ผ่านประตูเดียว (F40); revert คืนยอดด้วย tx.amount ที่เคยลงจริง.
           const newRefs = computeIncomeDeposits(merged);
-          const nextAccounts = reconcileIncomeDeposits(
-            state.data.bankAccounts,
-            year,
-            month,
-            previous.depositSideEffects,
-            newRefs,
-          );
+          const ledgerPatch =
+            state.data.bankAccounts !== undefined
+              ? withLedger(state.data, (l) =>
+                  reconcileIncomeLedger(l, year, month, newRefs),
+                )
+              : {};
           const nextRow: MonthlyIncome = { ...merged };
           if (newRefs.length > 0) nextRow.depositSideEffects = newRefs;
           else delete nextRow.depositSideEffects;
@@ -667,7 +746,7 @@ export const useFinanceStore = create<FinanceState>()(
           return {
             data: {
               ...state.data,
-              ...(nextAccounts ? { bankAccounts: nextAccounts } : {}),
+              ...ledgerPatch,
               lastUpdated: stamp,
               years: {
                 ...state.data.years,
@@ -715,9 +794,19 @@ export const useFinanceStore = create<FinanceState>()(
             carSequenceFor(year, month) != null;
           const newDed = expenseDeductionOf(newItem, year, month);
           if (newDed) newItem.sideEffects = newDed;
-          const nextBankAccounts = newDed
-            ? reconcileBankDeduction(state.data.bankAccounts ?? [], undefined, newDed)
-            : state.data.bankAccounts;
+          // จ่ายผ่านบัญชี → จดรายการหักผ่านประตูเดียว (F40). ไม่มีบัญชีจ่าย =
+          // ไม่แตะ ledger (คงพฤติกรรม F34: รายการทั่วไปไม่หักบัญชี).
+          const ledgerPatch = newDed
+            ? withLedger(state.data, (l) =>
+                reconcileExpenseLedger(
+                  l,
+                  newItem.id,
+                  newDed,
+                  newItem.name,
+                  newItem.date,
+                ),
+              )
+            : {};
           const monthRow = current.expenses.find((e) => e.month === month);
           const nextExpenses: MonthlyExpense[] = monthRow
             ? current.expenses.map((e) =>
@@ -737,7 +826,7 @@ export const useFinanceStore = create<FinanceState>()(
               ...state.data,
               lastUpdated: stamp,
               years: finalYears,
-              ...(nextBankAccounts ? { bankAccounts: nextBankAccounts } : {}),
+              ...ledgerPatch,
             },
             lastUpdated: stamp,
           };
@@ -753,16 +842,24 @@ export const useFinanceStore = create<FinanceState>()(
           if (!old) return state;
 
           const merged: ExpenseItem = { ...old, ...patch, id: old.id };
-          const oldDed = old.sideEffects;
           const newDed = expenseDeductionOf(merged, year, month);
           if (newDed) merged.sideEffects = newDed;
           else delete merged.sideEffects;
 
-          const nextBankAccounts = reconcileBankDeduction(
-            state.data.bankAccounts ?? [],
-            oldDed,
-            newDed,
-          );
+          // แก้ยอด/ย้ายบัญชี/ถอดบัญชี → บรรทัดเดิมของ itemId ถูกแทนที่ (หรือหาย)
+          // ผ่านประตูเดียว (F40); revoke คืนยอดด้วย tx.amount ที่เคยลงจริง.
+          const ledgerPatch =
+            state.data.bankAccounts !== undefined
+              ? withLedger(state.data, (l) =>
+                  reconcileExpenseLedger(
+                    l,
+                    itemId,
+                    newDed,
+                    merged.name,
+                    merged.date,
+                  ),
+                )
+              : {};
 
           const nextExpenses = current.expenses.map((row) =>
             row.month === month
@@ -781,7 +878,7 @@ export const useFinanceStore = create<FinanceState>()(
                 ...state.data.years,
                 [key]: { ...current, expenses: nextExpenses },
               },
-              ...(state.data.bankAccounts ? { bankAccounts: nextBankAccounts } : {}),
+              ...ledgerPatch,
             },
             lastUpdated: stamp,
           };
@@ -794,13 +891,14 @@ export const useFinanceStore = create<FinanceState>()(
           if (!current) return state;
           const monthRow = current.expenses.find((e) => e.month === month);
           const target = monthRow?.items.find((it) => it.id === itemId);
-          const nextBankAccounts = target?.sideEffects
-            ? reconcileBankDeduction(
-                state.data.bankAccounts ?? [],
-                target.sideEffects,
-                undefined,
-              )
-            : state.data.bankAccounts;
+          // ลบ = reconcile ด้วย movement ว่าง → revoke บรรทัดของ itemId ทิ้ง +
+          // คืนยอดด้วย tx.amount ที่เคยหักจริง (F40). ไม่มี target/บัญชี → ไม่แตะ.
+          const ledgerPatch =
+            target && state.data.bankAccounts !== undefined
+              ? withLedger(state.data, (l) =>
+                  reconcileExpenseLedger(l, itemId, undefined, target.name, target.date),
+                )
+              : {};
           // Keep the (possibly empty) month row to preserve historical
           // intent that this month was tracked.
           const nextExpenses = current.expenses.map((row) =>
@@ -817,7 +915,7 @@ export const useFinanceStore = create<FinanceState>()(
                 ...state.data.years,
                 [key]: { ...current, expenses: nextExpenses },
               },
-              ...(nextBankAccounts ? { bankAccounts: nextBankAccounts } : {}),
+              ...ledgerPatch,
             },
             lastUpdated: stamp,
           };
@@ -871,7 +969,10 @@ export const useFinanceStore = create<FinanceState>()(
           // Work on a single mutable years map so all งวด land in one
           // state update — atomic and only bumps `lastUpdated` once.
           let years: WealthLensData['years'] = state.data.years;
-          let nextBankAccounts = state.data.bankAccounts;
+          // สะสม ledger ข้ามงวด — สร้างต่อเมื่อมีงวดแรกที่จ่ายผ่านบัญชี (F40).
+          // null = ไม่มีงวดไหนผูกบัญชี → ไม่แตะ bankAccounts/bankTransactions
+          // เลย (คงพฤติกรรม F35: ไม่เลือกบัญชี = ไม่หัก).
+          let ledger: BankLedger | null = null;
 
           for (let seq = 1; seq <= totalMonths; seq++) {
             const { year, month } = advanceMonth(startYear, startMonth, seq - 1);
@@ -905,11 +1006,23 @@ export const useFinanceStore = create<FinanceState>()(
               };
               newItem.paymentAccountId = paymentAccountId;
               newItem.sideEffects = ded;
-              nextBankAccounts = reconcileBankDeduction(
-                nextBankAccounts ?? [],
-                undefined,
-                ded,
-              );
+              // จดรายการหักของงวดนี้ผ่านประตูเดียว คีย์ด้วย expenseId ของงวด —
+              // งวดจึง reconcile ผ่าน update/deleteExpense ได้เหมือนรายจ่ายทั่วไป
+              // (ถ้า add ไม่จดแต่ update จด → หักซ้ำ).
+              if (!ledger) {
+                ledger = {
+                  accounts: state.data.bankAccounts ?? [],
+                  transactions: state.data.bankTransactions ?? [],
+                };
+              }
+              ledger = applyBankMovement(ledger, {
+                accountId: paymentAccountId,
+                year,
+                month,
+                amount: -amount,
+                label: name,
+                source: { type: 'expense', expenseId: newItem.id },
+              });
             }
             const monthRow = current.expenses.find((e) => e.month === month);
             const nextExpenses: MonthlyExpense[] = monthRow
@@ -931,7 +1044,12 @@ export const useFinanceStore = create<FinanceState>()(
               ...state.data,
               lastUpdated: stamp,
               years,
-              ...(nextBankAccounts ? { bankAccounts: nextBankAccounts } : {}),
+              ...(ledger
+                ? {
+                    bankAccounts: ledger.accounts,
+                    bankTransactions: ledger.transactions,
+                  }
+                : {}),
             },
             lastUpdated: stamp,
           };
@@ -943,7 +1061,9 @@ export const useFinanceStore = create<FinanceState>()(
       deleteInstallmentPlan: (planId) =>
         set((state) => {
           let touched = false;
-          let nextBankAccounts = state.data.bankAccounts;
+          // เก็บงวดที่ถูกลบไว้ revoke ทีหลัง (นอก closure) — ถ้า mutate ledger
+          // ใน callback ของ .map ตรงๆ TS จะตามชนิดไม่ทัน (narrow เป็น null).
+          const removedItems: ExpenseItem[] = [];
           const nextYears: WealthLensData['years'] = {};
           for (const [yearKey, yr] of Object.entries(state.data.years)) {
             let yearTouched = false;
@@ -953,15 +1073,7 @@ export const useFinanceStore = create<FinanceState>()(
               );
               if (removed.length === 0) return row;
               yearTouched = true;
-              for (const it of removed) {
-                if (it.sideEffects) {
-                  nextBankAccounts = reconcileBankDeduction(
-                    nextBankAccounts ?? [],
-                    it.sideEffects,
-                    undefined,
-                  );
-                }
-              }
+              removedItems.push(...removed);
               const filtered = row.items.filter(
                 (it) => it.installment?.planId !== planId,
               );
@@ -975,13 +1087,36 @@ export const useFinanceStore = create<FinanceState>()(
             }
           }
           if (!touched) return state;
+          // revoke บรรทัดหักของทุกงวดที่ผูกบัญชี (F40) — คืนยอดด้วย tx.amount ที่
+          // เคยหักจริง (รับกรณีงวดถูกแก้ยอดภายหลัง). งวดที่ไม่ผูกบัญชีไม่มีบรรทัด
+          // → revoke เป็น no-op. null = ไม่มีงวดผูกบัญชี → ไม่แตะ bank state.
+          let ledger: BankLedger | null = null;
+          for (const it of removedItems) {
+            if (!it.sideEffects && !it.paymentAccountId) continue;
+            if (!ledger) {
+              ledger = {
+                accounts: state.data.bankAccounts ?? [],
+                transactions: state.data.bankTransactions ?? [],
+              };
+            }
+            ledger = revokeBankMovements(
+              ledger,
+              (tx) =>
+                tx.source.type === 'expense' && tx.source.expenseId === it.id,
+            );
+          }
           const stamp = nowIso();
           return {
             data: {
               ...state.data,
               lastUpdated: stamp,
               years: nextYears,
-              ...(nextBankAccounts ? { bankAccounts: nextBankAccounts } : {}),
+              ...(ledger
+                ? {
+                    bankAccounts: ledger.accounts,
+                    bankTransactions: ledger.transactions,
+                  }
+                : {}),
             },
             lastUpdated: stamp,
           };
@@ -1025,6 +1160,7 @@ export const useFinanceStore = create<FinanceState>()(
           let nextYears = state.data.years;
           const nextPrefs = ensurePreferences(state.data.preferences);
           let nextBankAccounts = state.data.bankAccounts;
+          let nextBankTransactions = state.data.bankTransactions;
 
           if (input.paymentMethod === 'cash') {
             // Dual-write: mirror the purchase as a SavingsItem in the
@@ -1059,28 +1195,25 @@ export const useFinanceStore = create<FinanceState>()(
               savingsMonth: month,
             };
           } else {
-            // Kept decrement: subtract from the migrated กรุงศรี bank
-            // account's balance for this year/month.
-            const yearKey = String(year);
-            const monthKey = String(month);
+            // Kept decrement → หักยอดบัญชีกรุงศรี ผ่านประตูเดียว (จดรายการด้วย,
+            // F40). จดเฉพาะเมื่อมีบัญชีกรุงศรีจริง (GoldForm ซ่อน 'kept' เมื่อ
+            // ไม่มี). id ของบรรทัดผูกกับ holding เพื่อ revoke ตอนลบ.
             const accounts = state.data.bankAccounts ?? [];
             const acct = accounts.find((a) => a.id === KRUNGSRI_ACCOUNT_ID);
             if (acct) {
-              const current = acct.balances[yearKey]?.[monthKey] ?? 0;
-              nextBankAccounts = accounts.map((a) =>
-                a.id === KRUNGSRI_ACCOUNT_ID
-                  ? {
-                      ...a,
-                      balances: {
-                        ...a.balances,
-                        [yearKey]: {
-                          ...(a.balances[yearKey] ?? {}),
-                          [monthKey]: current - input.totalCost,
-                        },
-                      },
-                    }
-                  : a,
+              const patch = withLedger(state.data, (l) =>
+                applyBankMovement(l, {
+                  accountId: KRUNGSRI_ACCOUNT_ID,
+                  year,
+                  month,
+                  amount: -input.totalCost,
+                  label: `ซื้อทอง ${input.weightBaht} บาททอง`,
+                  source: { type: 'gold', holdingId: newId },
+                  date: input.purchaseDate,
+                }),
               );
+              nextBankAccounts = patch.bankAccounts;
+              nextBankTransactions = patch.bankTransactions;
               holding.sideEffects = {
                 accountId: KRUNGSRI_ACCOUNT_ID,
                 keptYear: year,
@@ -1099,6 +1232,9 @@ export const useFinanceStore = create<FinanceState>()(
               years: nextYears,
               preferences: nextPrefs,
               bankAccounts: nextBankAccounts,
+              ...(nextBankTransactions !== undefined
+                ? { bankTransactions: nextBankTransactions }
+                : {}),
               goldHoldings: [...(state.data.goldHoldings ?? []), holding],
               lastUpdated: stamp,
             },
@@ -1144,6 +1280,7 @@ export const useFinanceStore = create<FinanceState>()(
           let nextYears = state.data.years;
           const nextPrefs = ensurePreferences(state.data.preferences);
           let nextBankAccounts = state.data.bankAccounts;
+          let nextBankTransactions = state.data.bankTransactions;
 
           if (revertSideEffects && target.sideEffects) {
             const se = target.sideEffects;
@@ -1178,34 +1315,38 @@ export const useFinanceStore = create<FinanceState>()(
               se.keptMonth != null &&
               se.keptAmount != null
             ) {
-              // Restore the bank account balance by re-adding the
-              // subtracted amount. `accountId` is only present on holdings
-              // created after F33 task 6; older holdings fall back to the
-              // migrated กรุงศรี account id.
+              // คืนยอดบัญชี. holding ที่ซื้อหลัง F40 มีบรรทัดใน journal → revoke
+              // (คืนด้วย tx.amount ที่เคยหักจริง, ลบบรรทัดทิ้ง). holding รุ่นเก่า
+              // (ก่อน F40) หักยอดแบบ inline ไม่มีบรรทัด → บวก keptAmount กลับ
+              // แบบ inline เช่นกัน (การหักอยู่นอกสมุด การคืนจึงต้องอยู่นอกสมุด —
+              // ไม่งั้นเกิดบรรทัดบวกลอยๆ ทำ invariant พัง).
               const accountId = se.accountId ?? KRUNGSRI_ACCOUNT_ID;
-              const yearKey = String(se.keptYear);
-              const monthKey = String(se.keptMonth);
-              const keptAmount = se.keptAmount;
-              const accounts = state.data.bankAccounts ?? [];
-              const acct = accounts.find((a) => a.id === accountId);
-              if (acct) {
-                const current = acct.balances[yearKey]?.[monthKey] ?? 0;
-                nextBankAccounts = accounts.map((a) =>
-                  a.id === accountId
-                    ? {
-                        ...a,
-                        balances: {
-                          ...a.balances,
-                          [yearKey]: {
-                            ...(a.balances[yearKey] ?? {}),
-                            [monthKey]: current + keptAmount,
-                          },
-                        },
-                      }
-                    : a,
+              const hasJournalLine = (state.data.bankTransactions ?? []).some(
+                (tx) => tx.source.type === 'gold' && tx.source.holdingId === id,
+              );
+              if (hasJournalLine) {
+                const patch = withLedger(state.data, (l) =>
+                  revokeBankMovements(
+                    l,
+                    (tx) =>
+                      tx.source.type === 'gold' && tx.source.holdingId === id,
+                  ),
                 );
+                nextBankAccounts = patch.bankAccounts;
+                nextBankTransactions = patch.bankTransactions;
+              } else {
+                const accounts = state.data.bankAccounts ?? [];
+                if (accounts.some((a) => a.id === accountId)) {
+                  nextBankAccounts = addRawBalance(
+                    accounts,
+                    accountId,
+                    se.keptYear,
+                    se.keptMonth,
+                    se.keptAmount,
+                  );
+                }
+                // If the target account no longer exists, skip silently.
               }
-              // If the target account no longer exists, skip silently.
             }
           }
 
@@ -1217,6 +1358,9 @@ export const useFinanceStore = create<FinanceState>()(
               years: nextYears,
               preferences: nextPrefs,
               bankAccounts: nextBankAccounts,
+              ...(nextBankTransactions !== undefined
+                ? { bankTransactions: nextBankTransactions }
+                : {}),
               lastUpdated: stamp,
             },
             lastUpdated: stamp,
