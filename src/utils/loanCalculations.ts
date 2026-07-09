@@ -28,6 +28,19 @@ const toMs = (iso: string): number => {
   return Number.isFinite(ms) ? ms : 0;
 };
 
+/**
+ * งวดที่ครบกำหนดแล้ว ณ `referenceDate` — ว่างเสมอเมื่อ `assumeOnSchedule`
+ * ปิด/ไม่มี (หนี้ที่บันทึกการจ่ายเอง เช่น กยศ).
+ */
+const dueInstallments = (
+  loan: Loan,
+  referenceDate: Date,
+): LoanInstallment[] => {
+  if (!loan.assumeOnSchedule) return [];
+  const refMs = referenceDate.getTime();
+  return loan.schedule.filter((i) => toMs(i.dueDate) <= refMs);
+};
+
 // ---------------------------------------------------------------------------
 // Schedule selectors
 // ---------------------------------------------------------------------------
@@ -82,8 +95,20 @@ export interface PaymentLogEntry {
  * Merge `scheduledPayments` (auto-debits) with `extraPayments` (โปะ) into
  * one date-sorted log.
  */
-export const getMergedPaymentLog = (loan: Loan): PaymentLogEntry[] => {
+export const getMergedPaymentLog = (
+  loan: Loan,
+  referenceDate: Date = new Date(),
+): PaymentLogEntry[] => {
   const out: PaymentLogEntry[] = [];
+
+  for (const i of dueInstallments(loan, referenceDate)) {
+    out.push({
+      date: i.dueDate,
+      amount: i.totalAmount,
+      source: 'auto',
+      label: 'หักตามตาราง',
+    });
+  }
 
   for (const sp of loan.scheduledPayments) {
     out.push({
@@ -117,15 +142,43 @@ export const getMergedPaymentLog = (loan: Loan): PaymentLogEntry[] => {
  * `getMergedPaymentLog().reduce(...)` but avoids building the intermediate
  * array for callers that only need the number.
  */
-export const getTotalPaid = (loan: Loan): number => {
+export const getTotalPaid = (
+  loan: Loan,
+  referenceDate: Date = new Date(),
+): number => {
   let total = 0;
+  for (const i of dueInstallments(loan, referenceDate)) total += i.totalAmount;
   for (const sp of loan.scheduledPayments) total += sp.amount;
   for (const ep of loan.extraPayments) total += ep.amount;
   return total;
 };
 
-export const getRemainingBalance = (loan: Loan): number =>
-  Math.max(0, getScheduleTotal(loan) - getTotalPaid(loan));
+export const getRemainingBalance = (
+  loan: Loan,
+  referenceDate: Date = new Date(),
+): number =>
+  Math.max(0, getScheduleTotal(loan) - getTotalPaid(loan, referenceDate));
+
+/**
+ * เงินต้นที่ยังไม่ได้ชำระ = Σต้นทั้งตาราง − Σต้นของงวดที่จ่ายแล้ว − โปะ.
+ * ต่างจาก `getRemainingBalance` ซึ่งรวมดอกเบี้ยที่ยังไม่เกิดด้วย — หนี้บ้าน
+ * ต้องเห็นทั้งสองค่า (กยศ ไม่มีดอก ทั้งคู่เท่ากัน).
+ */
+export const getPrincipalRemaining = (
+  loan: Loan,
+  referenceDate: Date = new Date(),
+): number => {
+  const totalPrincipal = loan.schedule.reduce(
+    (acc, i) => acc + i.principalAmount,
+    0,
+  );
+  let paidPrincipal = 0;
+  for (const i of dueInstallments(loan, referenceDate)) {
+    paidPrincipal += i.principalAmount;
+  }
+  for (const ep of loan.extraPayments) paidPrincipal += ep.amount;
+  return Math.max(0, totalPrincipal - paidPrincipal);
+};
 
 // ---------------------------------------------------------------------------
 // Progress selectors — relative to "today"
@@ -161,6 +214,11 @@ export const getThisYearProgress = (
   const calendarYear = parseIso(installment.dueDate).getFullYear();
 
   let paidThisYear = 0;
+  for (const i of dueInstallments(loan, referenceDate)) {
+    if (parseIso(i.dueDate).getFullYear() === calendarYear) {
+      paidThisYear += i.totalAmount;
+    }
+  }
   for (const sp of loan.scheduledPayments) {
     if (parseIso(sp.date).getFullYear() === calendarYear) {
       paidThisYear += sp.amount;
@@ -211,6 +269,8 @@ export interface LoanSummary {
   scheduleTotal: number;
   totalPaid: number;
   remaining: number;
+  /** เงินต้นที่ยังไม่ได้ชำระ (ไม่รวมดอกเบี้ยในอนาคต). */
+  principalRemaining: number;
   /** Fraction in [0, 1]. */
   progressFraction: number;
   yearsRemaining: number;
@@ -224,7 +284,7 @@ export const getLoanSummary = (
   referenceDate: Date = new Date(),
 ): LoanSummary => {
   const scheduleTotal = getScheduleTotal(loan);
-  const totalPaid = getTotalPaid(loan);
+  const totalPaid = getTotalPaid(loan, referenceDate);
   const remaining = Math.max(0, scheduleTotal - totalPaid);
   const progressFraction =
     scheduleTotal > 0 ? Math.min(1, totalPaid / scheduleTotal) : 0;
@@ -236,6 +296,7 @@ export const getLoanSummary = (
     scheduleTotal,
     totalPaid,
     remaining,
+    principalRemaining: getPrincipalRemaining(loan, referenceDate),
     progressFraction,
     yearsRemaining: getYearsRemaining(loan, referenceDate),
     endYear,

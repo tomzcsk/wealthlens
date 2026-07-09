@@ -575,6 +575,13 @@ export interface Loan {
   /** Out-of-band lump-sum payments ("โปะ"). */
   extraPayments: ExtraPayment[];
   /**
+   * เมื่อ true: ถือว่าทุกงวดที่ครบกำหนดแล้ว (dueDate ≤ วันนี้) ถูกจ่ายแล้ว
+   * — สำหรับหนี้ที่หักบัญชีอัตโนมัติ เช่น สินเชื่อบ้าน ที่ผู้ใช้ไม่ได้มา
+   * บันทึกทีละงวด. Optional: payload เดิม (กยศ) ไม่มี field นี้ →
+   * คำนวณจาก `scheduledPayments` เหมือนเดิมทุกประการ.
+   */
+  assumeOnSchedule?: boolean;
+  /**
    * Legacy hint pointing at a `MonthlyDeductions` field that *also* tracks
    * this loan's debit on the salary slip. Kept for forms that prefill from
    * a paycheck line, but the loan log no longer derives from it — see

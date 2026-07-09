@@ -3,6 +3,14 @@
  *   npx tsx --tsconfig tsconfig.app.json scripts/verify-amortization.ts
  */
 import { generateAmortizationSchedule } from '../src/utils/amortization';
+import {
+  getLoanSummary,
+  getMergedPaymentLog,
+  getPrincipalRemaining,
+  getTotalPaid,
+} from '../src/utils/loanCalculations';
+import { finalizeSchedule } from '../src/utils/loanForm';
+import type { Loan } from '../src/types';
 
 let failures = 0;
 const eq = (label: string, a: unknown, b: unknown): void => {
@@ -103,6 +111,61 @@ const clamp = generateAmortizationSchedule({
   firstDueDate: '2026-01-31',
 });
 eq('งวด 2 clamp สิ้นเดือน', clamp.ok && clamp.rows[1].dueDate, '2026-02-28');
+
+// --- assumeOnSchedule ---
+const mortgage: Loan = {
+  id: 'test-mortgage',
+  name: 'สินเชื่อบ้าน',
+  type: 'mortgage',
+  startDate: '2026-08-05',
+  schedule: tom.ok ? finalizeSchedule(tom.rows) : [],
+  scheduledPayments: [],
+  extraPayments: [],
+  assumeOnSchedule: true,
+};
+// อ้างอิงวันที่: 2026-10-10 → งวด 1 (ส.ค.) และ 2 (ก.ย.) และ 3 (5 ต.ค.) ครบกำหนดแล้ว
+const ref = new Date('2026-10-10T00:00:00');
+const first3Total = mortgage.schedule
+  .slice(0, 3)
+  .reduce((a, i) => a + i.totalAmount, 0);
+const first3Principal = mortgage.schedule
+  .slice(0, 3)
+  .reduce((a, i) => a + i.principalAmount, 0);
+
+eq('assumeOnSchedule: totalPaid = 3 งวดแรก',
+  Math.round(getTotalPaid(mortgage, ref) * 100) / 100,
+  Math.round(first3Total * 100) / 100);
+eq('assumeOnSchedule: เงินต้นคงเหลือ',
+  Math.round(getPrincipalRemaining(mortgage, ref) * 100) / 100,
+  Math.round((3047222.3 - first3Principal) * 100) / 100);
+eq('log มี 3 รายการหักตามตาราง', getMergedPaymentLog(mortgage, ref).length, 3);
+eq('log label', getMergedPaymentLog(mortgage, ref)[0].label, 'หักตามตาราง');
+
+// โปะ 100,000 → ทั้ง remaining และ principalRemaining ลดอีก 100,000
+const withExtra: Loan = {
+  ...mortgage,
+  extraPayments: [{ id: 'x1', date: '2026-09-20', amount: 100000, createExpenseEntry: false }],
+};
+eq('โปะลดเงินต้น',
+  Math.round(getPrincipalRemaining(withExtra, ref) * 100) / 100,
+  Math.round((3047222.3 - first3Principal - 100000) * 100) / 100);
+
+// ปิด flag → พฤติกรรมเดิมเป๊ะ
+const noFlag: Loan = { ...mortgage, assumeOnSchedule: false };
+eq('ปิด flag → totalPaid 0', getTotalPaid(noFlag, ref), 0);
+eq('ปิด flag → log ว่าง', getMergedPaymentLog(noFlag, ref).length, 0);
+eq('ปิด flag → เงินต้นคงเหลือเต็ม',
+  Math.round(getPrincipalRemaining(noFlag, ref) * 100) / 100, 3047222.3);
+
+// ไม่มี field เลย (payload เดิม) → เหมือนปิด
+const legacy: Loan = { ...mortgage };
+delete (legacy as { assumeOnSchedule?: boolean }).assumeOnSchedule;
+eq('ไม่มี field → totalPaid 0', getTotalPaid(legacy, ref), 0);
+
+// summary มี principalRemaining
+eq('summary.principalRemaining',
+  Math.round(getLoanSummary(mortgage, ref).principalRemaining * 100) / 100,
+  Math.round((3047222.3 - first3Principal) * 100) / 100);
 
 console.log(failures === 0 ? '\n✅ ผ่านทั้งหมด' : `\n❌ ล้มเหลว ${failures} ข้อ`);
 process.exit(failures === 0 ? 0 : 1);
