@@ -151,6 +151,7 @@ export interface LoanInput {
   startDate: string;
   schedule: LoanInstallment[];
   linkedDeductionField?: Loan['linkedDeductionField'];
+  assumeOnSchedule?: boolean;
 }
 
 /** Editable subset of a Loan, mirroring the GoldHoldingPatch pattern. */
@@ -160,6 +161,7 @@ export interface LoanPatch {
   startDate?: string;
   schedule?: LoanInstallment[];
   linkedDeductionField?: Loan['linkedDeductionField'] | null;
+  assumeOnSchedule?: boolean;
 }
 
 /** Inputs for a lump-sum extra payment ("โปะ"). */
@@ -1172,6 +1174,7 @@ export const useFinanceStore = create<FinanceState>()(
             schedule: input.schedule,
             scheduledPayments: [],
             extraPayments: [],
+            ...(input.assumeOnSchedule ? { assumeOnSchedule: true } : {}),
             ...(input.linkedDeductionField
               ? { linkedDeductionField: input.linkedDeductionField }
               : {}),
@@ -1223,6 +1226,9 @@ export const useFinanceStore = create<FinanceState>()(
                 : {}),
               ...(patch.schedule !== undefined
                 ? { schedule: patch.schedule }
+                : {}),
+              ...(patch.assumeOnSchedule !== undefined
+                ? { assumeOnSchedule: patch.assumeOnSchedule }
                 : {}),
             };
             // `linkedDeductionField: null` is the explicit "clear it" signal.
