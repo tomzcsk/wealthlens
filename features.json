@@ -1136,6 +1136,30 @@
             "completedAt": "2026-07-08",
             "notes": "Spec: docs/superpowers/specs/2026-07-08-installment-deduction-design.md | Files: stores/financeStore.ts (expenseDeductionOf, InstallmentPlanInput, addInstallmentPlan/deleteInstallmentPlan หัก/คืน, addExpense เอา car gate ออก), components/forms/{InstallmentForm,ExpenseForm,ExpenseList}.tsx | หมายเหตุ: หักทุกงวดเข้าเดือนของมัน (รวมงวดอนาคต = planned outflow); หักงวดเฉพาะที่ถึงกำหนด = นอก scope"
           }
+        },
+        {
+          "id": "F36",
+          "name": "หนี้บ้าน — Amortization Generator + หักอัตโนมัติ",
+          "description": "สร้างตารางผ่อนลดต้นลดดอกจาก (ยอดคงเหลือ, ดอกเบี้ย%/ปี, ค่างวด, วันงวดแรก) + Loan.assumeOnSchedule ให้ยอดคงเหลือลดเองตามงวดที่ถึงกำหนด",
+          "status": "completed",
+          "priority": "P1",
+          "phase": "phase_4",
+          "acceptanceCriteria": [
+            "utils/amortization.ts: generateAmortizationSchedule คืน draft rows เข้า finalizeSchedule เส้นทางเดิม",
+            "guards: PAYMENT_TOO_LOW / INVALID_INPUT / TOO_MANY_PERIODS (ไม่ throw)",
+            "Loan.assumeOnSchedule?: boolean (optional, backward-compat) — งวดที่ dueDate ≤ วันนี้ นับเป็นจ่ายแล้ว",
+            "getPrincipalRemaining() + LoanHero แสดงเงินต้นคงเหลือเมื่อต่างจากยอดต้น+ดอก",
+            "LoanForm: radio 2 โหมด (create เท่านั้น) + preview สด + checkbox หักอัตโนมัติ (create/edit)",
+            "กยศ ของ Tom ไม่มี field → คำนวณเท่าเดิมทุกค่า (verify-multi-loan ผ่าน)",
+            "Verified: scripts/verify-amortization.ts (32 assertions) + typecheck + build + UI run จริงบน /loans"
+          ],
+          "estimatedHours": 5,
+          "dependencies": ["F26", "F31"],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-07-09",
+            "notes": "Spec: docs/superpowers/specs/2026-07-09-mortgage-amortization-design.md | Plan: docs/superpowers/plans/2026-07-09-mortgage-amortization.md | Files: utils/amortization.ts (ใหม่), utils/loanForm.ts (export stepDate), utils/loanCalculations.ts (dueInstallments + getPrincipalRemaining + referenceDate ทุก selector), types/index.ts, stores/financeStore.ts, components/loans/{LoanForm,AmortizationBuilder,LoanDetail}.tsx | หมายเหตุ: ดอกคิดรายเดือน (balance × rate/12) อัตราเดียวคงที่; ดอกลอยตัว MRR−x% = นอก scope (แก้ loan แล้วสร้างตารางใหม่)"
+          }
         }
       ]
     }
@@ -1225,8 +1249,8 @@
     }
   },
   "progressSummary": {
-    "totalFeatures": 43,
-    "completed": 43,
+    "totalFeatures": 44,
+    "completed": 44,
     "inProgress": 0,
     "pending": 0,
     "overallProgress": "100%",
