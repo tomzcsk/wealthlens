@@ -10,13 +10,13 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
-import { useFinanceStore } from '@/stores/financeStore';
+import { useResolvedLoans } from '@/hooks/useFinanceData';
 import { getLoanSummary } from '@/utils/loanCalculations';
 import { formatPercent, formatTHB } from '@/utils/formatters';
 
 export const LoanSummaryCard = (): ReactNode => {
-  const data = useFinanceStore((s) => s.data);
-  const loan = data.loans?.[0] ?? null;
+  const loans = useResolvedLoans();
+  const loan = loans[0] ?? null;
   if (!loan) return null;
 
   const summary = getLoanSummary(loan);

@@ -14,6 +14,7 @@ import { useFinanceStore } from '@/stores/financeStore';
 import { useToastStore } from '@/stores/toastStore';
 import type { Loan } from '@/types';
 import { getLoanSummary, type LoanSummary } from '@/utils/loanCalculations';
+import { countLinkedExpenses } from '@/utils/loanPayments';
 import {
   formatNumber,
   formatPercent,
@@ -25,9 +26,16 @@ interface LoanCardsProps {
   loan: Loan;
   summary: LoanSummary;
   onAddExtra: () => void;
+  /** How many expenses point at this loan (F37) — 0 hides the origin note. */
+  linkedCount: number;
 }
 
-const LoanHero = ({ loan, summary, onAddExtra }: LoanCardsProps): ReactNode => {
+const LoanHero = ({
+  loan,
+  summary,
+  onAddExtra,
+  linkedCount,
+}: LoanCardsProps): ReactNode => {
   const {
     remaining,
     principalRemaining,
@@ -73,6 +81,11 @@ const LoanHero = ({ loan, summary, onAddExtra }: LoanCardsProps): ReactNode => {
               <span className="financial-number tabular-nums text-slate-700">
                 {formatTHB(principalRemaining, { decimals: 2 })}
               </span>
+            </div>
+          )}
+          {linkedCount > 0 && (
+            <div className="mt-1 text-xs text-slate-400">
+              ยอดคำนวณจากรายจ่ายที่ผูกไว้ {linkedCount} รายการ
             </div>
           )}
         </div>
@@ -206,6 +219,12 @@ export const LoanDetail = ({ loan }: LoanDetailProps): ReactNode => {
   const deleteExtraPayment = useFinanceStore((s) => s.deleteExtraPayment);
   const pushToast = useToastStore((s) => s.push);
 
+  const years = useFinanceStore((s) => s.data.years);
+  const linkedCount = useMemo(
+    () => countLinkedExpenses(loan, years),
+    [loan, years],
+  );
+
   const summary = useMemo(() => getLoanSummary(loan), [loan]);
   const [addOpen, setAddOpen] = useState(false);
   const [pendingDeleteExtra, setPendingDeleteExtra] = useState<string | null>(null);
@@ -234,6 +253,7 @@ export const LoanDetail = ({ loan }: LoanDetailProps): ReactNode => {
         loan={loan}
         summary={summary}
         onAddExtra={() => setAddOpen(true)}
+        linkedCount={linkedCount}
       />
 
       <ThisYearCard summary={summary} />

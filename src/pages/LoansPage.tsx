@@ -14,18 +14,22 @@ import LoanCard from '@/components/loans/LoanCard';
 import LoanDetail from '@/components/loans/LoanDetail';
 import LoanForm from '@/components/loans/LoanForm';
 import { gslLoan } from '@/data/seedData';
+import { useResolvedLoans } from '@/hooks/useFinanceData';
 import { useFinanceStore } from '@/stores/financeStore';
 import { useToastStore } from '@/stores/toastStore';
 import { formatTHB } from '@/utils/formatters';
 import { getRemainingBalance } from '@/utils/loanCalculations';
 
 export const LoansPage = (): ReactNode => {
-  const data = useFinanceStore((s) => s.data);
   const seedLoan = useFinanceStore((s) => s.seedLoan);
   const deleteLoan = useFinanceStore((s) => s.deleteLoan);
   const pushToast = useToastStore((s) => s.push);
 
-  const loans = data.loans ?? [];
+  // Display everywhere uses resolved loans (balances include linked expenses).
+  const loans = useResolvedLoans();
+  // The edit form must patch the RAW loan — feeding it a resolved loan would
+  // let derived expense payments get written back as if they were real.
+  const rawLoans = useFinanceStore((s) => s.data.loans) ?? [];
 
   // Which loan's detail is open. null = show the card list (or, with a single
   // loan, its detail directly).
@@ -42,7 +46,7 @@ export const LoansPage = (): ReactNode => {
 
   const editingLoan =
     form && form !== 'create'
-      ? loans.find((l) => l.id === form.editId) ?? undefined
+      ? rawLoans.find((l) => l.id === form.editId) ?? undefined
       : undefined;
 
   const pendingLoan = pendingDeleteId
