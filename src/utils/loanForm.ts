@@ -30,7 +30,7 @@ const lastDayOfMonth = (year: number, month: number): number =>
  * Step an ISO yyyy-mm-dd date forward by `n` periods, clamping the day to
  * the target month's last day (so 2026-01-31 + 1 month → 2026-02-28).
  */
-const stepDate = (
+export const stepDate = (
   iso: string,
   n: number,
   frequency: ScheduleFrequency,
