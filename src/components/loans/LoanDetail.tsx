@@ -28,7 +28,14 @@ interface LoanCardsProps {
 }
 
 const LoanHero = ({ loan, summary, onAddExtra }: LoanCardsProps): ReactNode => {
-  const { remaining, totalPaid, scheduleTotal, progressFraction, yearsRemaining } = summary;
+  const {
+    remaining,
+    principalRemaining,
+    totalPaid,
+    scheduleTotal,
+    progressFraction,
+    yearsRemaining,
+  } = summary;
 
   // Derive the "จบ" label from the final installment's real due date so it
   // reads correctly for any loan (a mortgage ending ธ.ค. — not just กยศ's ก.ค.).
@@ -60,6 +67,14 @@ const LoanHero = ({ loan, summary, onAddExtra }: LoanCardsProps): ReactNode => {
               <span className="text-slate-400"> · จบ {endLabel}</span>
             )}
           </div>
+          {Math.round(principalRemaining) !== Math.round(remaining) && (
+            <div className="mt-1 text-sm text-slate-500">
+              เงินต้นคงเหลือ{' '}
+              <span className="financial-number tabular-nums text-slate-700">
+                {formatTHB(principalRemaining, { decimals: 2 })}
+              </span>
+            </div>
+          )}
         </div>
         <button
           type="button"
