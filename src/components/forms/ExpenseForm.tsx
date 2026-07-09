@@ -29,6 +29,7 @@ import {
 } from 'react';
 
 import { useFinanceStore } from '@/stores/financeStore';
+import { EMPTY_BANK_ACCOUNTS } from '@/stores/emptyRefs';
 import {
   CATEGORY_ORDER,
   EXPENSE_CATEGORIES,
@@ -132,7 +133,7 @@ export const ExpenseForm = ({
 }: ExpenseFormProps): ReactNode => {
   const addExpense = useFinanceStore((s) => s.addExpense);
   const updateExpense = useFinanceStore((s) => s.updateExpense);
-  const accounts = useFinanceStore((s) => s.data.bankAccounts ?? []);
+  const accounts = useFinanceStore((s) => s.data.bankAccounts ?? EMPTY_BANK_ACCOUNTS);
   const loans = useFinanceStore((s) => s.data.loans) ?? [];
 
   const isEdit = initialValues != null;

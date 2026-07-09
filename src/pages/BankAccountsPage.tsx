@@ -14,12 +14,13 @@ import BankAccountDetail from '@/components/accounts/BankAccountDetail';
 import BankAccountForm from '@/components/accounts/BankAccountForm';
 import { resolveBank } from '@/data/thaiBanks';
 import { useFinanceStore } from '@/stores/financeStore';
+import { EMPTY_BANK_ACCOUNTS } from '@/stores/emptyRefs';
 import { useToastStore } from '@/stores/toastStore';
 import { sumBankAllTime, sumBankYear } from '@/utils/bankAccounts';
 import { formatTHB } from '@/utils/formatters';
 
 export const BankAccountsPage = (): ReactNode => {
-  const accounts = useFinanceStore((s) => s.data.bankAccounts ?? []);
+  const accounts = useFinanceStore((s) => s.data.bankAccounts ?? EMPTY_BANK_ACCOUNTS);
   const year = useFinanceStore((s) => s.selectedYear);
   const deleteBankAccount = useFinanceStore((s) => s.deleteBankAccount);
   const pushToast = useToastStore((s) => s.push);

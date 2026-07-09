@@ -16,6 +16,7 @@ import BankAvatar from '@/components/accounts/BankAvatar';
 import BankBalanceEditForm from '@/components/accounts/BankBalanceEditForm';
 import Modal from '@/components/ui/Modal';
 import { useFinanceStore } from '@/stores/financeStore';
+import { EMPTY_BANK_ACCOUNTS } from '@/stores/emptyRefs';
 import { selectMonthSavings } from '@/stores/selectors';
 import { useToastStore } from '@/stores/toastStore';
 import {
@@ -197,7 +198,7 @@ export const SavingsList = ({
 
   // Bank accounts — manual per-month balance entry per account. Treated as
   // savings lines (one row each), same as the legacy Kept row.
-  const accounts = useFinanceStore((s) => s.data.bankAccounts ?? []);
+  const accounts = useFinanceStore((s) => s.data.bankAccounts ?? EMPTY_BANK_ACCOUNTS);
 
   const [editAccountId, setEditAccountId] = useState<string | null>(null);
   // ยุบไว้ก่อน: ยอดบัญชีเป็นข้อมูลอ้างอิง ไม่ใช่สิ่งที่ต้องอ่านทุกครั้งที่เปิดเดือน

@@ -2,6 +2,7 @@ import { useMemo, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useFinanceStore } from '@/stores/financeStore';
+import { EMPTY_BANK_ACCOUNTS } from '@/stores/emptyRefs';
 import { selectMonthSummary } from '@/stores/selectors';
 import type { WealthLensData } from '@/types';
 import { sumBankYear } from '@/utils/bankAccounts';
@@ -124,7 +125,7 @@ export const AllYearsSummary = (): ReactNode => {
   const navigate = useNavigate();
   const data = useFinanceStore((s) => s.data);
   const setSelectedYear = useFinanceStore((s) => s.setSelectedYear);
-  const accounts = useFinanceStore((s) => s.data.bankAccounts ?? []);
+  const accounts = useFinanceStore((s) => s.data.bankAccounts ?? EMPTY_BANK_ACCOUNTS);
 
   const { rows, totals, remainingTotal, keptTotal } = useMemo(() => {
     const years = Object.keys(data.years)

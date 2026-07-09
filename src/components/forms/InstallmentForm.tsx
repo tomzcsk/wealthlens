@@ -21,6 +21,7 @@ import {
 } from 'react';
 
 import { useFinanceStore } from '@/stores/financeStore';
+import { EMPTY_BANK_ACCOUNTS } from '@/stores/emptyRefs';
 import {
   CATEGORY_ORDER,
   EXPENSE_CATEGORIES,
@@ -123,7 +124,7 @@ export const InstallmentForm = ({
   onCancel,
 }: InstallmentFormProps): ReactNode => {
   const addInstallmentPlan = useFinanceStore((s) => s.addInstallmentPlan);
-  const accounts = useFinanceStore((s) => s.data.bankAccounts ?? []);
+  const accounts = useFinanceStore((s) => s.data.bankAccounts ?? EMPTY_BANK_ACCOUNTS);
 
   const [name, setName] = useState('');
   const [category, setCategory] = useState<ExpenseCategory>('other');

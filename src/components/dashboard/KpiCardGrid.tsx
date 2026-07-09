@@ -24,6 +24,7 @@
 import type { ReactNode } from 'react';
 import { useSelectedYear, useYearSummary, useYoYChange } from '@/hooks/useFinanceData';
 import { useFinanceStore } from '@/stores/financeStore';
+import { EMPTY_BANK_ACCOUNTS } from '@/stores/emptyRefs';
 import { selectYearSummary } from '@/stores/selectors';
 import { sumBankYear } from '@/utils/bankAccounts';
 import { KpiCard } from './KpiCard';
@@ -51,7 +52,7 @@ export const KpiCardGrid = (): ReactNode => {
   // เงินออมธนาคาร = sum across every tracked bank account (F33). Annual
   // figure shown on the card is the sum across the year. YoY compares the
   // two annual sums.
-  const accounts = useFinanceStore((s) => s.data.bankAccounts ?? []);
+  const accounts = useFinanceStore((s) => s.data.bankAccounts ?? EMPTY_BANK_ACCOUNTS);
   const keptThisYear = sumBankYear(accounts, year);
   const keptLastYear = sumBankYear(accounts, year - 1);
   const keptDelta =

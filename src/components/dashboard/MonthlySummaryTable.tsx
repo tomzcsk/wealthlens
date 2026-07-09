@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 
 import { useFinanceStore } from '@/stores/financeStore';
+import { EMPTY_BANK_ACCOUNTS } from '@/stores/emptyRefs';
 import {
   selectMonthIncome,
   selectMonthlySummariesForYear,
@@ -139,7 +140,7 @@ export const MonthlySummaryTable = ({ year }: MonthlySummaryTableProps) => {
   // changes when state.data mutates. Then derive payloads lazily so we
   // avoid creating new arrays on unrelated re-renders.
   const data = useFinanceStore((s) => s.data);
-  const accounts = useFinanceStore((s) => s.data.bankAccounts ?? []);
+  const accounts = useFinanceStore((s) => s.data.bankAccounts ?? EMPTY_BANK_ACCOUNTS);
   const payloads = useMemo(
     () => buildPayloads(data, activeYear, accounts),
     [data, activeYear, accounts],

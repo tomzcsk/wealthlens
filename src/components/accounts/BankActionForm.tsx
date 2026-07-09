@@ -14,6 +14,7 @@ import {
 } from 'react';
 
 import { useFinanceStore } from '@/stores/financeStore';
+import { EMPTY_BANK_ACCOUNTS } from '@/stores/emptyRefs';
 import { useToastStore } from '@/stores/toastStore';
 import type { BankAccount } from '@/types';
 import { formatNumber, formatTHB, formatThaiMonthYear } from '@/utils/formatters';
@@ -69,7 +70,7 @@ export const BankActionForm = ({
   onSaved,
   onCancel,
 }: BankActionFormProps): ReactNode => {
-  const accounts = useFinanceStore((s) => s.data.bankAccounts ?? []);
+  const accounts = useFinanceStore((s) => s.data.bankAccounts ?? EMPTY_BANK_ACCOUNTS);
   const depositBank = useFinanceStore((s) => s.depositBank);
   const withdrawBank = useFinanceStore((s) => s.withdrawBank);
   const transferBankBalance = useFinanceStore((s) => s.transferBankBalance);

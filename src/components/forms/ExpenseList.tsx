@@ -21,6 +21,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 
 import Modal from '@/components/ui/Modal';
 import { useFinanceStore } from '@/stores/financeStore';
+import { EMPTY_BANK_ACCOUNTS, EMPTY_LOANS } from '@/stores/emptyRefs';
 import { selectMonthExpenses } from '@/stores/selectors';
 import { useToastStore } from '@/stores/toastStore';
 import {
@@ -64,9 +65,9 @@ interface ExpenseRowProps {
   /** Show the leading category icon. Suppressed inside grouped view. */
   showIcon?: boolean;
   /** Bank accounts for resolving `item.paymentAccountId` → display name. */
-  accounts: BankAccount[];
+  accounts: readonly BankAccount[];
   /** Loans for resolving `item.loanId` → display name (F37). */
-  loans: Loan[];
+  loans: readonly Loan[];
 }
 
 const ExpenseRow = ({
@@ -200,8 +201,8 @@ export const ExpenseList = ({
     () => selectMonthExpenses({ data }, year, month),
     [data, year, month],
   );
-  const accounts = useFinanceStore((s) => s.data.bankAccounts ?? []);
-  const loans = useFinanceStore((s) => s.data.loans ?? []);
+  const accounts = useFinanceStore((s) => s.data.bankAccounts ?? EMPTY_BANK_ACCOUNTS);
+  const loans = useFinanceStore((s) => s.data.loans ?? EMPTY_LOANS);
   const deleteExpense = useFinanceStore((s) => s.deleteExpense);
   const deleteInstallmentPlan = useFinanceStore((s) => s.deleteInstallmentPlan);
   const untagInstallmentPlan = useFinanceStore((s) => s.untagInstallmentPlan);

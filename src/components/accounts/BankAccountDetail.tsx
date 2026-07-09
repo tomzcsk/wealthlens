@@ -9,6 +9,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 
 import { Modal } from '@/components/ui/Modal';
 import { useFinanceStore } from '@/stores/financeStore';
+import { EMPTY_BANK_TRANSACTIONS } from '@/stores/emptyRefs';
 import type { BankAccount, BankTransaction } from '@/types';
 import { accountAllTimeTotal, accountYearTotal } from '@/utils/bankAccounts';
 import { THAI_MONTHS_LONG, formatTHB } from '@/utils/formatters';
@@ -91,7 +92,7 @@ export const BankAccountDetail = ({
   const hasOtherAccounts = useFinanceStore(
     (s) => (s.data.bankAccounts ?? []).length > 1,
   );
-  const allTransactions = useFinanceStore((s) => s.data.bankTransactions ?? []);
+  const allTransactions = useFinanceStore((s) => s.data.bankTransactions ?? EMPTY_BANK_TRANSACTIONS);
   const deleteBankTransaction = useFinanceStore((s) => s.deleteBankTransaction);
   // `openMonth` = แถวเดือนที่กางดูรายการอยู่ (accordion);
   // `editMonth` = แถวเดือนที่เปิด modal แก้ยอด. แยกกันเพื่อให้กางดูโดยไม่เด้ง modal.
