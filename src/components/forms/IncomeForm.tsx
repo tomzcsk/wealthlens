@@ -30,6 +30,7 @@ import {
   type ChangeEvent,
   type ReactNode,
 } from 'react';
+import { Link } from 'react-router-dom';
 
 import { useFinanceStore } from '@/stores/financeStore';
 import { useGoalsStore } from '@/stores/goalsStore';
@@ -112,6 +113,14 @@ const fromIncome = (income: MonthlyIncome): IncomeFormState => ({
 });
 
 const num = (v: FieldValue): number => (v === '' ? 0 : v);
+
+/** ติ๊ก "ลงบัญชี" ต่อช่องรายได้ — map เป็น account id ตอนบันทึก. */
+interface IncomeDepositChecks {
+  salary: boolean;
+  bonus: boolean;
+  commission: boolean;
+  otherIncome: boolean;
+}
 
 /** Stable empty reference so the store selector never re-triggers renders. */
 const EMPTY_ACCOUNTS: BankAccount[] = [];
@@ -303,43 +312,58 @@ const SummaryRow = ({
 };
 
 // ---------------------------------------------------------------------------
-// DepositSelect — tiny per-field "เข้าบัญชี" picker (F39).
+// DepositCheckbox — one-decision "ลงบัญชี" toggle per income field (F39, simplified).
+//
+// เจ้าของบอกว่า dropdown 4 ตัวเลือกต่อช่องมันเยอะไป — เหลือแค่ติ๊กถูก/ไม่ติ๊ก.
+// ปลายทางถูกกำหนดตายตัวตามชนิดของช่อง (เงินเดือน→บัญชีเงินเดือน, ที่เหลือ→เงินสด)
+// ผู้ปกครองฝั่ง IncomeForm เป็นคน map checkbox → account id ให้.
+//
+// เหตุที่เงินเดือนกับที่เหลือทำงานต่างกัน:
+//   - บัญชี "เงินเดือน" ผูกกับธนาคารจริง (เช่น กสิกร/ไทยพาณิชย์) ซึ่งเดาแทน
+//     ไม่ได้ ถ้ายังไม่มี → ปิดการติ๊ก + ลิงก์ให้ไปเพิ่มเองที่ /accounts.
+//   - บัญชี "เงินสด" ไม่มีแบรนด์ สร้างแทนได้ทันทีตอนติ๊ก (ดู handleCashDeposit).
 // Aligned to the input column of NumberInput's 140px/1fr grid.
 // ---------------------------------------------------------------------------
 
-interface DepositSelectProps {
-  field: keyof IncomeDepositTargets;
+interface DepositCheckboxProps {
   label: string;
-  value: string | undefined;
-  accounts: ReadonlyArray<BankAccount>;
-  onChange: (field: keyof IncomeDepositTargets, accountId: string | undefined) => void;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  ariaLabel: string;
+  disabled?: boolean;
+  /** Muted helper/link shown under the checkbox (e.g. เมื่อยังไม่มีบัญชีเงินเดือน). */
+  helper?: ReactNode;
 }
 
-const DepositSelect = ({
-  field,
+const DepositCheckbox = ({
   label,
-  value,
-  accounts,
+  checked,
   onChange,
-}: DepositSelectProps): ReactNode => (
+  ariaLabel,
+  disabled = false,
+  helper,
+}: DepositCheckboxProps): ReactNode => (
   <div className="grid grid-cols-[140px_1fr] gap-3">
     <span aria-hidden="true" />
-    <label className="flex items-center gap-2 text-xs text-slate-500">
-      เข้าบัญชี
-      <select
-        value={value ?? ''}
-        onChange={(e) => onChange(field, e.target.value || undefined)}
-        aria-label={`บัญชีปลายทางของ ${label}`}
-        className="flex-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/30"
+    <div>
+      <label
+        className={[
+          'flex items-center gap-2 text-xs select-none',
+          disabled ? 'text-slate-400 cursor-not-allowed' : 'text-slate-600 cursor-pointer',
+        ].join(' ')}
       >
-        <option value="">— ไม่ลงบัญชี —</option>
-        {accounts.map((a) => (
-          <option key={a.id} value={a.id}>
-            {a.name}
-          </option>
-        ))}
-      </select>
-    </label>
+        <input
+          type="checkbox"
+          checked={checked}
+          disabled={disabled}
+          onChange={(e) => onChange(e.target.checked)}
+          aria-label={ariaLabel}
+          className="h-4 w-4 rounded border-slate-300 text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+        />
+        {label}
+      </label>
+      {helper && <div className="mt-1 text-xs text-slate-400">{helper}</div>}
+    </div>
   </div>
 );
 
@@ -359,23 +383,45 @@ export const IncomeForm = ({
 
   const addIncome = useFinanceStore((s) => s.addIncome);
   const deleteIncome = useFinanceStore((s) => s.deleteIncome);
+  const addBankAccount = useFinanceStore((s) => s.addBankAccount);
   const bankAccounts = useFinanceStore((s) => s.data.bankAccounts ?? EMPTY_ACCOUNTS);
   const incomeDefaults = useGoalsStore((s) => s.incomeDefaults);
   const pushToast = useToastStore((s) => s.push);
+
+  // ปลายทางตายตัวตามชนิดบัญชี — เงินเดือนเข้าบัญชีประเภท 'salary', ส่วน
+  // โบนัส/คอม/อื่นๆ เข้าบัญชีประเภท 'cash' (ตัวแรกที่เจอ).
+  const salaryAccount = useMemo(
+    () => bankAccounts.find((a) => a.type === 'salary'),
+    [bankAccounts],
+  );
 
   const [form, setForm] = useState<IncomeFormState>(() =>
     initialValues ? fromIncome(initialValues) : EMPTY_STATE,
   );
 
-  // F39 — per-field deposit targets. เดือนที่ "ยังไม่เคยกรอก" ตั้ง default ให้
-  // เงินเดือน → บัญชีประเภท 'salary' ตัวแรก; ช่องอื่นเว้นว่าง (ไม่เดาแทน).
+  // F39 (simplified) — แต่ละช่องเหลือแค่ "ติ๊กลงบัญชีไหม" ไม่ใช่ dropdown เลือก
+  // บัญชี. เก็บเป็น boolean ต่อช่อง แล้วค่อย map เป็น account id ตอนบันทึก.
   //
-  // เกณฑ์คือ "ยังไม่เคยกรอก" ไม่ใช่ "ยังไม่มีแถว" — seed สร้างแถวศูนย์ไว้ครบ
-  // ทุกเดือนอยู่แล้ว ถ้าเช็คแค่การมีแถว default จะไม่มีวันทำงาน. และเดือนที่มี
-  // ตัวเลขจริงอยู่แล้วจะไม่ถูกเดาปลายทางให้ เพราะการกดบันทึกจะเขียนเงินเข้า
-  // บัญชีจริง — เจ้าของข้อมูลต้องเป็นคนเลือกเอง.
-  const [deposits, setDeposits] = useState<IncomeDepositTargets>(() => {
-    if (initialValues?.deposits) return initialValues.deposits;
+  // เดือนที่ "ยังไม่เคยกรอก" ตั้ง default ให้เงินเดือนติ๊กไว้เมื่อมีบัญชีเงินเดือน;
+  // ช่องอื่นไม่ติ๊ก (ไม่เดาแทน). เกณฑ์คือ "ยังไม่เคยกรอก" ไม่ใช่ "ยังไม่มีแถว" —
+  // seed สร้างแถวศูนย์ครบทุกเดือนอยู่แล้ว. เดือนที่มีตัวเลขจริงแต่ยังไม่เคยตั้ง
+  // ปลายทางจะไม่ถูกเดาให้ เพราะการกดบันทึกจะเขียนเงินเข้าบัญชีจริง.
+  //
+  // แถวเก่า (legacy) ที่ deposits ชี้ไปบัญชีอะไรก็ได้ (เช่น โบนัส→กรุงศรี) ถูก
+  // coerce: salary→บัญชีเงินเดือน, ที่เหลือ→เงินสด (เจ้าของเลือก "force-move to
+  // cash" มากกว่าจะรักษาปลายทางเดิม). ตรงนี้แค่ตั้ง checkbox ให้ติ๊ก — การ
+  // แปลงปลายทาง + reconcile ยอดจริงเกิดตอนบันทึก.
+  const [checks, setChecks] = useState<IncomeDepositChecks>(() => {
+    const salaryExists = bankAccounts.some((a) => a.type === 'salary');
+    const prior = initialValues?.deposits;
+    if (prior) {
+      return {
+        salary: Boolean(prior.salary) && salaryExists,
+        bonus: Boolean(prior.bonus),
+        commission: Boolean(prior.commission),
+        otherIncome: Boolean(prior.otherIncome),
+      };
+    }
     const neverFilled =
       initialValues == null ||
       (initialValues.salary === 0 &&
@@ -383,17 +429,37 @@ export const IncomeForm = ({
         initialValues.commission === 0 &&
         (initialValues.otherIncome ?? 0) === 0 &&
         initialValues.depositSideEffects == null);
-    if (!neverFilled) return {};
-    const salaryAccount = bankAccounts.find((a) => a.type === 'salary');
-    return salaryAccount ? { salary: salaryAccount.id } : {};
+    return {
+      salary: neverFilled && salaryExists,
+      bonus: false,
+      commission: false,
+      otherIncome: false,
+    };
   });
   const [pending, setPending] = useState<MonthlyIncome | null>(null);
 
-  const setDepositTarget = useCallback(
-    (field: keyof IncomeDepositTargets, accountId: string | undefined): void => {
-      setDeposits((prev) => ({ ...prev, [field]: accountId }));
+  // คืน id บัญชีเงินสด — สร้างให้อัตโนมัติถ้ายังไม่มี. ทำได้เพราะเงินสดไม่มี
+  // แบรนด์ (ต่างจากบัญชีเงินเดือนที่ต้องรู้ธนาคารจริงก่อน จึงสร้างแทนไม่ได้).
+  const ensureCashAccountId = useCallback((): string => {
+    const existing = bankAccounts.find((a) => a.type === 'cash');
+    if (existing) return existing.id;
+    const id = addBankAccount('เงินสด', 'cash', 'cash');
+    pushToast({ message: 'สร้างบัญชีเงินสดให้อัตโนมัติ', tone: 'success' });
+    return id;
+  }, [addBankAccount, bankAccounts, pushToast]);
+
+  const toggleSalaryDeposit = useCallback((checked: boolean): void => {
+    setChecks((prev) => ({ ...prev, salary: checked }));
+  }, []);
+
+  const toggleCashDeposit = useCallback(
+    (field: 'bonus' | 'commission' | 'otherIncome', checked: boolean): void => {
+      // ติ๊กแล้วยังไม่มีบัญชีเงินสด → สร้างทันที (พร้อม toast) เพื่อให้ปลายทาง
+      // มีจริงตั้งแต่ตอนติ๊ก ไม่ใช่รอถึงตอนบันทึก.
+      if (checked) ensureCashAccountId();
+      setChecks((prev) => ({ ...prev, [field]: checked }));
     },
-    [],
+    [ensureCashAccountId],
   );
 
   const handleFillDefaults = useCallback((): void => {
@@ -496,12 +562,22 @@ export const IncomeForm = ({
     // `MonthlySavings` and is entered via the Savings list/form on the
     // Monthly Detail page.
 
-    // Keep only fields that actually point at an account — an all-blank
-    // selection means "no deposits", so leave the field off entirely to
-    // preserve backward-compat (rows without `deposits` never touch banks).
-    const cleanedDeposits = Object.fromEntries(
-      Object.entries(deposits).filter(([, v]) => Boolean(v)),
-    ) as IncomeDepositTargets;
+    // Map checkbox → account id. เงินเดือนเข้าบัญชีเงินเดือน (ต้องมีอยู่แล้ว
+    // เพราะ checkbox ถูก disable เมื่อไม่มี); โบนัส/คอม/อื่นๆ เข้าเงินสด — เรียก
+    // ensureCashAccountId ครั้งเดียวแล้วใช้ id เดียวกันทุกช่อง (สร้าง+toast ถ้า
+    // ยังไม่มี เผื่อ legacy row ที่ติ๊กมาแต่ยังไม่เคยแตะ checkbox).
+    // ช่องที่ไม่ติ๊กถูกตัดทิ้ง — ไม่มีปลายทางเลย = ไม่มี deposits (backward-compat:
+    // แถวที่ไม่มี `deposits` ไม่แตะยอดบัญชี).
+    const cleanedDeposits: IncomeDepositTargets = {};
+    if (checks.salary && salaryAccount) {
+      cleanedDeposits.salary = salaryAccount.id;
+    }
+    if (checks.bonus || checks.commission || checks.otherIncome) {
+      const cashId = ensureCashAccountId();
+      if (checks.bonus) cleanedDeposits.bonus = cashId;
+      if (checks.commission) cleanedDeposits.commission = cashId;
+      if (checks.otherIncome) cleanedDeposits.otherIncome = cashId;
+    }
     const hasTargets = Object.keys(cleanedDeposits).length > 0;
 
     const income: MonthlyIncome = {
@@ -522,7 +598,17 @@ export const IncomeForm = ({
       return;
     }
     setPending(income);
-  }, [addIncome, deposits, form, isValid, month, onSaved, year]);
+  }, [
+    addIncome,
+    checks,
+    ensureCashAccountId,
+    form,
+    isValid,
+    month,
+    onSaved,
+    salaryAccount,
+    year,
+  ]);
 
   const confirmSave = useCallback((): void => {
     if (!pending) return;
@@ -568,7 +654,6 @@ export const IncomeForm = ({
   // ---- Render -----------------------------------------------------------
   const monthLabel = `${formatThaiMonth(month, { long: true })} ${year}`;
   const showDelete = isEdit && Boolean(onDelete);
-  const hasAccounts = bankAccounts.length > 0;
   const pendingRefs = pending ? computeIncomeDeposits(pending) : [];
 
   return (
@@ -614,60 +699,62 @@ export const IncomeForm = ({
           error={touched.salary ? errors.salary : undefined}
           autoFocus={!isEdit}
         />
-        {hasAccounts && (
-          <DepositSelect
-            field="salary"
-            label="เงินเดือน"
-            value={deposits.salary}
-            accounts={bankAccounts}
-            onChange={setDepositTarget}
-          />
-        )}
+        <DepositCheckbox
+          label="ลงบัญชีเงินเดือน"
+          ariaLabel="ลงบัญชีเงินเดือน"
+          checked={checks.salary}
+          disabled={!salaryAccount}
+          onChange={toggleSalaryDeposit}
+          helper={
+            !salaryAccount ? (
+              <>
+                ยังไม่มีบัญชีเงินเดือน — เพิ่มก่อน{' '}
+                <Link
+                  to="/accounts"
+                  className="text-primary underline underline-offset-2 hover:text-primary-dark"
+                >
+                  ไปเพิ่มบัญชี
+                </Link>
+              </>
+            ) : undefined
+          }
+        />
         <NumberInput
           id="income-bonus"
           label="โบนัส"
           value={form.bonus}
           onChange={setField('bonus')}
         />
-        {hasAccounts && (
-          <DepositSelect
-            field="bonus"
-            label="โบนัส"
-            value={deposits.bonus}
-            accounts={bankAccounts}
-            onChange={setDepositTarget}
-          />
-        )}
+        <DepositCheckbox
+          label="ลงเงินสด"
+          ariaLabel="ลงเงินสด (โบนัส)"
+          checked={checks.bonus}
+          onChange={(c) => toggleCashDeposit('bonus', c)}
+        />
         <NumberInput
           id="income-commission"
           label="คอม"
           value={form.commission}
           onChange={setField('commission')}
         />
-        {hasAccounts && (
-          <DepositSelect
-            field="commission"
-            label="คอม"
-            value={deposits.commission}
-            accounts={bankAccounts}
-            onChange={setDepositTarget}
-          />
-        )}
+        <DepositCheckbox
+          label="ลงเงินสด"
+          ariaLabel="ลงเงินสด (คอม)"
+          checked={checks.commission}
+          onChange={(c) => toggleCashDeposit('commission', c)}
+        />
         <NumberInput
           id="income-otherIncome"
           label="รายได้อื่นๆ"
           value={form.otherIncome}
           onChange={setField('otherIncome')}
         />
-        {hasAccounts && (
-          <DepositSelect
-            field="otherIncome"
-            label="รายได้อื่นๆ"
-            value={deposits.otherIncome}
-            accounts={bankAccounts}
-            onChange={setDepositTarget}
-          />
-        )}
+        <DepositCheckbox
+          label="ลงเงินสด"
+          ariaLabel="ลงเงินสด (รายได้อื่นๆ)"
+          checked={checks.otherIncome}
+          onChange={(c) => toggleCashDeposit('otherIncome', c)}
+        />
       </div>
 
       {/* --- Deductions section --- */}
