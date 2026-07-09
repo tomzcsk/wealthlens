@@ -17,6 +17,7 @@ import {
 } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
+import AmortizationBuilder from '@/components/loans/AmortizationBuilder';
 import { useFinanceStore } from '@/stores/financeStore';
 import { useToastStore } from '@/stores/toastStore';
 import type { Loan, LoanType } from '@/types';
@@ -24,8 +25,12 @@ import { formatNumber } from '@/utils/formatters';
 import {
   finalizeSchedule,
   scaffoldSchedule,
+  type LoanScheduleDraftRow,
   type ScheduleFrequency,
 } from '@/utils/loanForm';
+
+/** จำนวนแถวที่ render ก่อนกด "แสดงทั้งหมด" — ตารางลดต้นลดดอกยาวได้ถึง 123 งวด. */
+const ROWS_PREVIEW_LIMIT = 5;
 
 interface LoanFormProps {
   /** undefined = create; a Loan = edit that loan. */
@@ -90,6 +95,27 @@ export const LoanForm = ({
       : [],
   );
   const [error, setError] = useState<string | null>(null);
+  // โหมดคำนวณเปิดได้เฉพาะตอนสร้างหนี้ใหม่ (แก้ไข = กรอกมือ/สร้างตารางใหม่ทับ).
+  const [mode, setMode] = useState<'manual' | 'auto'>('manual');
+  const [showAllRows, setShowAllRows] = useState(false);
+  const [assumeOnSchedule, setAssumeOnSchedule] = useState(
+    initialLoan?.assumeOnSchedule ?? false,
+  );
+
+  const applyGeneratedSchedule = (
+    generated: LoanScheduleDraftRow[],
+  ): void => {
+    setRows(
+      generated.map((r) => ({
+        id: uuidv4(),
+        dueDate: r.dueDate,
+        principalText: String(r.principalAmount),
+        interestText: String(r.interestAmount),
+      })),
+    );
+    setShowAllRows(false);
+    setError(null);
+  };
 
   const regenerate = (): void => {
     const c = Math.max(0, Math.floor(Number(count) || 0));
@@ -105,6 +131,7 @@ export const LoanForm = ({
         interestText: '',
       })),
     );
+    setShowAllRows(false);
     setError(null);
   };
 
@@ -159,10 +186,17 @@ export const LoanForm = ({
         type,
         startDate,
         schedule,
+        assumeOnSchedule,
       });
       pushToast({ message: 'แก้ไขหนี้แล้ว', tone: 'success' });
     } else {
-      addLoan({ name: name.trim(), type, startDate, schedule });
+      addLoan({
+        name: name.trim(),
+        type,
+        startDate,
+        schedule,
+        assumeOnSchedule,
+      });
       pushToast({ message: 'เพิ่มหนี้แล้ว', tone: 'success' });
     }
     onSaved();
@@ -203,51 +237,104 @@ export const LoanForm = ({
         </label>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
-        <label className="block text-sm font-medium text-slate-700">
-          วันเริ่มงวดแรก
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className={inputCls}
-          />
-        </label>
-        <label className="block text-sm font-medium text-slate-700">
-          จำนวนงวด
-          <input
-            type="number"
-            min={1}
-            value={count}
-            onChange={(e) => setCount(e.target.value)}
-            className={inputCls}
-          />
-        </label>
-        <label className="block text-sm font-medium text-slate-700">
-          ความถี่
-          <select
-            value={frequency}
-            onChange={(e) =>
-              setFrequency(e.target.value as ScheduleFrequency)
-            }
-            className={inputCls}
-          >
-            <option value="monthly">รายเดือน</option>
-            <option value="yearly">รายปี</option>
-          </select>
-        </label>
-      </div>
+      {!isEdit && (
+        <div className="flex gap-4 text-sm">
+          {(
+            [
+              ['manual', 'กรอกตารางเอง'],
+              ['auto', 'คำนวณอัตโนมัติ (ลดต้นลดดอก)'],
+            ] as const
+          ).map(([value, label]) => (
+            <label
+              key={value}
+              className="flex items-center gap-2 text-slate-700"
+            >
+              <input
+                type="radio"
+                name="schedule-mode"
+                value={value}
+                checked={mode === value}
+                onChange={() => setMode(value)}
+              />
+              {label}
+            </label>
+          ))}
+        </div>
+      )}
 
-      <button
-        type="button"
-        onClick={regenerate}
-        className="rounded-lg border border-primary px-4 py-2 text-sm font-semibold text-primary hover:bg-primary-light transition"
-      >
-        {rows.length > 0 ? 'สร้างตารางใหม่' : 'สร้างตาราง'}
-      </button>
+      {mode === 'auto' && !isEdit ? (
+        <AmortizationBuilder
+          startDate={startDate}
+          onStartDateChange={setStartDate}
+          onGenerate={applyGeneratedSchedule}
+          inputCls={inputCls}
+        />
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+            <label className="block text-sm font-medium text-slate-700">
+              วันเริ่มงวดแรก
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className={inputCls}
+              />
+            </label>
+            <label className="block text-sm font-medium text-slate-700">
+              จำนวนงวด
+              <input
+                type="number"
+                min={1}
+                value={count}
+                onChange={(e) => setCount(e.target.value)}
+                className={inputCls}
+              />
+            </label>
+            <label className="block text-sm font-medium text-slate-700">
+              ความถี่
+              <select
+                value={frequency}
+                onChange={(e) =>
+                  setFrequency(e.target.value as ScheduleFrequency)
+                }
+                className={inputCls}
+              >
+                <option value="monthly">รายเดือน</option>
+                <option value="yearly">รายปี</option>
+              </select>
+            </label>
+          </div>
+
+          <button
+            type="button"
+            onClick={regenerate}
+            className="rounded-lg border border-primary px-4 py-2 text-sm font-semibold text-primary hover:bg-primary-light transition"
+          >
+            {rows.length > 0 ? 'สร้างตารางใหม่' : 'สร้างตาราง'}
+          </button>
+        </>
+      )}
+
+      <label className="flex items-start gap-2 text-sm text-slate-700">
+        <input
+          type="checkbox"
+          checked={assumeOnSchedule}
+          onChange={(e) => setAssumeOnSchedule(e.target.checked)}
+          className="mt-1"
+        />
+        <span>
+          หักบัญชีอัตโนมัติทุกเดือน
+          <span className="block text-xs text-slate-500">
+            ถือว่างวดที่ถึงกำหนดแล้ว = จ่ายแล้ว · ปิดไว้ถ้าจ่ายเองไม่ตรงงวด
+            แล้วบันทึกเป็นโปะพิเศษแทน
+          </span>
+        </span>
+      </label>
 
       {rows.length > 0 && (
-        <div className="overflow-x-auto rounded-lg border border-slate-200">
+        <div className="space-y-2">
+          <div className="overflow-x-auto rounded-lg border border-slate-200">
           <table className="w-full text-sm">
             <thead className="bg-slate-50 text-xs text-slate-500">
               <tr>
@@ -260,7 +347,8 @@ export const LoanForm = ({
               </tr>
             </thead>
             <tbody>
-              {rows.map((r, idx) => (
+              {(showAllRows ? rows : rows.slice(0, ROWS_PREVIEW_LIMIT)).map(
+                (r, idx) => (
                 <tr key={r.id} className="border-t border-slate-100">
                   <td className="px-2 py-1 tabular-nums text-slate-500">
                     {idx + 1}
@@ -325,6 +413,16 @@ export const LoanForm = ({
               </tr>
             </tfoot>
           </table>
+          </div>
+          {rows.length > ROWS_PREVIEW_LIMIT && !showAllRows && (
+            <button
+              type="button"
+              onClick={() => setShowAllRows(true)}
+              className="w-full rounded-lg border border-slate-200 py-2 text-sm text-primary hover:bg-slate-50 transition"
+            >
+              แสดงทั้งหมด ({rows.length} งวด)
+            </button>
+          )}
         </div>
       )}
 
