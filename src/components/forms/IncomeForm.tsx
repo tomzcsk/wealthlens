@@ -32,6 +32,7 @@ import {
 } from 'react';
 import { Link } from 'react-router-dom';
 
+import { EMPTY_BANK_ACCOUNTS } from '@/stores/emptyRefs';
 import { useFinanceStore } from '@/stores/financeStore';
 import { useGoalsStore } from '@/stores/goalsStore';
 import { useToastStore } from '@/stores/toastStore';
@@ -41,6 +42,10 @@ import type {
   MonthlyDeductions,
   MonthlyIncome,
 } from '@/types';
+import {
+  incomeDeletedMessage,
+  incomeSavedMessage,
+} from '@/utils/actionMessages';
 import { calculateNetAll } from '@/utils/calculations';
 import { formatNumber, formatTHB, formatThaiMonth } from '@/utils/formatters';
 import {
@@ -459,6 +464,23 @@ export const IncomeForm = ({
     return id;
   }, [addBankAccount, bankAccounts, pushToast]);
 
+  // ชื่อบัญชีที่ "เงินเข้าจริง" (ยอด > 0) จากรายได้ก้อนนี้ —
+  // computeIncomeDeposits กรองยอด 0 ทิ้งให้แล้ว. บัญชีเดียวรับหลายช่อง
+  // (เช่น เงินเดือน + โบนัสเข้าเงินสดใบเดียว) ไม่ควรถูกพูดถึงสองครั้ง → dedupe.
+  //
+  // รับ `accounts` เป็น argument (ไม่ปิด closure ทับ bankAccounts) เพราะ
+  // confirmSave อาจเพิ่งสร้างบัญชีเงินสดใบใหม่ผ่าน ensureCashAccountId ซึ่ง
+  // bankAccounts ของ render นี้ยังไม่เห็น — ผู้เรียกจึงส่ง state สดจาก getState().
+  const depositedAccountNames = useCallback(
+    (income: MonthlyIncome, accounts: readonly BankAccount[]): string[] => {
+      const names = computeIncomeDeposits(income).map(
+        (d) => accounts.find((a) => a.id === d.accountId)?.name ?? 'บัญชี',
+      );
+      return [...new Set(names)];
+    },
+    [],
+  );
+
   const toggleSalaryDeposit = useCallback((checked: boolean): void => {
     setChecks((prev) => ({ ...prev, salary: checked }));
   }, []);
@@ -607,6 +629,13 @@ export const IncomeForm = ({
     // rather than nagging the user with an empty confirmation modal.
     if (computeIncomeDeposits(income).length === 0) {
       addIncome(year, income);
+      pushToast({
+        message: incomeSavedMessage({
+          mode: isEdit ? 'edit' : 'add',
+          depositedAccounts: [],
+        }),
+        tone: 'success',
+      });
       onSaved?.(income);
       return;
     }
@@ -616,9 +645,11 @@ export const IncomeForm = ({
     cashAccount,
     checks,
     form,
+    isEdit,
     isValid,
     month,
     onSaved,
+    pushToast,
     salaryAccount,
     year,
   ]);
@@ -638,10 +669,33 @@ export const IncomeForm = ({
       income = { ...pending, deposits: resolved };
     }
     addIncome(year, income);
-    pushToast({ message: 'บันทึกรายได้แล้ว', tone: 'success' });
+    // ใช้ `income` (id บัญชีเงินสดถูก resolve เป็นของจริงแล้ว) ไม่ใช่ `pending`
+    // ที่ยังถือ PENDING_CASH_ID — ไม่งั้นบัญชีเงินสดที่เพิ่งสร้างจะหาชื่อไม่เจอ.
+    // อ่านรายชื่อบัญชีสดจาก getState() หลัง ensureCashAccountId เขียนบัญชีใหม่ลง
+    // store แล้ว — bankAccounts ที่ปิด closure ไว้เป็นของ render ก่อนหน้า จึงยัง
+    // ไม่เห็นบัญชีเงินสดใบใหม่ (จะ fallback เป็น 'บัญชี'). getState() ใน event
+    // handler ปลอดภัย (ไม่ใช่ระหว่าง render).
+    const currentAccounts =
+      useFinanceStore.getState().data.bankAccounts ?? EMPTY_BANK_ACCOUNTS;
+    pushToast({
+      message: incomeSavedMessage({
+        mode: isEdit ? 'edit' : 'add',
+        depositedAccounts: depositedAccountNames(income, currentAccounts),
+      }),
+      tone: 'success',
+    });
     onSaved?.(income);
     setPending(null);
-  }, [addIncome, ensureCashAccountId, onSaved, pending, pushToast, year]);
+  }, [
+    addIncome,
+    depositedAccountNames,
+    ensureCashAccountId,
+    isEdit,
+    onSaved,
+    pending,
+    pushToast,
+    year,
+  ]);
 
   // ---- Delete -----------------------------------------------------------
   const handleDelete = useCallback((): void => {
@@ -652,8 +706,20 @@ export const IncomeForm = ({
     );
     if (!confirmed) return;
     deleteIncome(year, month);
+    // revertedAccounts ต้องเป็น [] โดยตั้งใจ — store.deleteIncome ปัจจุบัน
+    // (financeStore.ts:777) แค่ filter แถวรายได้ทิ้งแล้ว return: ไม่มี withLedger,
+    // ไม่ revert depositSideEffects, ไม่แตะยอดบัญชี/รายการเดินบัญชีเลย (ต่างจาก
+    // add/updateIncome ที่ reconcile ledger). เงินที่เคยฝากจึงยังค้างอยู่ในบัญชี
+    // การใส่ชื่อบัญชีลงในนี้จึงเป็น "คำโกหก" ที่โค้ดไม่ได้ทำจริง.
+    // ⚠️ ถ้าวันหนึ่ง deleteIncome เรียนรู้ที่จะคืนยอด (revert) → นี่คือบรรทัดที่
+    //    ต้องแก้ให้ส่งชื่อบัญชีที่ถูกคืนจริง ไม่ใช่ [].
+    // `month` ที่นี่เป็น 1-based; incomeDeletedMessage รับแบบ 0-based.
+    pushToast({
+      message: incomeDeletedMessage({ month: month - 1, revertedAccounts: [] }),
+      tone: 'success',
+    });
     onDelete();
-  }, [deleteIncome, isEdit, month, onDelete, year]);
+  }, [deleteIncome, isEdit, month, onDelete, pushToast, year]);
 
   // ---- Keyboard shortcuts ----------------------------------------------
   useEffect(() => {
