@@ -6,6 +6,7 @@
  */
 import type { ReactNode } from 'react';
 
+import { AnimatedNumber } from '@/components/motion';
 import { formatTHB } from '@/utils/formatters';
 
 interface NetWorthHeroProps {
@@ -33,7 +34,10 @@ export const NetWorthHero = ({
             netWorth >= 0 ? 'text-slate-900' : 'text-expense'
           }`}
         >
-          {formatTHB(netWorth, { decimals: 0 })}
+          <AnimatedNumber
+            value={netWorth}
+            format={(v) => formatTHB(v, { decimals: 0 })}
+          />
         </div>
         <div className="mt-1 text-sm text-slate-500">
           ไม่รวมมูลค่าบ้านและรถ — นับเฉพาะเงินในบัญชี ทองคำ และเงินออม

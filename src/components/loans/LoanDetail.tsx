@@ -6,6 +6,7 @@
  */
 import { useMemo, useState, type ReactNode } from 'react';
 
+import { AnimatedNumber } from '@/components/motion';
 import { Modal } from '@/components/ui/Modal';
 import ExtraPaymentForm from '@/components/loans/ExtraPaymentForm';
 import LoanScheduleTable from '@/components/loans/LoanScheduleTable';
@@ -63,7 +64,10 @@ const LoanHero = ({
           </div>
           <div className="mt-1 flex items-baseline gap-3">
             <span className="text-3xl font-bold financial-number tabular-nums text-slate-900">
-              {formatTHB(remaining, { decimals: 2 })}
+              <AnimatedNumber
+                value={remaining}
+                format={(v) => formatTHB(v, { decimals: 2 })}
+              />
             </span>
             <span className="text-sm text-slate-500">เหลือต้องชำระ</span>
           </div>
