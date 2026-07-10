@@ -38,7 +38,7 @@ export const STAGGER = 0.05;
 
 | Component | หน้าที่ | ใช้ที่ |
 |---|---|---|
-| `AnimatedNumber` | count-up เลขจริง แล้ว format ทุกเฟรม | KPI cards, LoanHero, NetWorthHero, ยอดสะสมบัญชี |
+| `AnimatedNumber` | count-up เลขจริง แล้ว format ทุกเฟรม | KPI cards, hero ใน `LoanDetail`, `NetWorthHero`, ยอดสะสมบัญชี |
 | `Stagger` | parent แจก delay 50ms ต่อลูก | KPI grid, savings cards, bank account cards |
 | `FadeInUp` | fade + เลื่อนขึ้น 8px | ลูกของ `Stagger`, section เดี่ยว ๆ |
 | `PageTransition` | `AnimatePresence mode="wait"` รอบ `<Outlet />` | `Layout.tsx` |
