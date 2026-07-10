@@ -10,9 +10,16 @@
  *
  * Route-level code splitting: every page is loaded via React.lazy() so
  * heavy dependencies (Recharts on Analytics / PrintReport, etc.) only
- * land in the user's browser when the matching route is visited. The
- * Layout shell stays eager so the chrome paints instantly while the
- * first page chunk streams in behind <Suspense>.
+ * land in the user's browser when the matching route is visited.
+ *
+ * Suspense placement (F42): the <Suspense> boundary lives DOWN inside
+ * <PageTransition> (rendered by Layout), NOT wrapped around <Routes>
+ * here. That keeps the shell (sidebar + header) eager and painted while
+ * only the page body swaps to <RouteLoader /> during a chunk fetch —
+ * and lets PageTransition's exit animation run instead of the whole
+ * tree blinking out. The only route that still needs its own <Suspense>
+ * is `report/:year`, which renders OUTSIDE <Layout> (chrome-less PDF)
+ * and therefore has no PageTransition to host a boundary.
  */
 
 import { lazy, Suspense, type ReactNode } from 'react';
@@ -44,28 +51,39 @@ function App(): ReactNode {
   return (
     /* GoogleOAuthProvider will be added by auth integration */
     <BrowserRouter>
-      <Suspense fallback={<RouteLoader />}>
-        <Routes>
-          {/*
-            Print report lives OUTSIDE the Layout so the PDF has no sidebar
-            / header chrome. F17.
-          */}
-          <Route path="report/:year" element={<PrintReportPage />} />
-          <Route element={<Layout />}>
-            <Route index element={<OverviewPage />} />
-            <Route path="monthly" element={<MonthlyPage />} />
-            <Route path="analytics" element={<AnalyticsPage />} />
-            <Route path="installments" element={<DebtPage />} />
-            <Route path="loans" element={<DebtPage />} />
-            <Route path="accounts" element={<BankAccountsPage />} />
-            <Route path="gold" element={<GoldPage />} />
-            <Route path="wealth" element={<WealthPage />} />
-            <Route path="tax" element={<TaxCalculatorPage />} />
-            <Route path="settings" element={<SettingsPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Route>
-        </Routes>
-      </Suspense>
+      <Routes>
+        {/*
+          Print report lives OUTSIDE the Layout so the PDF has no sidebar
+          / header chrome. F17.
+
+          Rule (F42): any route rendered outside <Layout> gets no
+          <PageTransition>, and therefore no Suspense boundary from it —
+          so it must bring its own <Suspense fallback={<RouteLoader />}>
+          around its lazy element. Layout-child routes inherit the
+          boundary from PageTransition and must NOT add their own.
+        */}
+        <Route
+          path="report/:year"
+          element={
+            <Suspense fallback={<RouteLoader />}>
+              <PrintReportPage />
+            </Suspense>
+          }
+        />
+        <Route element={<Layout />}>
+          <Route index element={<OverviewPage />} />
+          <Route path="monthly" element={<MonthlyPage />} />
+          <Route path="analytics" element={<AnalyticsPage />} />
+          <Route path="installments" element={<DebtPage />} />
+          <Route path="loans" element={<DebtPage />} />
+          <Route path="accounts" element={<BankAccountsPage />} />
+          <Route path="gold" element={<GoldPage />} />
+          <Route path="wealth" element={<WealthPage />} />
+          <Route path="tax" element={<TaxCalculatorPage />} />
+          <Route path="settings" element={<SettingsPage />} />
+          <Route path="*" element={<NotFound />} />
+        </Route>
+      </Routes>
     </BrowserRouter>
   );
 }

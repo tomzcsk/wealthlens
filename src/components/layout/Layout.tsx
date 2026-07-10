@@ -17,10 +17,10 @@
  */
 
 import type { ReactNode } from 'react';
-import { Outlet } from 'react-router-dom';
 
 import { SyncCoordinatorProvider } from '@/auth/SyncCoordinatorContext';
 import { useGoogleAuth } from '@/auth/useGoogleAuth';
+import { PageTransition } from '@/components/motion';
 import Toaster from '@/components/ui/Toaster';
 import useAnomalyAlertEffect from '@/hooks/useAnomalyAlertEffect';
 import useDriveSyncCoordinator from '@/hooks/useDriveSyncCoordinator';
@@ -57,7 +57,7 @@ export const Layout = (): ReactNode => {
           <div className="flex flex-col min-w-0">
             <Header />
             <main className="flex-1 p-6 md:p-8">
-              <Outlet />
+              <PageTransition />
             </main>
           </div>
           <SessionWatcher />
