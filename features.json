@@ -4,7 +4,7 @@
     "description": "Personal Finance Dashboard สำหรับติดตามรายรับ-รายจ่ายส่วนตัว",
     "version": "1.3.0",
     "created": "2026-05-06",
-    "lastUpdated": "2026-05-19",
+    "lastUpdated": "2026-07-10",
     "owner": "Tom",
     "status": "shipped",
     "storageStrategy": "LocalStorage (primary) + Google Drive Sync (cloud backup) + JSON Export (emergency)"
@@ -1386,7 +1386,40 @@
           "checkpoint": {
             "completed": true,
             "completedAt": "2026-07-10",
-            "notes": "Spec: docs/superpowers/specs (F43 action feedback) | Files: utils/actionMessages.ts (ใหม่), scripts/verify-action-messages.ts (ใหม่), utils/formatters.ts (+formatTHBAuto), components/forms/{ExpenseList,IncomeForm,SavingsList}.tsx, components/accounts/{MonthTransactionList,BankAccountDetail,BankBalanceEditForm}.tsx | บั๊กที่เจอแต่ไม่แก้: deleteIncome ไม่ revert deposits → บันทึกใน docs/superpowers/specs/2026-07-10-delete-income-ledger-gap.md | หมายเหตุ: store เป็นแหล่ง mutation, ชั้นข้อความแยก pure; บอกผลข้างเคียงเฉพาะที่เกิดจริง"
+            "notes": "Spec: docs/superpowers/specs (F43 action feedback) | Files: utils/actionMessages.ts (ใหม่), scripts/verify-action-messages.ts (ใหม่), utils/formatters.ts (+formatTHBAuto), components/forms/{ExpenseList,IncomeForm,SavingsList}.tsx, components/accounts/{MonthTransactionList,BankAccountDetail,BankBalanceEditForm}.tsx | บั๊กที่เจอแต่ไม่แก้: deleteIncome ไม่ revert deposits → บันทึกใน docs/superpowers/specs/2026-07-10-delete-income-ledger-gap.md (แก้แล้วใน F44) | หมายเหตุ: store เป็นแหล่ง mutation, ชั้นข้อความแยก pure; บอกผลข้างเคียงเฉพาะที่เกิดจริง"
+          }
+        },
+        {
+          "id": "F44",
+          "name": "Ledger Integrity — ปิดขาลบที่ไม่เก็บกวาด (deleteIncome + deleteBankAccount)",
+          "description": "action ที่ลบของ แต่ลืมเก็บกวาดสิ่งที่ชี้มาหามัน — เงินค้างในบัญชี, pointer กำพร้า, และเงินหายเงียบ ๆ โดยไม่มี error",
+          "status": "completed",
+          "priority": "P0",
+          "phase": "phase_4",
+          "acceptanceCriteria": [
+            "deleteIncome วิ่งผ่าน withLedger(reconcileIncomeLedger(l, year, month, [])) — refs ว่าง = revert ล้วน; คืนด้วย tx.amount ที่ลงจริง ไม่ recompute จากแถวที่กำลังจะหาย (บทเรียน F34/F39)",
+            "deleteIncome guard 'ไม่มีแถว = ไม่มีอะไรให้คืน' → ลบซ้ำไม่คืนเงินสองรอบ และไม่กวาดรายการของเดือนที่ไม่ได้ถูกลบ",
+            "IncomeForm อ่าน depositSideEffects ก่อนลบ → toast บอกบัญชีที่คืนจริง (F43 จงใจส่ง revertedAccounts: [] เพราะตอนนั้นโค้ดยังไม่คืน)",
+            "ตัดสินใจ: revert เงียบ ๆ ยอดติดลบได้ ไม่ clamp — ปฏิเสธการลบจะล็อกผู้ใช้ไว้กับข้อมูลที่กรอกผิด",
+            "deleteBankAccount ปฏิเสธการลบเมื่อมีต้นทางนอกบัญชีชี้มา (รายได้/รายจ่าย/ทอง/ขาโอน) — applyBankDelta หาบัญชีไม่เจอก็คืน array เดิมเงียบ ๆ ทำให้แก้รายได้ทีหลังเงินหายโดยไม่มี error",
+            "ขาโอนบล็อกด้วย เพราะขาคู่อยู่อีกบัญชี ลบข้างเดียวเงินรวมทั้งระบบไม่คงที่",
+            "บรรทัดที่บัญชีเป็นเจ้าของเอง (manual/adjustment/backfill) กวาดทิ้งพร้อมบัญชี — backfill ต้องไม่บล็อก ไม่งั้นข้อมูลจริงของ Tom (tx 32 บรรทัด backfill ล้วน) จะลบบัญชีไม่ได้เลยตลอดกาล",
+            "utils/bankAccountUsage.ts (ใหม่, pure) + bankAccountBlockedReason ในชั้นข้อความเดิม (F43) — บอกเฉพาะหมวดที่ผูกอยู่จริง",
+            "ไม่ทำ cascade delete โดยตั้งใจ — ลบบัญชีแล้วไล่ลบรายได้/รายจ่ายให้อัตโนมัติ = ทำลายข้อมูลการเงินจริงจากปุ่มเดียว",
+            "ข้อมูลจริงบน Drive ตรวจแล้วไม่มีรายการกำพร้า (tx 32 เป็น backfill ล้วน, ไม่เคยใช้ F39 กับข้อมูลจริง) → ไม่ต้อง migration",
+            "Verified: scripts/verify-delete-income.ts (25 assertions, แดง 11 ก่อนแก้) + scripts/verify-delete-bank-account.ts (20 assertions, store แดง 4 ก่อนแก้) + verify-action-messages (+3) + verify เดิมไม่ regress (21/21) + typecheck + lint + build + UI run จริงกับข้อมูลจริง (ลบรายได้ → คืนยอด 2 บัญชี, กดลบบัญชี → ถูกบล็อก, เทียบ snapshot ทุกเซลล์ไม่ต่าง)"
+          ],
+          "estimatedHours": 4,
+          "dependencies": [
+            "F33",
+            "F39",
+            "F40",
+            "F43"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-07-10",
+            "notes": "Commits: be50684 (deleteIncome), dd8a33f (deleteBankAccount) | Specs: docs/superpowers/specs/2026-07-10-delete-income-ledger-gap.md, docs/superpowers/specs/2026-07-10-delete-bank-account-guard.md | Files: utils/bankAccountUsage.ts (ใหม่), scripts/verify-delete-income.ts (ใหม่), scripts/verify-delete-bank-account.ts (ใหม่), stores/financeStore.ts, utils/actionMessages.ts, components/forms/IncomeForm.tsx, pages/BankAccountsPage.tsx | รู้แต่ไม่แก้: applyBankDelta ทิ้งคีย์ยอดศูนย์ ({'2027':{'7':0}}) เมื่อ revert จนยอดเป็น 0 — ไม่กระทบตัวเลขใด มีมาก่อนงานนี้ทุกเส้นทาง แก้ที่นั่น = แตะจุดที่ทุก flow เรียกผ่าน Tom ตัดสินให้ปล่อยไว้"
           }
         }
       ]
@@ -1477,8 +1510,8 @@
     }
   },
   "progressSummary": {
-    "totalFeatures": 51,
-    "completed": 51,
+    "totalFeatures": 52,
+    "completed": 52,
     "inProgress": 0,
     "pending": 0,
     "overallProgress": "100%",

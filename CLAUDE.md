@@ -96,6 +96,8 @@ npm run lint       # ESLint check
 5. **Thai month names** — ใช้ `ม.ค.–ธ.ค.` บน chart axes เสมอ
 6. **Income = Salary + Bonus + Commission + รายได้อื่นๆ (otherIncome)** — `otherIncome` เพิ่มภายหลัง (F32) พฤติกรรมเหมือน Commission: บวกเข้า Net.All หลังหัก, นับใน รายรับรวม, optional (`otherIncome?: number`) เพื่อ backward-compat กับข้อมูลเดิม
 7. **framer-motion เป็น dependency ของ motion layer (F42)** — กลับจุดยืนเดิม "ไม่เพิ่ม package เกินจำเป็น" โดยตั้งใจ เพราะ animation ที่ทำเองไม่มี exit/spring/reduced-motion ที่ดีพอ; แต่ห่อไว้หลัง `src/components/motion/` + `src/lib/motion.ts` ทั้งหมด page ไม่แตะ framer ตรง จึงถอด/เปลี่ยน library ได้จากที่เดียว
+8. **ยอดบัญชีติดลบได้ ห้าม clamp (F44)** — ลบรายได้ที่เงินถูกใช้ไปแล้ว → คืนยอดจนติดลบ ไม่ใช่ปฏิเสธการลบ. ปฏิเสธ = ล็อกผู้ใช้ไว้กับข้อมูลที่กรอกผิด. ยอดติดลบในข้อมูลจริงของ Tom เป็นยอดจริง ไม่ใช่บั๊ก
+9. **ลบบัญชีที่ยังมีต้นทางผูกอยู่ไม่ได้ (F44)** — รายได้/รายจ่าย/ทอง/ขาโอน บล็อกการลบ (บอกว่าผูกกี่ที่ ให้ผู้ใช้ถอดเอง); บรรทัด manual/adjustment/backfill กวาดพร้อมบัญชี. **ไม่มี cascade delete** — ลบบัญชีแล้วไล่ลบรายได้/รายจ่ายอัตโนมัติ = ทำลายข้อมูลการเงินจริงจากปุ่มเดียว
 
 ---
 
