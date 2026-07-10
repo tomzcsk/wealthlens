@@ -16,6 +16,7 @@
  */
 
 import type { ReactNode } from 'react';
+import { AnimatedNumber } from '@/components/motion';
 import { formatDelta, formatTHB } from '@/utils/formatters';
 
 /** Visual tone driving the icon-pill background and the delta accent. */
@@ -135,7 +136,7 @@ export const KpiCard = ({
         role="group"
         aria-label={`${label}: กำลังโหลด`}
         aria-busy="true"
-        className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+        className="relative h-full overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
       >
         <div className={`absolute inset-x-0 top-0 h-1 ${toneClasses.accentBar} opacity-40`} />
         <div className="flex items-center gap-2">
@@ -179,7 +180,7 @@ export const KpiCard = ({
     <div
       role="group"
       aria-label={`${label}: ${formattedAmount}`}
-      className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow duration-150 hover:shadow-md"
+      className="group relative h-full overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow duration-150 hover:shadow-md"
     >
       {/* Quiet tone accent — 4px bar across the top */}
       <div className={`absolute inset-x-0 top-0 h-1 ${toneClasses.accentBar}`} />
@@ -197,9 +198,23 @@ export const KpiCard = ({
         <span className="font-medium">{label}</span>
       </div>
 
-      {/* Hero number */}
-      <div className="mt-4 financial-number text-3xl font-bold tabular-nums text-slate-900">
-        {formattedAmount}
+      {/*
+        Hero number — animated count-up.
+
+        A11y (F42): the card's own `role="group" aria-label` already names the
+        card as "${label}: ${formattedAmount}" (the final value), so the number
+        is announced there. `AnimatedNumber` additionally renders an `sr-only`
+        span with the same figure — inside this group that would be a *second*
+        announcement of the identical amount. We mark the hero wrapper
+        `aria-hidden` so the count-up stays purely visual and the group name
+        remains the single SR source of truth. `AnimatedNumber` itself is
+        untouched; the group aria-label is untouched.
+      */}
+      <div
+        aria-hidden="true"
+        className="mt-4 financial-number text-3xl font-bold tabular-nums text-slate-900"
+      >
+        <AnimatedNumber value={amount} format={formatAmount} />
       </div>
 
       {/* Delta line */}

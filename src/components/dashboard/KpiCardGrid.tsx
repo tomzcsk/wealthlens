@@ -27,6 +27,7 @@ import { useFinanceStore } from '@/stores/financeStore';
 import { EMPTY_BANK_ACCOUNTS } from '@/stores/emptyRefs';
 import { selectYearSummary } from '@/stores/selectors';
 import { sumBankYear } from '@/utils/bankAccounts';
+import { FadeInUp, Stagger } from '@/components/motion';
 import { KpiCard } from './KpiCard';
 
 export const KpiCardGrid = (): ReactNode => {
@@ -62,36 +63,59 @@ export const KpiCardGrid = (): ReactNode => {
 
   return (
     <section aria-label={`KPI สรุปปี ${year}`}>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
-        <KpiCard
-          label="รายรับรวม"
-          amount={grossIncome}
-          delta={grossDelta}
-          tone="income"
-          icon="💰"
-        />
-        <KpiCard
-          label="ค่าใช้จ่าย"
-          amount={summary.totalExpenses}
-          delta={expensesDelta}
-          tone="expense"
-          icon="💳"
-        />
-        <KpiCard
-          label="รายได้สุทธิ"
-          amount={summary.netAll}
-          delta={netAllDelta}
-          tone="net"
-          icon="📊"
-        />
-        <KpiCard
-          label="เงินออมธนาคาร"
-          amount={keptThisYear}
-          delta={keptDelta}
-          tone="savings"
-          icon="🏦"
-        />
-      </div>
+      {/*
+        Stagger carries the grid's exact className (it forwards it to its
+        motion.div, which becomes the grid container). Each KpiCard is wrapped
+        in a FadeInUp — a direct variant-child of Stagger with no
+        variant-controlling motion component in between — so the four cards
+        fade + rise in sequence on mount.
+
+        Equal height by construction (not coincidence): the FadeInUp motion.div
+        is now the grid item and stretches to the row height (grid default
+        align-items: stretch). We pass `h-full` so that stretch reaches the
+        motion.div, and KpiCard's root also carries `h-full` so the card fills
+        the wrapper. Without BOTH links, a card whose delta line or number
+        wraps would leave its siblings short. We do NOT add `items-stretch` to
+        Stagger — stretch is already the grid default.
+      */}
+      <Stagger className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
+        <FadeInUp className="h-full">
+          <KpiCard
+            label="รายรับรวม"
+            amount={grossIncome}
+            delta={grossDelta}
+            tone="income"
+            icon="💰"
+          />
+        </FadeInUp>
+        <FadeInUp className="h-full">
+          <KpiCard
+            label="ค่าใช้จ่าย"
+            amount={summary.totalExpenses}
+            delta={expensesDelta}
+            tone="expense"
+            icon="💳"
+          />
+        </FadeInUp>
+        <FadeInUp className="h-full">
+          <KpiCard
+            label="รายได้สุทธิ"
+            amount={summary.netAll}
+            delta={netAllDelta}
+            tone="net"
+            icon="📊"
+          />
+        </FadeInUp>
+        <FadeInUp className="h-full">
+          <KpiCard
+            label="เงินออมธนาคาร"
+            amount={keptThisYear}
+            delta={keptDelta}
+            tone="savings"
+            icon="🏦"
+          />
+        </FadeInUp>
+      </Stagger>
     </section>
   );
 };
