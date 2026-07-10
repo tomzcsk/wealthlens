@@ -29,6 +29,10 @@ import {
   EXPENSE_CATEGORIES,
 } from '@/types/expense-categories';
 import type { BankAccount, ExpenseCategory, ExpenseItem, Loan } from '@/types';
+import {
+  expenseDeletedMessage,
+  expenseSavedMessage,
+} from '@/utils/actionMessages';
 import { formatTHB, formatThaiDate } from '@/utils/formatters';
 import { buildRecurringExpenseLibrary } from '@/utils/recurringTemplate';
 
@@ -212,6 +216,14 @@ export const ExpenseList = ({
   const pushToast = useToastStore((s) => s.push);
 
   /**
+   * Resolve a `paymentAccountId` → account name for toast side-effect copy.
+   * Undefined id (or an id whose account was deleted) → undefined, which the
+   * message builders read as "no bank account touched" (no side-effect clause).
+   */
+  const accountNameOf = (id: string | undefined): string | undefined =>
+    id ? accounts.find((a) => a.id === id)?.name : undefined;
+
+  /**
    * Flip an expense's reimbursement status without opening the full form.
    * Pending → received stamps today's date; received → pending clears the
    * date so the field doesn't lie about when it was received.
@@ -329,7 +341,13 @@ export const ExpenseList = ({
       return;
     }
     if (window.confirm(`ลบรายการ '${item.name}'?`)) {
+      // Read the account name before deleting — the row is gone afterwards.
+      const accountName = accountNameOf(item.paymentAccountId);
       deleteExpense(year, month, item.id);
+      pushToast({
+        message: expenseDeletedMessage({ name: item.name, accountName }),
+        tone: 'success',
+      });
     }
   };
 
@@ -412,7 +430,16 @@ export const ExpenseList = ({
               year={year}
               month={month}
               defaultCategory={defaultCategory}
-              onSaved={(_item, continueAdding) => {
+              onSaved={(item, continueAdding) => {
+                // Empty state only ever adds (editing is never set here).
+                pushToast({
+                  message: expenseSavedMessage({
+                    mode: 'add',
+                    amount: item.amount,
+                    accountName: accountNameOf(item.paymentAccountId),
+                  }),
+                  tone: 'success',
+                });
                 // Button click → close; Enter quick-add → keep open.
                 if (!continueAdding) handleClose();
               }}
@@ -557,7 +584,17 @@ export const ExpenseList = ({
             month={month}
             initialValues={editing}
             defaultCategory={defaultCategory}
-            onSaved={(_item, continueAdding) => {
+            onSaved={(item, continueAdding) => {
+              // Toast BEFORE handleClose — it clears `editing`, which we need
+              // to distinguish edit vs add for the message verb.
+              pushToast({
+                message: expenseSavedMessage({
+                  mode: editing != null ? 'edit' : 'add',
+                  amount: item.amount,
+                  accountName: accountNameOf(item.paymentAccountId),
+                }),
+                tone: 'success',
+              });
               // Edit always closes. Add: button click closes (continueAdding
               // false); Enter quick-add keeps the modal open for batch entry.
               if (editing != null || !continueAdding) handleClose();
