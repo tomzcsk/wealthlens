@@ -431,7 +431,10 @@ export const ExpenseList = ({
               month={month}
               defaultCategory={defaultCategory}
               onSaved={(item, continueAdding) => {
-                // Empty state only ever adds (editing is never set here).
+                // ฟอร์มนี้ไม่ได้รับ initialValues จึงเป็นการ "เพิ่ม" เสมอ —
+                // ไม่ได้อิงว่า editing ว่างหรือไม่ (ลบแถวสุดท้ายขณะแก้ไข
+                // ทำให้ editing ค้างในสาขานี้ได้). ถ้าวันหนึ่งส่ง initialValues
+                // เข้ามา ต้องเปลี่ยน mode ตรงนี้ด้วย
                 pushToast({
                   message: expenseSavedMessage({
                     mode: 'add',
