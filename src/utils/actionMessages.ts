@@ -79,3 +79,30 @@ export const savingDeletedMessage = ({ name }: { name: string }): string => `ล
  */
 export const bankTransactionDeletedMessage = ({ amount }: { amount: number }): string =>
   withSideEffect('ลบรายการแล้ว', `ยอดบัญชีปรับ ${formatTHBAuto(Math.abs(amount))}`);
+
+export interface BankAccountBlockedInput {
+  incomeMonths: number;
+  expenses: number;
+  goldHoldings: number;
+  transfers: number;
+}
+
+/**
+ * บอกว่าบัญชีถูกใช้อยู่ที่ไหนบ้าง — เฉพาะหมวดที่มีจริง (หลักการเดียวกับ
+ * `withSideEffect`: ไม่พูดถึงสิ่งที่ไม่เกิด). คืน '' เมื่อไม่มีอะไรผูก ซึ่งแปลว่า
+ * บัญชีลบได้ และผู้เรียกไม่ควรแสดงข้อความนี้เลย
+ */
+export const bankAccountBlockedReason = ({
+  incomeMonths,
+  expenses,
+  goldHoldings,
+  transfers,
+}: BankAccountBlockedInput): string =>
+  [
+    incomeMonths > 0 ? `รายได้ ${incomeMonths} เดือน` : null,
+    expenses > 0 ? `รายจ่าย ${expenses} รายการ` : null,
+    goldHoldings > 0 ? `ทองคำ ${goldHoldings} รายการ` : null,
+    transfers > 0 ? `รายการโอน ${transfers} รายการ` : null,
+  ]
+    .filter(Boolean)
+    .join(', ');

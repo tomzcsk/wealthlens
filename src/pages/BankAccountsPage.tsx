@@ -16,11 +16,14 @@ import { resolveBank } from '@/data/thaiBanks';
 import { useFinanceStore } from '@/stores/financeStore';
 import { EMPTY_BANK_ACCOUNTS } from '@/stores/emptyRefs';
 import { useToastStore } from '@/stores/toastStore';
+import { bankAccountBlockedReason } from '@/utils/actionMessages';
 import { sumBankAllTime, sumBankYear } from '@/utils/bankAccounts';
+import { findBankAccountUsage } from '@/utils/bankAccountUsage';
 import { formatTHB } from '@/utils/formatters';
 
 export const BankAccountsPage = (): ReactNode => {
   const accounts = useFinanceStore((s) => s.data.bankAccounts ?? EMPTY_BANK_ACCOUNTS);
+  const data = useFinanceStore((s) => s.data);
   const year = useFinanceStore((s) => s.selectedYear);
   const deleteBankAccount = useFinanceStore((s) => s.deleteBankAccount);
   const pushToast = useToastStore((s) => s.push);
@@ -46,8 +49,22 @@ export const BankAccountsPage = (): ReactNode => {
     ? accounts.find((a) => a.id === pendingDeleteId) ?? null
     : null;
 
+  // ต้นทางที่ยังชี้มาที่บัญชีนี้ — ลบไปแล้ว pointer จะค้างและเงินหายเงียบ ๆ
+  // (applyBankDelta หาบัญชีไม่เจอก็คืน array เดิม ไม่ throw)
+  const pendingUsage = pendingDeleteId
+    ? findBankAccountUsage(data, pendingDeleteId)
+    : null;
+  const blockedReason = pendingUsage
+    ? bankAccountBlockedReason({
+        incomeMonths: pendingUsage.incomeMonths.length,
+        expenses: pendingUsage.expenses.length,
+        goldHoldings: pendingUsage.goldHoldings.length,
+        transfers: pendingUsage.transfers,
+      })
+    : '';
+
   const handleDelete = (): void => {
-    if (!pendingDeleteId) return;
+    if (!pendingDeleteId || blockedReason) return;
     deleteBankAccount(pendingDeleteId);
     setPendingDeleteId(null);
     setOpenId(null);
@@ -215,27 +232,53 @@ export const BankAccountsPage = (): ReactNode => {
       >
         {pendingAccount && (
           <div className="px-6 py-5 space-y-4">
-            <p className="text-sm text-slate-700">
-              ลบบัญชี{' '}
-              <span className="font-semibold">{pendingAccount.name}</span>{' '}
-              และยอดทั้งหมด?
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setPendingDeleteId(null)}
-                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-              >
-                ยกเลิก
-              </button>
-              <button
-                type="button"
-                onClick={handleDelete}
-                className="rounded-lg bg-expense px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
-              >
-                ลบบัญชี
-              </button>
-            </div>
+            {blockedReason ? (
+              <>
+                <p className="text-sm text-slate-700">
+                  ลบ{' '}
+                  <span className="font-semibold">{pendingAccount.name}</span>{' '}
+                  ไม่ได้ — ยังถูกใช้อยู่ที่{' '}
+                  <span className="font-semibold">{blockedReason}</span>
+                </p>
+                <p className="text-sm text-slate-500">
+                  ถอดการผูกจากรายการเหล่านั้นก่อน แล้วจึงลบบัญชีนี้ได้ —
+                  ถ้าลบตอนนี้ ยอดที่รายการเหล่านั้นเคยหัก/ฝากจะไม่มีที่ให้คืน
+                </p>
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setPendingDeleteId(null)}
+                    className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    เข้าใจแล้ว
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-slate-700">
+                  ลบบัญชี{' '}
+                  <span className="font-semibold">{pendingAccount.name}</span>{' '}
+                  และยอดทั้งหมด?
+                </p>
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPendingDeleteId(null)}
+                    className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    ยกเลิก
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    className="rounded-lg bg-expense px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+                  >
+                    ลบบัญชี
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         )}
       </Modal>

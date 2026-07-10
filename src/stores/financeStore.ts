@@ -32,6 +32,7 @@ import {
 } from '@/utils/bankMovements';
 import { buildBackfillTransactions, planBackfill } from '@/utils/journalBackfill';
 import { computeIncomeDeposits } from '@/utils/incomeDeposits';
+import { isBankAccountDeletable } from '@/utils/bankAccountUsage';
 import {
   advanceMonth,
   applyCarInstallmentTags,
@@ -2095,11 +2096,22 @@ export const useFinanceStore = create<FinanceState>()(
         set((state) => {
           const accounts = state.data.bankAccounts ?? [];
           if (!accounts.some((a) => a.id === id)) return state;
+          // ปฏิเสธเมื่อยังมีต้นทางนอกบัญชีชี้มา (รายได้/รายจ่าย/ทอง/ขาโอน) —
+          // ลบไปแล้ว pointer จะค้าง และ applyBankDelta หาบัญชีไม่เจอก็เงียบ
+          // ทำให้เงินหายโดยไม่มี error. UI เช็ค isBankAccountDeletable ก่อนอยู่แล้ว
+          // guard นี้กันเส้นทางอื่นที่อาจเรียกตรง.
+          if (!isBankAccountDeletable(state.data, id)) return state;
+
+          // บรรทัดที่บัญชีเป็นเจ้าของเอง (manual/adjustment/backfill) ไม่มีใคร
+          // นอกบัญชีอ้างถึง → กวาดทิ้งพร้อมกัน ไม่งั้นกลายเป็นรายการกำพร้า.
           const stamp = nowIso();
           return {
             data: {
               ...state.data,
               bankAccounts: accounts.filter((a) => a.id !== id),
+              bankTransactions: (state.data.bankTransactions ?? []).filter(
+                (t) => t.accountId !== id,
+              ),
               lastUpdated: stamp,
             },
             lastUpdated: stamp,
