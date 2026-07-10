@@ -78,7 +78,7 @@ export const Header = (): ReactNode => {
           <button
             type="button"
             onClick={() => navigate('/monthly')}
-            className="hidden sm:inline-flex items-center gap-1.5 bg-primary hover:bg-primary-dark text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-sm transition-colors"
+            className="hidden sm:inline-flex items-center gap-1.5 bg-primary hover:bg-primary-dark text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-sm transition motion-safe:active:scale-[0.98]"
           >
             <span aria-hidden="true">+</span>
             <span>เพิ่มรายการ</span>

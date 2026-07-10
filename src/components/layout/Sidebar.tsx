@@ -8,7 +8,10 @@
  */
 
 import { useState, type ReactNode } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { NavLink, useLocation } from 'react-router-dom';
+
+import { DURATION, EASE } from '@/lib/motion';
 
 import BuildInfo from './BuildInfo';
 
@@ -111,6 +114,7 @@ const NavList = ({ onNavigate }: { onNavigate?: () => void }): ReactNode => {
 
 export const Sidebar = (): ReactNode => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const reduced = useReducedMotion() ?? false;
 
   const close = (): void => setMobileOpen(false);
 
@@ -139,34 +143,58 @@ export const Sidebar = (): ReactNode => {
         <BuildInfo />
       </aside>
 
-      {/* Mobile drawer + backdrop */}
-      {mobileOpen && (
-        <div className="md:hidden fixed inset-0 z-40">
-          <button
-            type="button"
-            aria-label="ปิดเมนู"
-            onClick={close}
-            className="absolute inset-0 bg-slate-900/40"
-          />
-          <aside
-            className="relative w-[260px] h-full bg-white border-r border-slate-200 shadow-xl flex flex-col animate-in"
-            aria-label="เมนูมือถือ"
+      {/* Mobile drawer + backdrop.
+          AnimatePresence renders UNCONDITIONALLY — `mobileOpen` only gates the
+          child inside it. A `{mobileOpen && …}` guard around AnimatePresence
+          would unmount everything the instant it flips false, killing the exit
+          (same lesson as Modal.tsx, F42). `pointerEvents` is keyed to
+          `mobileOpen` on the wrapper so a still-sliding drawer stops taking
+          clicks — a thumb can't fire `close` twice mid-exit. */}
+      <AnimatePresence>
+        {mobileOpen ? (
+          <div
+            key="drawer"
+            className="md:hidden fixed inset-0 z-40"
+            style={{ pointerEvents: mobileOpen ? undefined : 'none' }}
           >
-            <div className="flex items-start justify-between">
-              <Brand />
-              <button
-                type="button"
-                onClick={close}
-                aria-label="ปิดเมนู"
-                className="m-3 inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-slate-100"
-              >
-                <span aria-hidden="true">✕</span>
-              </button>
-            </div>
-            <NavList onNavigate={close} />
-          </aside>
-        </div>
-      )}
+            <motion.button
+              type="button"
+              aria-label="ปิดเมนู"
+              onClick={close}
+              className="absolute inset-0 bg-slate-900/40"
+              initial={{ opacity: reduced ? 1 : 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: reduced ? 1 : 0 }}
+              transition={reduced ? { duration: 0 } : { duration: DURATION.base }}
+            />
+            <motion.aside
+              className="relative w-[260px] h-full bg-white border-r border-slate-200 shadow-xl flex flex-col"
+              aria-label="เมนูมือถือ"
+              initial={{ x: reduced ? 0 : -260 }}
+              animate={{ x: 0 }}
+              exit={{ x: reduced ? 0 : -260 }}
+              transition={
+                reduced
+                  ? { duration: 0 }
+                  : { duration: DURATION.base, ease: EASE }
+              }
+            >
+              <div className="flex items-start justify-between">
+                <Brand />
+                <button
+                  type="button"
+                  onClick={close}
+                  aria-label="ปิดเมนู"
+                  className="m-3 inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-slate-100"
+                >
+                  <span aria-hidden="true">✕</span>
+                </button>
+              </div>
+              <NavList onNavigate={close} />
+            </motion.aside>
+          </div>
+        ) : null}
+      </AnimatePresence>
     </>
   );
 };

@@ -12,7 +12,9 @@
  *
  * Animation is pure CSS: each card fades + slides in from the right on
  * mount via Tailwind transition classes triggered through a one-tick state
- * flip. We avoid framer-motion to honour the "no extra packages" rule.
+ * flip. Hand-rolled CSS transitions — this component predates the motion
+ * layer (F42) and works well; migrating it to framer-motion would buy
+ * nothing. New animations should use `src/components/motion/` instead.
  */
 
 import { useEffect, useState, type ReactNode } from 'react';

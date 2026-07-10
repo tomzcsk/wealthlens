@@ -156,7 +156,7 @@ export const SettingsPage = (): ReactNode => {
                 type="button"
                 onClick={onSync}
                 disabled={busy !== null}
-                className="inline-flex items-center gap-1.5 bg-primary hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-sm transition-colors"
+                className="inline-flex items-center gap-1.5 bg-primary hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-sm transition motion-safe:active:scale-[0.98]"
               >
                 {busy === 'sync' ? 'กำลังซิงค์...' : 'ซิงค์ตอนนี้'}
               </button>
