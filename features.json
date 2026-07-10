@@ -1291,6 +1291,34 @@
             "completedAt": "2026-07-09",
             "notes": "Spec: docs/superpowers/specs/2026-07-09-journal-backfill-design.md | Plan: docs/superpowers/plans/2026-07-09-journal-backfill.md | Files: utils/journalBackfill.ts (ใหม่), components/settings/JournalBackfillSection.tsx (ใหม่), types/index.ts, stores/financeStore.ts, pages/SettingsPage.tsx, components/accounts/MonthTransactionList.tsx (SOURCE_BADGE backfill: null) | หมายเหตุ: บรรทัด 'ยอดก่อนมีรายการ' ใน MonthTransactionList หายเองเมื่อ opening = 0"
           }
+        },
+        {
+          "id": "F42",
+          "name": "Motion Layer (จังหวะไหวทั้งแอป)",
+          "description": "ชั้น animation กลางของทั้งแอป — timing/easing แหล่งเดียว + motion primitives ห่อ framer-motion ไว้ให้ page ไม่ import ตรง; เลขวิ่งบน KPI/hero, การ์ดโผล่ไล่กัน, Modal/drawer เปิด-ปิดจริง, กราฟจังหวะเดียวกัน; ตารางไม่ไหว; reduced-motion ปิดสนิท",
+          "status": "completed",
+          "priority": "P2",
+          "phase": "phase_4",
+          "acceptanceCriteria": [
+            "src/lib/motion.ts: แหล่งความจริงเดียว — DURATION (fast .15/base .25/slow .4), EASE (easeOutQuint tuple), STAGGER (.05) + pure helpers transitionFor/shouldCountUp/staggerDelay/chartAnimation (ไม่ import React/framer-motion → ทดสอบใน node ล้วน)",
+            "src/components/motion/: AnimatedNumber/FadeInUp/Stagger/PageTransition + staggerContext + index — page ไม่ import framer-motion ตรงเลย",
+            "ใช้จริง: KPI cards (เลขวิ่ง + โผล่ไล่กัน), NetWorthHero, LoanDetail hero, Modal (scale+fade มี exit จริง), mobile drawer (slide เข้า/ออกจริง), กราฟ Recharts ครบ 7 series (400ms จาก default 1500ms), ปุ่มหลัก motion-safe:active:scale-[0.98]",
+            "ตารางไม่ไหวโดยตั้งใจ: MonthlySummaryTable/LoanScheduleTable/MonthTransactionList/PaymentLogTable/AllYearsSummary (ตัวเลขมีไว้เทียบกัน)",
+            "prefers-reduced-motion ปิดทุกอย่าง (duration 0) ไม่ใช่แค่ลดลง",
+            "Bug#1 fixed: Sidebar ใช้ class 'animate-in' ที่ไม่มีในโปรเจกต์ (ไม่มี keyframes/tailwindcss-animate) — drawer ไม่เคยไหวมาก่อน",
+            "Bug#2 fixed: App.tsx ครอบ <Suspense> รอบทั้ง <Routes> รวม <Layout> → นำทางไป lazy chunk ที่ยังไม่โหลดทำ shell หาย; ย้าย Suspense ลงใน PageTransition",
+            "Bug#3 fixed: PageTransition ใช้ <Outlet/> → ภายใต้ AnimatePresence mode='wait' หน้าที่ fade out อ่าน location ปัจจุบันจึง render ปลายทาง; แก้ด้วย useOutlet() จับ element ตอน render",
+            "Bug#4 fixed: FadeInUp ตั้ง initial/animate เอง ทำให้ framer ถือว่าคุม variant เอง หลุดจาก variantChildren ของ parent → staggerChildren ไม่ทำงาน; แก้ผ่าน context ให้ลูกใน <Stagger> ละ props นั้น",
+            "Bug#5 fixed: KpiCard ใน FadeInUp เสีย align-items:stretch (equal-height) ของ CSS grid; แก้ด้วย h-full ทั้ง wrapper และ card",
+            "Verified: scripts/verify-motion.ts (20 assertions บน pure helpers) + verify เดิมทั้ง 17 ตัวไม่ regress + typecheck + lint + build (main 260.72 kB/75.22 kB gzip) + UI run จริง Playwright 18 assertions (count-up ฿0→฿2,598,100 ผ่าน 40 ค่า DOM, เปลี่ยนปีวิ่งจากค่าเก่าไม่กลับ 0, สลับปีเร็วไม่มี NaN/ค้าง, เซลล์ตารางถือ 1 ค่าขณะ KPI วิ่ง, sidebar ไม่ unmount ตอนนำทาง, page container เหลือ 1, reduced-motion เห็น 1 ค่า, drawer slide เข้า x −50→0 และออก 9 ตำแหน่งแล้วหาย, Modal เปิด 8 ค่า transform ปิด fade 12 เฟรม, /report/2025 ไม่มี element opacity ≠ 1)"
+          ],
+          "estimatedHours": 6,
+          "dependencies": [],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-07-10",
+            "notes": "Commits: deddae9, b840683, 2e9fd9b, 0bf9fb6, 21ea265, f5ceb08, 94cf7f6, bdc9731, 7ac9580, d0ff8f8 | Files: lib/motion.ts (ใหม่), components/motion/{AnimatedNumber,FadeInUp,Stagger,PageTransition,staggerContext,index} (ใหม่), scripts/verify-motion.ts (ใหม่), App.tsx (Suspense ลงระดับ page), components/layout/Sidebar.tsx (drawer slide จริง), components/ui/Modal.tsx, components/dashboard/KpiCardGrid.tsx, components/wealth/NetWorthHero.tsx, components/loans/LoanDetail.tsx + กราฟ Recharts ทั้ง 7 series | เพิ่ม dependency: framer-motion (ห่อหลัง motion primitives) | หมายเหตุ: ตารางไม่ไหวเป็นกฎ; reduced-motion ปิดสนิท"
+          }
         }
       ]
     }
@@ -1380,8 +1408,8 @@
     }
   },
   "progressSummary": {
-    "totalFeatures": 49,
-    "completed": 49,
+    "totalFeatures": 50,
+    "completed": 50,
     "inProgress": 0,
     "pending": 0,
     "overallProgress": "100%",

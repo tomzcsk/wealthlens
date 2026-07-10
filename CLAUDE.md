@@ -28,9 +28,10 @@ Single-page app, no backend, all data in browser LocalStorage
 
 ```
 src/
-├── components/     → UI components (layout/, dashboard/, forms/, ui/)
+├── components/     → UI components (layout/, dashboard/, forms/, ui/, motion/)
 ├── stores/         → Zustand store (financeStore.js)
 ├── data/           → seedData.js (historical 2023-2026)
+├── lib/            → motion.ts (animation tokens + pure helpers)
 ├── utils/          → calculations.js, formatters.js, exportImport.js
 ├── hooks/          → useFinanceData.js
 ├── App.jsx
@@ -56,6 +57,8 @@ src/
 - **หนึ่ง component = หนึ่งความรับผิดชอบ** — ถ้า component ยาวกว่า 150 บรรทัดให้แตก
 - **ตัวเลขทั้งหมดใช้ `tabular-nums`** และ format ผ่าน `utils/formatters.js` เท่านั้น
 - Number format: `฿1,234,567.89` — ใช้ `numeral` library เสมอ
+- **Animation ทุกตัวมาจาก `src/components/motion/`** — ห้าม import `framer-motion` ตรงใน page/feature component; timing/easing ดึงจาก `src/lib/motion.ts` เท่านั้น (F42)
+- **เลขวิ่ง (count-up) ใช้เฉพาะ KPI/hero** — ตัวเลขในตารางมีไว้เทียบกัน จึงไม่ animate เด็ดขาด
 
 ### Dev Commands
 ```bash
@@ -88,10 +91,11 @@ npm run lint       # ESLint check
 
 1. **No backend** — ข้อมูลส่วนตัวอยู่บน LocalStorage + Google Drive เท่านั้น ไม่มี server กลาง
 2. **Google Drive scope = `drive.file` เท่านั้น** — แอปเห็นแค่ไฟล์ที่ตัวเองสร้าง ไม่เห็น Drive ทั้งหมดของ Tom
-2. **Zustand ไม่ใช่ Redux** — ง่ายกว่า boilerplate น้อยกว่า ทรงพลังพอ
-3. **Recharts ไม่ใช่ Chart.js** — React-native, TypeScript support ดีกว่า
-4. **Thai month names** — ใช้ `ม.ค.–ธ.ค.` บน chart axes เสมอ
-5. **Income = Salary + Bonus + Commission + รายได้อื่นๆ (otherIncome)** — `otherIncome` เพิ่มภายหลัง (F32) พฤติกรรมเหมือน Commission: บวกเข้า Net.All หลังหัก, นับใน รายรับรวม, optional (`otherIncome?: number`) เพื่อ backward-compat กับข้อมูลเดิม
+3. **Zustand ไม่ใช่ Redux** — ง่ายกว่า boilerplate น้อยกว่า ทรงพลังพอ
+4. **Recharts ไม่ใช่ Chart.js** — React-native, TypeScript support ดีกว่า
+5. **Thai month names** — ใช้ `ม.ค.–ธ.ค.` บน chart axes เสมอ
+6. **Income = Salary + Bonus + Commission + รายได้อื่นๆ (otherIncome)** — `otherIncome` เพิ่มภายหลัง (F32) พฤติกรรมเหมือน Commission: บวกเข้า Net.All หลังหัก, นับใน รายรับรวม, optional (`otherIncome?: number`) เพื่อ backward-compat กับข้อมูลเดิม
+7. **framer-motion เป็น dependency ของ motion layer (F42)** — กลับจุดยืนเดิม "ไม่เพิ่ม package เกินจำเป็น" โดยตั้งใจ เพราะ animation ที่ทำเองไม่มี exit/spring/reduced-motion ที่ดีพอ; แต่ห่อไว้หลัง `src/components/motion/` + `src/lib/motion.ts` ทั้งหมด page ไม่แตะ framer ตรง จึงถอด/เปลี่ยน library ได้จากที่เดียว
 
 ---
 
