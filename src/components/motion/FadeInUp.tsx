@@ -9,6 +9,12 @@
  * initial/animate ของตัวเอง framer จะถือว่ามัน "คุม variant เอง" แล้วไม่นับมัน
  * เป็น variantChild ของ parent → staggerChildren ไม่ทำงาน. เราจึงตั้ง initial/animate
  * เฉพาะตอนอยู่ *นอก* <Stagger> เท่านั้น (อ่านจาก InsideStaggerContext)
+ *
+ * ข้อจำกัดของแบบที่ 2: ห้ามมี motion component ที่คุม variant ของตัวเอง
+ * (เช่น <motion.div animate="visible">) คั่นระหว่าง <Stagger> กับ <FadeInUp>
+ * — ตัวคั่นจะกลายเป็น framer parent แทน แล้ว FadeInUp จะสืบ label ที่ตัวเอง
+ * ไม่มีใน variants → ค้างที่ hidden (opacity 0) มองไม่เห็นตลอดกาล
+ * <div> ธรรมดาคั่นได้ ไม่มีปัญหา (framer ไล่สาย motion ไม่ใช่สาย DOM)
  */
 
 import { useContext, type ReactNode } from 'react';
