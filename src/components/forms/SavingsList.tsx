@@ -24,6 +24,7 @@ import {
   SAVINGS_CATEGORY_ORDER,
 } from '@/types/savings-categories';
 import type { BankAccount, SavingsCategory, SavingsItem } from '@/types';
+import { savingDeletedMessage, savingSavedMessage } from '@/utils/actionMessages';
 import { accountYearTotal, sumBankMonth } from '@/utils/bankAccounts';
 import { formatTHB } from '@/utils/formatters';
 import { buildRecurringSavingsLibrary } from '@/utils/recurringTemplate';
@@ -283,6 +284,10 @@ export const SavingsList = ({
   const handleDelete = (item: SavingsItem): void => {
     if (window.confirm(`ลบรายการ '${item.name}'?`)) {
       deleteSavings(year, month, item.id);
+      pushToast({
+        message: savingDeletedMessage({ name: item.name }),
+        tone: 'success',
+      });
     }
   };
 
@@ -437,6 +442,10 @@ export const SavingsList = ({
             initialValues={editing}
             defaultCategory={defaultCategory}
             onSaved={(_item, continueAdding) => {
+              pushToast({
+                message: savingSavedMessage({ mode: editing != null ? 'edit' : 'add' }),
+                tone: 'success',
+              });
               // Edit always closes. Add: button click closes (continueAdding
               // false); Enter quick-add keeps the modal open for batch entry.
               if (editing != null || !continueAdding) handleClose();
