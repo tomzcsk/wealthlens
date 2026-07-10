@@ -11,7 +11,7 @@
  * เราคำนวณ `opening = ยอดเดือน − Σ รายการ` แล้วโชว์เป็นบรรทัดแรก "ยอดก่อนมี
  * รายการ" เพื่อให้เลขบนจอบวกกันได้ครบเสมอ และแถว "รวม" เท่ายอดเดือนเป๊ะ.
  */
-import type { ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 import type { BankTransaction } from '@/types';
 import { formatTHB, formatThaiDate } from '@/utils/formatters';
@@ -51,6 +51,35 @@ export const MonthTransactionList = ({
   monthTotal,
   onDelete,
 }: MonthTransactionListProps): ReactNode => {
+  // แถวเดียวที่รอยืนยันลบ (ไม่ใช่ boolean) — กด ✕ แถวอื่นย้ายการยืนยันไปแถวนั้น
+  // แทนที่จะค้างสองแถว. ไม่ใช้ onBlur reset เพราะ blur ยิงก่อน click บน mousedown
+  // ปุ่มจะ unmount ก่อน onClick ทำงาน → ลบไม่ติด. reset เมื่อกด ✕ แถวอื่น/ลบเสร็จ.
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const confirmButtonRef = useRef<HTMLButtonElement>(null);
+
+  // ทางถอยจากสถานะ "ยืนยัน?" ที่ไม่ทำลายข้อมูล — ถ้าเดือนมีแถวลบได้แถวเดียว
+  // ปุ่มยืนยันคือ affordance เดียวบนแถวที่ติดอาวุธ กดพลาดแล้วจะไม่มีทางออก.
+  // Esc หรือกดที่อื่นในหน้า เคลียร์การยืนยัน. ไม่ใช้ onBlur (จะ unmount ปุ่ม
+  // ก่อน onClick ทำงาน → ลบไม่ติด). pointerdown ปลอดภัยเพราะเช็คก่อนว่า target
+  // อยู่ในปุ่มยืนยันไหม ถ้าใช่ข้ามการ reset ให้ onClick ของปุ่มทำงานตามปกติ.
+  useEffect(() => {
+    if (confirmingId === null) return;
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') setConfirmingId(null);
+    };
+    const onPointerDown = (event: PointerEvent): void => {
+      if (!confirmButtonRef.current?.contains(event.target as Node)) {
+        setConfirmingId(null);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('pointerdown', onPointerDown);
+    };
+  }, [confirmingId]);
+
   if (transactions.length === 0) {
     return (
       <p className="px-3 py-3 text-xs text-slate-400">
@@ -74,7 +103,7 @@ export const MonthTransactionList = ({
           <span className="financial-number text-sm tabular-nums text-slate-400">
             {formatTHB(opening)}
           </span>
-          <span className="w-5 shrink-0" aria-hidden="true" />
+          <span className="w-14 shrink-0" aria-hidden="true" />
         </div>
       )}
 
@@ -101,16 +130,31 @@ export const MonthTransactionList = ({
               {signedAmount(tx.amount)}
             </span>
             {canDelete ? (
-              <button
-                type="button"
-                onClick={() => onDelete(tx.id)}
-                aria-label="ลบรายการ"
-                className="w-5 shrink-0 text-slate-300 transition hover:text-red-600"
-              >
-                ✕
-              </button>
+              confirmingId === tx.id ? (
+                <button
+                  ref={confirmButtonRef}
+                  type="button"
+                  onClick={() => {
+                    onDelete(tx.id);
+                    setConfirmingId(null);
+                  }}
+                  aria-label="ยืนยันการลบรายการ"
+                  className="w-14 shrink-0 whitespace-nowrap text-right text-xs font-semibold text-red-600 transition hover:text-red-700"
+                >
+                  ยืนยัน?
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setConfirmingId(tx.id)}
+                  aria-label="ลบรายการ"
+                  className="w-14 shrink-0 text-right text-slate-300 transition hover:text-red-600"
+                >
+                  ✕
+                </button>
+              )
             ) : (
-              <span className="w-5 shrink-0" aria-hidden="true" />
+              <span className="w-14 shrink-0" aria-hidden="true" />
             )}
           </div>
         );
@@ -127,7 +171,7 @@ export const MonthTransactionList = ({
         >
           {formatTHB(monthTotal)}
         </span>
-        <span className="w-5 shrink-0" aria-hidden="true" />
+        <span className="w-14 shrink-0" aria-hidden="true" />
       </div>
     </div>
   );

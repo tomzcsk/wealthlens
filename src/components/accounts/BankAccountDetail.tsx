@@ -9,8 +9,10 @@ import { useMemo, useState, type ReactNode } from 'react';
 
 import { Modal } from '@/components/ui/Modal';
 import { useFinanceStore } from '@/stores/financeStore';
+import { useToastStore } from '@/stores/toastStore';
 import { EMPTY_BANK_TRANSACTIONS } from '@/stores/emptyRefs';
 import type { BankAccount, BankTransaction } from '@/types';
+import { bankTransactionDeletedMessage } from '@/utils/actionMessages';
 import { accountAllTimeTotal, accountYearTotal } from '@/utils/bankAccounts';
 import { THAI_MONTHS_LONG, formatTHB } from '@/utils/formatters';
 
@@ -94,6 +96,21 @@ export const BankAccountDetail = ({
   );
   const allTransactions = useFinanceStore((s) => s.data.bankTransactions ?? EMPTY_BANK_TRANSACTIONS);
   const deleteBankTransaction = useFinanceStore((s) => s.deleteBankTransaction);
+  const pushToast = useToastStore((s) => s.push);
+
+  // อ่านจำนวนก่อนลบ แล้วค่อยแจ้ง — หลังลบ tx หายจาก store แล้ว.
+  // เฉพาะรายการ manual/transfer/adjustment เท่านั้นที่มีปุ่มลบ จึงลบสำเร็จเสมอ
+  // (deleteBankTransaction no-op เฉพาะ income/expense/gold/backfill ที่ไม่มีปุ่ม).
+  const handleDeleteTransaction = (txId: string): void => {
+    const tx = allTransactions.find((t) => t.id === txId);
+    deleteBankTransaction(txId);
+    if (tx) {
+      pushToast({
+        message: bankTransactionDeletedMessage({ amount: tx.amount }),
+        tone: 'success',
+      });
+    }
+  };
   // `openMonth` = แถวเดือนที่กางดูรายการอยู่ (accordion);
   // `editMonth` = แถวเดือนที่เปิด modal แก้ยอด. แยกกันเพื่อให้กางดูโดยไม่เด้ง modal.
   const [openMonth, setOpenMonth] = useState<number | null>(null);
@@ -196,7 +213,7 @@ export const BankAccountDetail = ({
                     <MonthTransactionList
                       transactions={monthTx}
                       monthTotal={yearBucket?.[String(month)] ?? 0}
-                      onDelete={deleteBankTransaction}
+                      onDelete={handleDeleteTransaction}
                     />
                   </div>
                 )}
