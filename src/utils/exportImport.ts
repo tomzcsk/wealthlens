@@ -46,13 +46,24 @@ const VALID_CATEGORIES: readonly ExpenseCategory[] = [
   'other',
 ];
 
-const VALID_SAVINGS_CATEGORIES: readonly SavingsCategory[] = [
-  'investment-dime',
-  'travel',
-  'emergency',
-  'retirement',
-  'general',
-];
+/**
+ * Record (ไม่ใช่ array) เพื่อให้ TypeScript บังคับความครบถ้วน — เพิ่มหมวดใหม่ใน
+ * `SavingsCategory` แล้วลืมเติมที่นี่ = typecheck แดงทันที
+ *
+ * WHY: เดิมเป็น array แล้วขาด 'gold' ทั้งที่ store สร้างหมวดนี้เองทุกครั้งที่ซื้อทอง
+ * ด้วยเงินสด → ไฟล์ backup ของผู้ใช้เอง import กลับไม่ได้ และเงียบสนิทเพราะ
+ * Drive sync ไม่ validate (พังเฉพาะวันที่ต้องกู้ข้อมูลจริง)
+ */
+const SAVINGS_CATEGORY_SET: Record<SavingsCategory, true> = {
+  'investment-dime': true,
+  travel: true,
+  emergency: true,
+  retirement: true,
+  general: true,
+  gold: true,
+};
+
+const VALID_SAVINGS_CATEGORIES = Object.keys(SAVINGS_CATEGORY_SET) as readonly SavingsCategory[];
 
 const FILENAME_PREFIX = 'wealthlens_backup_';
 const FILENAME_EXT = '.json';
