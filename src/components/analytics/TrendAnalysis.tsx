@@ -30,6 +30,7 @@
 
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
+import { useReducedMotion } from 'framer-motion';
 import {
   Area,
   AreaChart,
@@ -43,6 +44,7 @@ import {
   YAxis,
 } from 'recharts';
 
+import { chartAnimation } from '@/lib/motion';
 import { use48MonthTrend, type TrendPoint } from '@/hooks/useFinanceData';
 import { CATEGORY_ORDER, EXPENSE_CATEGORIES } from '@/types/expense-categories';
 import type { ExpenseCategory } from '@/types';
@@ -261,6 +263,8 @@ const NetIncomeAreaSection = ({
   lastYear,
   height,
 }: NetIncomeAreaSectionProps): ReactNode => {
+  const reduced = useReducedMotion() ?? false;
+  const anim = chartAnimation(reduced);
   const hasAny = data.some((p) => p.netAll !== 0);
   const subtitle =
     firstYear !== null && lastYear !== null
@@ -328,8 +332,7 @@ const NetIncomeAreaSection = ({
                 stroke={COLOR_NET}
                 strokeWidth={2.25}
                 fill={`url(#${NET_GRADIENT_ID})`}
-                isAnimationActive
-                animationDuration={600}
+                {...anim}
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -490,6 +493,8 @@ const ExpenseStackedBarSection = ({
   data,
   height,
 }: ExpenseStackedBarSectionProps): ReactNode => {
+  const reduced = useReducedMotion() ?? false;
+  const anim = chartAnimation(reduced);
   // Track which categories are visually hidden (legend toggle).
   const [hidden, setHidden] = useState<Record<ExpenseCategory, boolean>>(() => {
     const init = {} as Record<ExpenseCategory, boolean>;
@@ -577,8 +582,7 @@ const ExpenseStackedBarSection = ({
                   stackId="exp"
                   fill={CATEGORY_HEX_COLORS[cat]}
                   hide={hidden[cat]}
-                  isAnimationActive
-                  animationDuration={500}
+                  {...anim}
                 />
               ))}
             </BarChart>

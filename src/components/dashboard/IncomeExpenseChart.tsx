@@ -15,6 +15,7 @@
 
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
+import { useReducedMotion } from 'framer-motion';
 import {
   Bar,
   CartesianGrid,
@@ -27,6 +28,7 @@ import {
   YAxis,
 } from 'recharts';
 
+import { chartAnimation } from '@/lib/motion';
 import { useMonthlySummariesForYear, useSelectedYear } from '@/hooks/useFinanceData';
 import { THAI_MONTHS_SHORT, formatTHB, formatThaiMonthYear } from '@/utils/formatters';
 
@@ -152,6 +154,8 @@ export const IncomeExpenseChart = ({
   height = 320,
 }: IncomeExpenseChartProps): ReactNode => {
   const selectedYear = useSelectedYear();
+  const reduced = useReducedMotion() ?? false;
+  const anim = chartAnimation(reduced);
   const activeYear = year ?? selectedYear;
   const monthlyRows = useMonthlySummariesForYear(activeYear);
 
@@ -241,6 +245,7 @@ export const IncomeExpenseChart = ({
                 radius={[4, 4, 0, 0]}
                 maxBarSize={28}
                 hide={hidden[KEY_INCOME]}
+                {...anim}
               />
               <Bar
                 dataKey={KEY_EXPENSE}
@@ -249,6 +254,7 @@ export const IncomeExpenseChart = ({
                 radius={[4, 4, 0, 0]}
                 maxBarSize={28}
                 hide={hidden[KEY_EXPENSE]}
+                {...anim}
               />
               <Line
                 type="monotone"
@@ -259,6 +265,7 @@ export const IncomeExpenseChart = ({
                 dot={{ r: 3, strokeWidth: 0, fill: COLOR_NET_LINE }}
                 activeDot={{ r: 5 }}
                 hide={hidden[KEY_NET]}
+                {...anim}
               />
             </ComposedChart>
           </ResponsiveContainer>

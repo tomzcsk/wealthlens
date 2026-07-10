@@ -19,6 +19,7 @@
 
 import { useMemo } from 'react';
 import type { ReactNode } from 'react';
+import { useReducedMotion } from 'framer-motion';
 import {
   Cell,
   Pie,
@@ -27,6 +28,7 @@ import {
   Tooltip,
 } from 'recharts';
 
+import { chartAnimation } from '@/lib/motion';
 import { useExpenseByCategory, useSelectedYear } from '@/hooks/useFinanceData';
 import { CATEGORY_ORDER, EXPENSE_CATEGORIES } from '@/types/expense-categories';
 import type { ExpenseCategory } from '@/types';
@@ -129,6 +131,8 @@ export const ExpensePieChart = ({
   height = 320,
 }: ExpensePieChartProps): ReactNode => {
   const selectedYear = useSelectedYear();
+  const reduced = useReducedMotion() ?? false;
+  const anim = chartAnimation(reduced);
   const activeYear = year ?? selectedYear;
   // The hook accepts `month?: number` — coalesce a `null` prop into undefined.
   const monthArg = month ?? undefined;
@@ -181,8 +185,7 @@ export const ExpensePieChart = ({
                   outerRadius={100}
                   paddingAngle={1.5}
                   stroke="none"
-                  isAnimationActive
-                  animationDuration={600}
+                  {...anim}
                 >
                   {slices.map((s) => (
                     <Cell key={s.category} fill={s.color} />

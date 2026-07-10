@@ -28,6 +28,7 @@
 
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
+import { useReducedMotion } from 'framer-motion';
 import {
   CartesianGrid,
   Legend,
@@ -38,6 +39,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+
+import { chartAnimation } from '@/lib/motion';
 
 import {
   useAvailableYears,
@@ -253,6 +256,8 @@ export interface MultiYearComparisonProps {
 export const MultiYearComparison = ({
   height = 340,
 }: MultiYearComparisonProps): ReactNode => {
+  const reduced = useReducedMotion() ?? false;
+  const anim = chartAnimation(reduced);
   const availableYears = useAvailableYears();
   const yearSummaries = usePerYearSummaries(availableYears);
   const yearMonthlyRows = usePerYearMonthlyRows(availableYears);
@@ -458,6 +463,7 @@ export const MultiYearComparison = ({
                       strokeWidth={2.25}
                       dot={{ r: 3, strokeWidth: 0, fill: color }}
                       activeDot={{ r: 5 }}
+                      {...anim}
                     />
                   );
                 })}
