@@ -705,17 +705,26 @@ export const IncomeForm = ({
       `ลบข้อมูลรายได้เดือน ${monthName} ${year}?`,
     );
     if (!confirmed) return;
+
+    // อ่านบัญชีที่ "เงินเข้าจริง" ก่อนลบ — จาก depositSideEffects (ยอดที่ลงบัญชี
+    // จริง) ไม่ใช่ computeIncomeDeposits ที่คำนวณใหม่จากแถว: store คืนยอดด้วย
+    // tx.amount ที่เคยลงไว้ ข้อความจึงต้องอ้างแหล่งเดียวกัน ไม่งั้นพูดถึงบัญชีที่
+    // ไม่ได้ถูกคืนจริง. แถวที่ไม่มี deposits (ข้อมูลเก่า) → [] → toast ไม่พูดถึงยอด.
+    const state = useFinanceStore.getState();
+    const row = state.data.years[String(year)]?.income.find((i) => i.month === month);
+    const accounts = state.data.bankAccounts ?? EMPTY_BANK_ACCOUNTS;
+    const revertedAccounts = [
+      ...new Set(
+        (row?.depositSideEffects ?? []).map(
+          (ref) => accounts.find((a) => a.id === ref.accountId)?.name ?? 'บัญชี',
+        ),
+      ),
+    ];
+
     deleteIncome(year, month);
-    // revertedAccounts ต้องเป็น [] โดยตั้งใจ — store.deleteIncome ปัจจุบัน
-    // (financeStore.ts:777) แค่ filter แถวรายได้ทิ้งแล้ว return: ไม่มี withLedger,
-    // ไม่ revert depositSideEffects, ไม่แตะยอดบัญชี/รายการเดินบัญชีเลย (ต่างจาก
-    // add/updateIncome ที่ reconcile ledger). เงินที่เคยฝากจึงยังค้างอยู่ในบัญชี
-    // การใส่ชื่อบัญชีลงในนี้จึงเป็น "คำโกหก" ที่โค้ดไม่ได้ทำจริง.
-    // ⚠️ ถ้าวันหนึ่ง deleteIncome เรียนรู้ที่จะคืนยอด (revert) → นี่คือบรรทัดที่
-    //    ต้องแก้ให้ส่งชื่อบัญชีที่ถูกคืนจริง ไม่ใช่ [].
     // `month` ที่นี่เป็น 1-based; incomeDeletedMessage รับแบบ 0-based.
     pushToast({
-      message: incomeDeletedMessage({ month: month - 1, revertedAccounts: [] }),
+      message: incomeDeletedMessage({ month: month - 1, revertedAccounts }),
       tone: 'success',
     });
     onDelete();

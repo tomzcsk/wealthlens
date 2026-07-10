@@ -779,11 +779,24 @@ export const useFinanceStore = create<FinanceState>()(
           const key = String(year);
           const current = state.data.years[key];
           if (!current) return state;
+          // ไม่มีแถว = ไม่มีอะไรให้คืน. guard นี้ทำให้ลบซ้ำไม่คืนเงินสองรอบ
+          // และไม่กวาดรายการของเดือนที่ไม่ได้ถูกลบ.
+          if (!current.income.some((i) => i.month === month)) return state;
+
+          // refs ว่าง = revert ล้วน — revoke ทุกบรรทัดของ (income, ปี, เดือน)
+          // แล้วไม่ apply อะไรกลับ. คืนยอดด้วย tx.amount ที่ "เคยลงจริง"
+          // ไม่ recompute จากแถวที่กำลังจะหาย (บทเรียน F34/F39).
+          const ledgerPatch =
+            state.data.bankAccounts !== undefined
+              ? withLedger(state.data, (l) => reconcileIncomeLedger(l, year, month, []))
+              : {};
+
           const nextIncome = current.income.filter((i) => i.month !== month);
           const stamp = nowIso();
           return {
             data: {
               ...state.data,
+              ...ledgerPatch,
               lastUpdated: stamp,
               years: {
                 ...state.data.years,
