@@ -1007,7 +1007,9 @@
             "ปุ่มลบแผนมี 2 ทางเลือก: 'ยกเลิกสถานะผ่อน (เก็บรายการ)' กันลบประวัติรถจริง / 'ลบทุกงวด'"
           ],
           "estimatedHours": 6,
-          "dependencies": ["F24"],
+          "dependencies": [
+            "F24"
+          ],
           "checkpoint": {
             "completed": true,
             "completedAt": "2026-06-15",
@@ -1032,7 +1034,9 @@
             "ไม่แตะ schema — seed กยศ เดิมของ Tom คำนวณเท่าเดิม (verify-multi-loan.ts)"
           ],
           "estimatedHours": 6,
-          "dependencies": ["F26"],
+          "dependencies": [
+            "F26"
+          ],
           "checkpoint": {
             "completed": true,
             "completedAt": "2026-07-08",
@@ -1082,7 +1086,10 @@
             "Verified: scripts/verify-bank-accounts.ts (13 assertions: migrate ยอดเท่าเดิม + sums + gold arithmetic) + typecheck + build"
           ],
           "estimatedHours": 8,
-          "dependencies": ["F20", "F25"],
+          "dependencies": [
+            "F20",
+            "F25"
+          ],
           "checkpoint": {
             "completed": true,
             "completedAt": "2026-07-08",
@@ -1107,7 +1114,9 @@
             "Verified: scripts/verify-expense-payment.ts (10 assertions) + verify อื่นไม่ regress + typecheck + build"
           ],
           "estimatedHours": 5,
-          "dependencies": ["F33"],
+          "dependencies": [
+            "F33"
+          ],
           "checkpoint": {
             "completed": true,
             "completedAt": "2026-07-08",
@@ -1130,7 +1139,10 @@
             "Verified: scripts/verify-installment-deduction.ts (store-level: addPlan หัก + deletePlan คืน round-trip) + verify-expense-payment + typecheck + build"
           ],
           "estimatedHours": 3,
-          "dependencies": ["F33", "F34"],
+          "dependencies": [
+            "F33",
+            "F34"
+          ],
           "checkpoint": {
             "completed": true,
             "completedAt": "2026-07-08",
@@ -1154,7 +1166,10 @@
             "Verified: scripts/verify-amortization.ts (32 assertions) + typecheck + build + UI run จริงบน /loans"
           ],
           "estimatedHours": 5,
-          "dependencies": ["F26", "F31"],
+          "dependencies": [
+            "F26",
+            "F31"
+          ],
           "checkpoint": {
             "completed": true,
             "completedAt": "2026-07-09",
@@ -1180,7 +1195,11 @@
             "Verified: scripts/verify-expense-loan-link.ts (22 assertions) + verify เดิมทั้ง 11 ตัวไม่ regress + typecheck + lint + build + UI run จริง (ผูก → 100%/฿0 · ถอด link → เด้งกลับ ฿3,300)"
           ],
           "estimatedHours": 5,
-          "dependencies": ["F26", "F31", "F36"],
+          "dependencies": [
+            "F26",
+            "F31",
+            "F36"
+          ],
           "checkpoint": {
             "completed": true,
             "completedAt": "2026-07-09",
@@ -1205,7 +1224,12 @@
             "Verified: scripts/verify-net-worth.ts (21 assertions) + verify เดิมทั้ง 12 ตัวไม่ regress + typecheck + lint + build + UI run จริง (assets ฿1,914,373 ตรงกับคำนวณมือ, ออมไม่มีแถวทอง)"
           ],
           "estimatedHours": 4,
-          "dependencies": ["F25", "F33", "F36", "F37"],
+          "dependencies": [
+            "F25",
+            "F33",
+            "F36",
+            "F37"
+          ],
           "checkpoint": {
             "completed": true,
             "completedAt": "2026-07-09",
@@ -1232,7 +1256,11 @@
             "Verified: scripts/verify-income-deposit.ts (23 assertions) + verify เดิมทั้ง 13 ตัวไม่ regress + typecheck + lint + build + UI run จริง (ฝาก 60k/50k → แก้เป็น 70k ไม่บวกทบ → ถอดบัญชีคืนยอดเป็น 0)"
           ],
           "estimatedHours": 6,
-          "dependencies": ["F32", "F33", "F34"],
+          "dependencies": [
+            "F32",
+            "F33",
+            "F34"
+          ],
           "checkpoint": {
             "completed": true,
             "completedAt": "2026-07-09",
@@ -1260,7 +1288,13 @@
             "Verified: scripts/verify-bank-transactions.ts (invariant หลังทุกเคส) + verify เดิมทั้ง 14 ตัวไม่ regress + typecheck + lint + build + UI run จริง (แก้เงินเดือน 80k→90k → 1 บรรทัด ฿70,000; โอน+ลบขาโอน → เงินรวมคงที่)"
           ],
           "estimatedHours": 10,
-          "dependencies": ["F25", "F33", "F34", "F35", "F39"],
+          "dependencies": [
+            "F25",
+            "F33",
+            "F34",
+            "F35",
+            "F39"
+          ],
           "checkpoint": {
             "completed": true,
             "completedAt": "2026-07-09",
@@ -1285,7 +1319,9 @@
             "Verified: scripts/verify-journal-backfill.ts + verify เดิมทั้ง 16 ตัวไม่ regress + typecheck + lint + build + UI run จริง (29 บรรทัด, ยอด 748,372.69 ไม่ขยับ, undo กลับสภาพเดิมทุกเซลล์)"
           ],
           "estimatedHours": 4,
-          "dependencies": ["F40"],
+          "dependencies": [
+            "F40"
+          ],
           "checkpoint": {
             "completed": true,
             "completedAt": "2026-07-09",
@@ -1318,6 +1354,39 @@
             "completed": true,
             "completedAt": "2026-07-10",
             "notes": "Commits: deddae9, b840683, 2e9fd9b, 0bf9fb6, 21ea265, f5ceb08, 94cf7f6, bdc9731, 7ac9580, d0ff8f8 | Files: lib/motion.ts (ใหม่), components/motion/{AnimatedNumber,FadeInUp,Stagger,PageTransition,staggerContext,index} (ใหม่), scripts/verify-motion.ts (ใหม่), App.tsx (Suspense ลงระดับ page), components/layout/Sidebar.tsx (drawer slide จริง), components/ui/Modal.tsx, components/dashboard/KpiCardGrid.tsx, components/wealth/NetWorthHero.tsx, components/loans/LoanDetail.tsx + กราฟ Recharts ทั้ง 7 series | เพิ่ม dependency: framer-motion (ห่อหลัง motion primitives) | หมายเหตุ: ตารางไม่ไหวเป็นกฎ; reduced-motion ปิดสนิท"
+          }
+        },
+        {
+          "id": "F43",
+          "name": "Action Feedback (บอกผู้ใช้ว่าเกิดอะไรขึ้น)",
+          "description": "แจ้งผลทุกการกระทำที่ยังเงียบอยู่ — ฟอร์มรายเดือน (รายจ่าย/รายได้/เงินออม) เดิม 9 action ที่ใช้บ่อยสุดไม่ toast + ปุ่ม ✕ ลบรายการเดินบัญชีที่ลบทันทีโดยไม่ถามไม่บอก; ทำเป็นชั้นข้อความ pure แหล่งเดียว บอกเฉพาะผลข้างเคียงที่เกิดจริง",
+          "status": "completed",
+          "priority": "P1",
+          "phase": "phase_4",
+          "acceptanceCriteria": [
+            "src/utils/actionMessages.ts (ใหม่): ชั้นสร้างข้อความ pure — import แค่ ./formatters; export SaveMode + expenseSaved/Deleted, incomeSaved/Deleted, savingSaved/Deleted, bankTransactionDeleted. store ไม่ push toast เอง (แยก state mutation ออกจาก UI feedback; ข้อความทดสอบได้ใน node ล้วน ไม่ผูก React/Zustand)",
+            "หลักการ 'บอกผลข้างเคียงเฉพาะเมื่อมันเกิดจริง': รายจ่ายที่มีบัญชีจ่าย → 'บันทึกรายจ่ายแล้ว · หักจากกรุงศรี ฿1,200'; ไม่มีบัญชี → 'บันทึกรายจ่ายแล้ว' เฉยๆ ไม่มีวรรคผลข้างเคียง",
+            "formatters.ts: เพิ่ม formatTHBAuto (โชว์สตางค์เฉพาะเมื่อมีจริง) — ยุบโค้ดซ้ำ byte-identical ที่เคยมีใน actionMessages + BankBalanceEditForm.tsx",
+            "wire toast: ExpenseList (เพิ่ม/แก้/ลบ + บอกบัญชีที่ถูกหัก/คืน), SavingsList (เพิ่ม/แก้/ลบ)",
+            "IncomeForm: toast 'ทุกครั้ง' ที่ save (เดิม toast เฉพาะตอนเงินเข้าบัญชี — ปุ่มเดียวมี 2 พฤติกรรม; ตอนนี้รวมเป็นหนึ่ง)",
+            "MonthTransactionList: ปุ่ม ✕ ลบรายการเดินบัญชี เดิม 'ลบทันทีไม่ถามไม่บอก' (ปุ่มลบเดียวในแอปที่ไม่ confirm) → inline 2 จังหวะ (✕ → 'ยืนยัน?'), ยกเลิกด้วย Escape และ pointer-down นอกปุ่ม; ไม่ใช้ onBlur (มันยิงก่อน click แล้วกินการลบ); aria-label='ยืนยันการลบรายการ'",
+            "BankAccountDetail: อ่านจำนวนเงินของรายการก่อนลบ แล้ว toast 'ลบรายการแล้ว · ยอดบัญชีปรับ ฿800'",
+            "รายการที่มาจากต้นทาง (income/expense/gold) ยังลบจากหน้าบัญชีไม่ได้ — DELETABLE ไม่ถูกแตะ",
+            "แก้ column จัดตำแหน่ง: spacer คอลัมน์ควบคุมทุกจุดกว้าง w-14 → คอลัมน์เงินอยู่ขอบขวาเดียวกันเสมอ (1310px)",
+            "บั๊ก store พบระหว่างทาง ไม่แก้ในงานนี้ (นอก scope): deleteIncome (financeStore.ts:777) filter แถวรายได้อย่างเดียว ไม่ revert bank deposits ที่ addIncome เขียนผ่าน withLedger — probe ยืนยัน: ลบรายได้ที่ฝาก ฿74,250 แล้วเงินยังค้าง + เหลือ bankTransaction กำพร้าชี้แถวที่หายไป. ดังนั้น incomeDeletedMessage ถูกเรียกด้วย revertedAccounts:[] → toast พูดแค่ 'ลบรายได้ ก.ค. แล้ว' ไม่โกหกว่า 'คืนยอด'; call site มี comment อธิบาย + ชี้บรรทัดที่ต้องแก้ + บันทึกไว้ที่ docs/superpowers/specs/2026-07-10-delete-income-ledger-gap.md",
+            "ไม่ทำโดยตั้งใจ: ไม่มีปุ่ม Undo (ต้อง snapshot ทุกจุดลบ), window.confirm ใน ExpenseList/SavingsList คงเดิม, Toaster.tsx ไม่แตะ",
+            "Verified: scripts/verify-action-messages.ts (17 assertions รวมเคสขอบเดือนธันวาคมตรึงการแปลงเดือน 0-based→1-based + เคสชื่อบัญชีว่างตรึง falsy guard) + verify เดิมทั้ง 18 ตัวไม่ regress + typecheck + lint + build + UI run จริง Playwright (รายจ่ายไม่มีบัญชี → ไม่มีวรรคผลข้างเคียง, มีบัญชี → หักจากกรุงศรี ฿1,200, ลบ → คืนยอดกรุงศรี, ออม → บันทึกเงินออมแล้ว, รายได้ save → toast (เดิมเงียบ), รายได้ลบ → ไม่มีคำโกหกคืนยอด, ✕ จังหวะแรก arm ไม่ลบ, Escape/นอกปุ่มยกเลิก, จังหวะสองลบ+toast ยอดบัญชีปรับ ฿800, แถวจากต้นทางไม่มี ✕, ทุกยอดขอบขวาเดียว 1310px)"
+          ],
+          "estimatedHours": 4,
+          "dependencies": [
+            "F34",
+            "F39",
+            "F40"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-07-10",
+            "notes": "Spec: docs/superpowers/specs (F43 action feedback) | Files: utils/actionMessages.ts (ใหม่), scripts/verify-action-messages.ts (ใหม่), utils/formatters.ts (+formatTHBAuto), components/forms/{ExpenseList,IncomeForm,SavingsList}.tsx, components/accounts/{MonthTransactionList,BankAccountDetail,BankBalanceEditForm}.tsx | บั๊กที่เจอแต่ไม่แก้: deleteIncome ไม่ revert deposits → บันทึกใน docs/superpowers/specs/2026-07-10-delete-income-ledger-gap.md | หมายเหตุ: store เป็นแหล่ง mutation, ชั้นข้อความแยก pure; บอกผลข้างเคียงเฉพาะที่เกิดจริง"
           }
         }
       ]
@@ -1408,8 +1477,8 @@
     }
   },
   "progressSummary": {
-    "totalFeatures": 50,
-    "completed": 50,
+    "totalFeatures": 51,
+    "completed": 51,
     "inProgress": 0,
     "pending": 0,
     "overallProgress": "100%",
