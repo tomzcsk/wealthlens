@@ -1922,20 +1922,48 @@ export const useFinanceStore = create<FinanceState>()(
       setBankBalance: (id, year, month, amount) =>
         set((state) => {
           const accounts = state.data.bankAccounts ?? [];
-          if (!accounts.some((a) => a.id === id)) return state;
+          const account = accounts.find((a) => a.id === id);
+          if (!account) return state;
           const txs = state.data.bankTransactions ?? [];
           const isSameCell = (t: BankTransaction): boolean =>
             t.accountId === id && t.year === year && t.month === month;
           const stamp = nowIso();
 
-          // เดือนที่ยังไม่มีรายการเลย (ข้อมูลเก่า/เซลล์ว่าง) → เขียนยอดตรงๆ ไม่
-          // สร้างประวัติรายการย้อนหลังปลอมๆ. ตรงกับ invariant: เดือนที่ไม่มี
-          // รายการได้รับการยกเว้น.
           if (!txs.some(isSameCell)) {
+            // เซลล์ที่ไม่มีรายการมีสองพันธุ์ และต่างกันที่ "ยอดเดิม" ไม่ใช่ที่
+            // "ไม่มีรายการ" — โค้ดเดิมเช็คอย่างหลัง ข้อมูลใหม่จึงลอยเหมือนของเก่า.
+            //
+            // `applyBankMovement` ลง **delta** ไม่ใช่ยอดสัมบูรณ์ ดังนั้น
+            // Σ รายการ = ยอดใหม่ ก็ต่อเมื่อยอดเดิมเป็น 0 เท่านั้น. นั่นคือเส้นแบ่ง:
+            //
+            //   ยอดเดิม 0/ว่าง  → เงินก้อนแรกของเซลล์ = ข้อมูลใหม่ → จดบรรทัด
+            //   ยอดเดิม ≠ 0     → ยอดที่กรอกไว้ก่อน F40 → เขียนดิบ (invariant
+            //                     ยกเว้นเดือนที่ไม่มีรายการ); ให้ F41 backfill
+            //                     เก็บกวาด แล้วครั้งต่อไปจะตกเส้นทาง adjustment
+            const current = account.balances[String(year)]?.[String(month)] ?? 0;
+            if (current !== 0 || amount === 0) {
+              return {
+                data: {
+                  ...state.data,
+                  bankAccounts: setRawBalance(accounts, id, year, month, amount),
+                  lastUpdated: stamp,
+                },
+                lastUpdated: stamp,
+              };
+            }
             return {
               data: {
                 ...state.data,
-                bankAccounts: setRawBalance(accounts, id, year, month, amount),
+                ...withLedger(state.data, (l) =>
+                  applyBankMovement(l, {
+                    accountId: id,
+                    year,
+                    month,
+                    amount,
+                    label: 'ปรับยอดเอง',
+                    source: { type: 'adjustment' },
+                  }),
+                ),
                 lastUpdated: stamp,
               },
               lastUpdated: stamp,

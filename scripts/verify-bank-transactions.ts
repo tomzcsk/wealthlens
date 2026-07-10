@@ -125,7 +125,8 @@ const runStore = async (): Promise<void> => {
       bankTransactions: [],
       bankAccounts: [
         { id: 'acc-1', name: 'หนึ่ง', type: 'salary', balances: {} },
-        { id: 'acc-2', name: 'สอง', type: 'cash', balances: {} },
+        // acc-2 มียอดค้างที่ 2025/3 โดยไม่มีรายการ = ข้อมูลที่กรอกไว้ก่อน F40
+        { id: 'acc-2', name: 'สอง', type: 'cash', balances: { '2025': { '3': 17250 } } },
       ],
     },
   }));
@@ -166,12 +167,40 @@ const runStore = async (): Promise<void> => {
   eq('ปรับซ้ำ → ส่วนต่างใหม่', adj2[0].amount, 500);
   eq('ปรับซ้ำ → invariant', findLedgerMismatches(ledgerOf()).length, 0);
 
-  // --- ปรับยอดในเดือนที่ไม่มีรายการเลย → ไม่สร้างบรรทัด (เดือนเก่า) ---
-  store.getState().setBankBalance('acc-2', 2025, 3, 17250);
+  // --- เซลล์ที่มียอดค้างแต่ไม่มีรายการ (ข้อมูลก่อน F40) → เขียนดิบ ไม่สร้าง
+  //     ประวัติย้อนหลังปลอมๆ. เส้นทางนี้เป็นของ F41 backfill ---
+  store.getState().setBankBalance('acc-2', 2025, 3, 20000);
   const marchTx = store.getState().data.bankTransactions?.filter((t) => t.year === 2025) ?? [];
-  eq('เดือนเก่า → ไม่มีบรรทัด', marchTx.length, 0);
-  eq('เดือนเก่า → ยอดยังเขียนได้', balOf('acc-2', 2025, 3), 17250);
-  eq('เดือนเก่า → invariant ยังผ่าน', findLedgerMismatches(ledgerOf()).length, 0);
+  eq('ยอดเก่า → ไม่มีบรรทัด', marchTx.length, 0);
+  eq('ยอดเก่า → ยอดยังเขียนได้', balOf('acc-2', 2025, 3), 20000);
+  eq('ยอดเก่า → invariant ยังผ่าน', findLedgerMismatches(ledgerOf()).length, 0);
+
+  // --- เซลล์ว่างเปล่า (ยอดเดิม 0) → ข้อมูลใหม่ ต้องจดบรรทัดตั้งแต่แรก
+  //     ไม่ใช่ปล่อยลอยรอ backfill ตามหลัง ---
+  store.getState().setBankBalance('acc-2', 2024, 1, 5000);
+  const freshTx =
+    store.getState().data.bankTransactions?.filter((t) => t.year === 2024) ?? [];
+  eq('เซลล์ใหม่ → จด 1 บรรทัด', freshTx.length, 1);
+  eq('เซลล์ใหม่ → source adjustment', freshTx[0]?.source.type, 'adjustment');
+  eq('เซลล์ใหม่ → บรรทัดเท่ายอดเต็ม', freshTx[0]?.amount, 5000);
+  eq('เซลล์ใหม่ → ยอดถูก', balOf('acc-2', 2024, 1), 5000);
+  eq('เซลล์ใหม่ → invariant', findLedgerMismatches(ledgerOf()).length, 0);
+
+  // แก้ซ้ำบนเซลล์นั้น → แทนที่บรรทัดเดิม ไม่บวกทบ
+  store.getState().setBankBalance('acc-2', 2024, 1, 8000);
+  const freshTx2 =
+    store.getState().data.bankTransactions?.filter((t) => t.year === 2024) ?? [];
+  eq('เซลล์ใหม่ แก้ซ้ำ → ยังมี 1 บรรทัด', freshTx2.length, 1);
+  eq('เซลล์ใหม่ แก้ซ้ำ → ยอดไม่บวกทบ', balOf('acc-2', 2024, 1), 8000);
+  eq('เซลล์ใหม่ แก้ซ้ำ → invariant', findLedgerMismatches(ledgerOf()).length, 0);
+
+  // ล้างเซลล์แล้วตั้งใหม่ → กลับไปเป็น "เซลล์ว่าง" จึงจดบรรทัดอีกครั้ง
+  store.getState().clearBankBalance('acc-2', 2024, 1);
+  store.getState().setBankBalance('acc-2', 2024, 1, 300);
+  const reTx = store.getState().data.bankTransactions?.filter((t) => t.year === 2024) ?? [];
+  eq('ล้างแล้วตั้งใหม่ → จดบรรทัด', reTx.length, 1);
+  eq('ล้างแล้วตั้งใหม่ → invariant', findLedgerMismatches(ledgerOf()).length, 0);
+  store.getState().clearBankBalance('acc-2', 2024, 1);
 
   // --- clearBankBalance → รายการเดือนนั้นหายหมด ---
   store.getState().clearBankBalance('acc-1', 2026, 7);

@@ -5,10 +5,12 @@
  * เครื่องมือนี้เขียนคำอธิบายให้ยอดที่มีอยู่ (บรรทัด "ยอดที่กรอกไว้เดิม")
  * ไม่ได้เพิ่มเงิน — และย้อนกลับได้.
  *
- * สามสถานะที่ตัดขาดกัน:
- *   1. มีบรรทัด backfill อยู่แล้ว → สรุป + ปุ่มย้อนกลับ (inline confirm 2 จังหวะ)
- *   2. ไม่มีอะไรต้องแปลง (cellCount 0) → ข้อความ, ปุ่ม disabled
- *   3. มีส่วนต่างรอแปลง → preview + ปุ่มแปลง
+ * UI ถามสองคำถามที่เป็นอิสระต่อกัน ไม่ใช่สามสถานะที่ตัดขาดกัน:
+ *   • ยังมีส่วนต่างรอแปลงไหม (`plan.cellCount`) → ปุ่มแปลง
+ *   • เคยแปลงไว้ไหม (`existing`)              → ปุ่มย้อนกลับ
+ * ทั้งสองจริงพร้อมกันได้ — เช่น import backup เก่าทับหลังเคยแปลงแล้ว ยอดลอย
+ * ชุดใหม่จะโผล่มาทั้งที่ `existing > 0`. เวอร์ชันแรกเช็ค `existing` ก่อน จึงบัง
+ * ปุ่มแปลงไว้ ทั้งที่ `planBackfill` รันซ้ำได้อยู่แล้ว (idempotent).
  *
  * inline confirm (ไม่ใช่ window.confirm ซึ่งค้าง automation และ repo เลิกใช้แล้ว
  * — ดู RecurringFillModal): กดครั้งแรกให้ปุ่มกลายเป็น "ยืนยันย้อนกลับ? ✓ / ✕".
@@ -83,8 +85,43 @@ export const JournalBackfillSection = (): ReactNode => {
         </p>
       </header>
 
-      {existing > 0 ? (
-        // สถานะ 1 — แปลงแล้ว
+      {plan.cellCount > 0 ? (
+        <div className="space-y-3">
+          {existing > 0 && (
+            <p className="text-sm text-slate-500">
+              เคยแปลงไว้{' '}
+              <span className="font-semibold tabular-nums text-slate-700">
+                {formatNumber(existing)}
+              </span>{' '}
+              บรรทัด — มียอดลอยชุดใหม่รอแปลงอีก
+            </p>
+          )}
+          <p className="text-sm text-slate-700">
+            จะสร้าง{' '}
+            <span className="font-semibold tabular-nums text-slate-900">
+              {formatNumber(plan.cellCount)}
+            </span>{' '}
+            บรรทัด ใน{' '}
+            <span className="font-semibold tabular-nums text-slate-900">
+              {formatNumber(plan.accountCount)}
+            </span>{' '}
+            บัญชี
+          </p>
+          <p className="text-sm font-semibold text-income bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+            <span aria-hidden="true">✓ </span>
+            ยอดเงินทุกบัญชีไม่เปลี่ยน
+          </p>
+          <button
+            type="button"
+            onClick={handleApply}
+            className="inline-flex items-center gap-1.5 bg-primary hover:bg-primary-dark text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-sm transition-colors"
+          >
+            <span aria-hidden="true">🧾</span>
+            แปลงยอดเก่าเป็นรายการ
+          </button>
+        </div>
+      ) : existing > 0 ? (
+        // แปลงครบแล้ว — เหลือทางถอยอย่างเดียว
         <div className="space-y-3">
           <p className="text-sm text-slate-700">
             แปลงแล้ว{' '}
@@ -128,8 +165,8 @@ export const JournalBackfillSection = (): ReactNode => {
             </button>
           )}
         </div>
-      ) : plan.cellCount === 0 ? (
-        // สถานะ 2 — ไม่มีอะไรต้องแปลง
+      ) : (
+        // ยอดทุกเซลล์มีรายการรองรับแล้ว และไม่เคยต้องแปลง
         <div className="space-y-3">
           <p className="text-sm text-slate-400">
             ทุกเดือนมีรายการครบแล้ว ไม่ต้องแปลง
@@ -139,33 +176,6 @@ export const JournalBackfillSection = (): ReactNode => {
             disabled
             className="inline-flex items-center gap-1.5 bg-slate-100 border border-slate-200 text-slate-400 text-sm font-semibold px-4 py-2 rounded-lg cursor-not-allowed"
           >
-            แปลงยอดเก่าเป็นรายการ
-          </button>
-        </div>
-      ) : (
-        // สถานะ 3 — มีส่วนต่างรอแปลง
-        <div className="space-y-3">
-          <p className="text-sm text-slate-700">
-            จะสร้าง{' '}
-            <span className="font-semibold tabular-nums text-slate-900">
-              {formatNumber(plan.cellCount)}
-            </span>{' '}
-            บรรทัด ใน{' '}
-            <span className="font-semibold tabular-nums text-slate-900">
-              {formatNumber(plan.accountCount)}
-            </span>{' '}
-            บัญชี
-          </p>
-          <p className="text-sm font-semibold text-income bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
-            <span aria-hidden="true">✓ </span>
-            ยอดเงินทุกบัญชีไม่เปลี่ยน
-          </p>
-          <button
-            type="button"
-            onClick={handleApply}
-            className="inline-flex items-center gap-1.5 bg-primary hover:bg-primary-dark text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-sm transition-colors"
-          >
-            <span aria-hidden="true">🧾</span>
             แปลงยอดเก่าเป็นรายการ
           </button>
         </div>
