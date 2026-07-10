@@ -6,6 +6,14 @@
  * tree. Keeps the surface area tiny: backdrop click + ESC to dismiss,
  * body scroll lock while open, and a corner close button.
  *
+ * Open/close motion (F42): backdrop fades, panel scales+fades. The portal
+ * and `<AnimatePresence>` render UNCONDITIONALLY — `open` only controls the
+ * child inside `<AnimatePresence>`. This is what lets the panel play its
+ * *exit* animation: an early `if (!open) return null` would unmount the whole
+ * component the instant `open` flips false, and there would be nothing left
+ * to animate out. When closed, `<AnimatePresence>{null}</AnimatePresence>`
+ * renders zero DOM into `document.body` — no stray full-screen div.
+ *
  * NOTE: Focus trapping is intentionally NOT implemented in v1. The form
  * inside auto-focuses its first input on mount, which covers the common
  * case. If we ever ship multi-step or nested modals, revisit and add a
@@ -15,6 +23,9 @@
 
 import { useEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+
+import { DURATION, EASE, transitionFor, type MotionTransition } from '@/lib/motion';
 
 export type ModalSize = 'sm' | 'md' | 'lg';
 
@@ -45,8 +56,16 @@ export const Modal = ({
   children,
   size = 'md',
 }: ModalProps): ReactNode => {
+  const reduced = useReducedMotion() ?? false;
+
   // Lock body scroll while the modal is up so background content doesn't
   // shift around when the user scrolls inside the panel.
+  //
+  // Deliberate: this is keyed to `open`, so the lock releases ~150ms before
+  // the exit animation finishes. On our target (macOS overlay scrollbars) that
+  // causes no layout shift, and holding the lock until `onExitComplete` would
+  // mean threading exit-completion state through here for an invisible window.
+  // Don't "fix" it by decoupling from `open` without that tradeoff in mind.
   useEffect(() => {
     if (!open) return;
     const previousOverflow = document.body.style.overflow;
@@ -72,27 +91,54 @@ export const Modal = ({
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  // Panel motion: quick scale+fade. Reduced motion → scale pinned to 1 in
+  // every state and duration 0 (opacity may still snap).
+  const panelTransition: MotionTransition = reduced
+    ? { duration: 0 }
+    : { duration: DURATION.fast, ease: EASE };
 
   const panel = (
     <div
+      key="modal"
       role="presentation"
       // Outermost wrapper sits above everything; backdrop is a sibling-as-self
       // that handles the click-out behaviour.
+      //
+      // `pointer-events` is keyed to `open`, not to AnimatePresence presence:
+      // the instant `open` flips false the still-fading panel must stop taking
+      // clicks so a user who double-clicks "บันทึก" can't hit a live control on
+      // a modal that's already closing. It doesn't touch opacity/transform, so
+      // the exit animation still plays out normally.
+      //
+      // NOTE: intentionally NOT `aria-hidden={!open}`. ESC-to-close fires while
+      // focus is still on a field *inside* the panel (and in-panel X/save/cancel
+      // buttons focus on click in Chromium), and v1 has no focus trap and moves
+      // no focus on close — so when `open` flips false, focus can live inside
+      // this subtree. `aria-hidden` on an ancestor of the focused element is
+      // itself an a11y violation, so we omit it. Revisit if a focus trap lands.
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ pointerEvents: open ? undefined : 'none' }}
     >
       {/* Backdrop */}
-      <div
+      <motion.div
         aria-hidden="true"
         onClick={onClose}
         className="absolute inset-0 bg-slate-900/50"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={transitionFor(reduced)}
       />
       {/* Panel */}
-      <div
+      <motion.div
         role="dialog"
         aria-modal="true"
         aria-label={title}
         className={`relative bg-white rounded-2xl shadow-xl w-full ${SIZE_MAX_WIDTH[size]} max-h-[90vh] overflow-y-auto`}
+        initial={{ opacity: 0, scale: reduced ? 1 : 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: reduced ? 1 : 0.98 }}
+        transition={panelTransition}
       >
         {title !== undefined && (
           <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-slate-200">
@@ -119,11 +165,14 @@ export const Modal = ({
           </button>
         )}
         {children}
-      </div>
+      </motion.div>
     </div>
   );
 
-  return createPortal(panel, document.body);
+  return createPortal(
+    <AnimatePresence>{open ? panel : null}</AnimatePresence>,
+    document.body,
+  );
 };
 
 export default Modal;
