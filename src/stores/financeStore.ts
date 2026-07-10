@@ -1650,6 +1650,9 @@ export const useFinanceStore = create<FinanceState>()(
 
           const nextLoans = loans.filter((l) => l.id !== id);
           let nextYears = state.data.years;
+          // รายจ่ายที่กำลังจะถูกลบ — เก็บไว้เพื่อคืนยอดบัญชีผ่านประตูเดียว
+          // (ลบ items ตรง ๆ อย่างเดียวจะทิ้งเงินที่หักไว้ + บรรทัดกำพร้า)
+          const swept: ExpenseItem[] = [];
 
           if (revertExpenseSideEffects) {
             // Sweep every linked expense — keep month rows intact (mirror
@@ -1665,6 +1668,10 @@ export const useFinanceStore = create<FinanceState>()(
               const yearKey = String(ep.linkedExpenseYear);
               const yr = nextYears[yearKey];
               if (!yr) continue;
+              const doomed = yr.expenses
+                .find((row) => row.month === ep.linkedExpenseMonth)
+                ?.items.find((it) => it.id === ep.linkedExpenseItemId);
+              if (doomed) swept.push(doomed);
               const nextExpenses = yr.expenses.map((row) =>
                 row.month === ep.linkedExpenseMonth
                   ? {
@@ -1682,12 +1689,26 @@ export const useFinanceStore = create<FinanceState>()(
             }
           }
 
+          // reconcile ด้วย movement ว่าง = revoke บรรทัดของแต่ละรายจ่าย +
+          // คืนยอดด้วย tx.amount ที่เคยหักจริง (เส้นทางเดียวกับ deleteExpense).
+          const ledgerPatch =
+            swept.length > 0 && state.data.bankAccounts !== undefined
+              ? withLedger(state.data, (l) =>
+                  swept.reduce(
+                    (acc, item) =>
+                      reconcileExpenseLedger(acc, item.id, undefined, item.name, item.date),
+                    l,
+                  ),
+                )
+              : {};
+
           const stamp = nowIso();
           return {
             data: {
               ...state.data,
               loans: nextLoans,
               years: nextYears,
+              ...ledgerPatch,
               lastUpdated: stamp,
             },
             lastUpdated: stamp,
@@ -1779,6 +1800,8 @@ export const useFinanceStore = create<FinanceState>()(
           if (!extra) return state;
 
           let nextYears = state.data.years;
+          // รายจ่ายที่กำลังจะถูกลบ — ต้องคืนยอดบัญชีที่มันหักไว้ผ่านประตูเดียว
+          let doomed: ExpenseItem | undefined;
           if (
             revertExpenseSideEffect &&
             extra.linkedExpenseItemId &&
@@ -1788,6 +1811,9 @@ export const useFinanceStore = create<FinanceState>()(
             const yearKey = String(extra.linkedExpenseYear);
             const yr = nextYears[yearKey];
             if (yr) {
+              doomed = yr.expenses
+                .find((row) => row.month === extra.linkedExpenseMonth)
+                ?.items.find((it) => it.id === extra.linkedExpenseItemId);
               const nextExpenses = yr.expenses.map((row) =>
                 row.month === extra.linkedExpenseMonth
                   ? {
@@ -1804,6 +1830,15 @@ export const useFinanceStore = create<FinanceState>()(
               };
             }
           }
+
+          // revoke บรรทัดของรายจ่ายนั้น + คืนยอดด้วย tx.amount ที่เคยหักจริง
+          // (เส้นทางเดียวกับ deleteExpense — ไม่ recompute จากรายการที่กำลังจะหาย)
+          const ledgerPatch =
+            doomed && state.data.bankAccounts !== undefined
+              ? withLedger(state.data, (l) =>
+                  reconcileExpenseLedger(l, doomed.id, undefined, doomed.name, doomed.date),
+                )
+              : {};
 
           const nextLoans = loans.map((l) =>
             l.id === loanId
@@ -1822,6 +1857,7 @@ export const useFinanceStore = create<FinanceState>()(
               ...state.data,
               loans: nextLoans,
               years: nextYears,
+              ...ledgerPatch,
               lastUpdated: stamp,
             },
             lastUpdated: stamp,
