@@ -172,7 +172,10 @@ const MAX_STAGGER_INDEX = 8;
 
 export interface MotionTransition {
   duration: number;
-  ease?: readonly number[];
+  // ต้องเป็น tuple 4 ตัว ไม่ใช่ number[] — framer-motion นิยาม
+  // BezierDefinition = readonly [number, number, number, number]
+  // ถ้าใช้ readonly number[] จะ assign เข้า <motion.div transition={...}> ไม่ได้
+  ease?: readonly [number, number, number, number];
 }
 
 /**
@@ -299,7 +302,7 @@ export const AnimatedNumber = ({
 
     const controls = animate(from, value, {
       duration: DURATION.slow,
-      ease: [...EASE],
+      ease: EASE,
       onUpdate: (latest: number) => {
         currentRef.current = latest;
         node.textContent = format(latest);
@@ -379,7 +382,7 @@ export const fadeInUpVariants = {
   show: {
     opacity: 1,
     y: 0,
-    transition: { duration: DURATION.base, ease: [...EASE] },
+    transition: { duration: DURATION.base, ease: EASE },
   },
 };
 
@@ -662,7 +665,7 @@ import { DURATION, EASE, transitionFor } from '@/lib/motion';
         transition={
           reduced
             ? { duration: 0 }
-            : { duration: DURATION.fast, ease: [...EASE] }
+            : { duration: DURATION.fast, ease: EASE }
         }
       >
         {title !== undefined && (
@@ -907,7 +910,7 @@ const reduced = useReducedMotion() ?? false;
   className="relative w-[260px] h-full bg-white border-r border-slate-200 shadow-xl flex flex-col"
   initial={{ x: reduced ? 0 : -260 }}
   animate={{ x: 0 }}
-  transition={reduced ? { duration: 0 } : { duration: DURATION.base, ease: [...EASE] }}
+  transition={reduced ? { duration: 0 } : { duration: DURATION.base, ease: EASE }}
 >
 ```
 
