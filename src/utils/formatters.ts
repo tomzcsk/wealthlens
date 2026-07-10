@@ -110,6 +110,13 @@ export const formatTHB = (
   return `฿${numeral(value).format(fmt)}`;
 };
 
+/**
+ * Show satang only when the amount actually has them: `฿1,200` vs `฿1,200.50`.
+ * Keeps whole baht clean while never silently rounding away a fractional part.
+ */
+export const formatTHBAuto = (value: number): string =>
+  formatTHB(value, { decimals: Number.isInteger(value) ? 0 : 2 });
+
 export interface FormatNumberOptions {
   /** Decimal places. Defaults to 0. */
   decimals?: number;

@@ -19,7 +19,7 @@ import { useToastStore } from '@/stores/toastStore';
 import {
   THAI_MONTHS_LONG,
   formatNumber,
-  formatTHB,
+  formatTHBAuto,
 } from '@/utils/formatters';
 
 export interface BankBalanceEditFormProps {
@@ -66,9 +66,6 @@ export const BankBalanceEditForm = ({
   const hasValue = current !== undefined;
   const monthLabel = THAI_MONTHS_LONG[month - 1];
   const newTotal = base + (delta ?? 0);
-
-  const fmtMoney = (n: number): string =>
-    formatTHB(n, { decimals: Number.isInteger(n) ? 0 : 2 });
 
   const handleChange = (raw: string): void => {
     const cleaned = raw.replace(/[^\d.,-]/g, '');
@@ -120,7 +117,7 @@ export const BankBalanceEditForm = ({
         <div className="flex items-center justify-between rounded-md bg-slate-50 border border-slate-200 px-3 py-2 mb-3">
           <span className="text-sm text-slate-600">ยอดปัจจุบันเดือนนี้</span>
           <span className="text-base font-medium tabular-nums text-slate-800">
-            {fmtMoney(base)}
+            {formatTHBAuto(base)}
           </span>
         </div>
 
@@ -149,7 +146,7 @@ export const BankBalanceEditForm = ({
                   : 'text-expense'
             }`}
           >
-            {fmtMoney(newTotal)}
+            {formatTHBAuto(newTotal)}
           </span>
         </div>
       </div>
