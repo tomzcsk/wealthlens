@@ -101,6 +101,23 @@ const sumRows = (rows: ReadonlyArray<YearRow>): YearRow => {
   return total;
 };
 
+/*
+ * F47 — pinned first column (ปี) for phones. The pinned cell must be opaque
+ * and must take its colour from the row (`bg-inherit`), otherwise the zebra /
+ * totals rows show a wrong-coloured seam down the left edge. Every row below
+ * therefore carries an opaque background of its own.
+ */
+const STICKY_COL =
+  'sticky left-0 z-10 bg-inherit shadow-[8px_0_8px_-8px_rgb(2_6_23_/_0.22)]';
+const STICKY_CORNER =
+  'sticky left-0 z-20 bg-inherit shadow-[8px_0_8px_-8px_rgb(2_6_23_/_0.22)]';
+
+/** The old zebra was `bg-warning-50/30` — translucent, so a pinned cell that
+ *  inherited it let the scrolling numbers ghost through. `color-mix` bakes the
+ *  identical composite (30% warning-50 over the card) into an opaque colour. */
+const ZEBRA_ROW =
+  'bg-[color-mix(in_srgb,rgb(var(--c-warning-50))_30%,rgb(var(--bg-card)))]';
+
 interface MoneyCellProps {
   value: number;
   bold?: boolean;
@@ -168,6 +185,9 @@ export const AllYearsSummary = (): ReactNode => {
         <h2 className="text-lg font-bold text-warning-900 text-center">
           รายรับ – รายจ่าย (ภาพรวมทุกปี)
         </h2>
+        <span className="md:hidden mt-0.5 block text-center text-[10px] font-normal text-ink-400">
+          เลื่อนดูคอลัมน์อื่น →
+        </span>
       </header>
 
       <div className="overflow-x-auto">
@@ -176,7 +196,7 @@ export const AllYearsSummary = (): ReactNode => {
             <tr className="bg-warning-50 text-warning-900 border-b border-warning-200">
               <th
                 rowSpan={2}
-                className="px-3 py-2 text-left font-semibold align-middle border-r border-warning-200"
+                className={`px-3 py-2 text-left font-semibold align-middle border-r border-warning-200 ${STICKY_CORNER}`}
               >
                 ปี
               </th>
@@ -236,10 +256,12 @@ export const AllYearsSummary = (): ReactNode => {
               <tr
                 key={r.year}
                 className={`border-b border-ink-100 hover:bg-hover ${
-                  idx % 2 === 1 ? 'bg-warning-50/30' : ''
+                  idx % 2 === 1 ? ZEBRA_ROW : 'bg-card'
                 }`}
               >
-                <td className="px-3 py-2 font-semibold text-ink-900 border-r border-ink-100">
+                <td
+                  className={`px-3 py-2 font-semibold text-ink-900 border-r border-ink-100 ${STICKY_COL}`}
+                >
                   {r.year}
                 </td>
                 <MoneyCell value={r.salary} />
@@ -305,7 +327,9 @@ export const AllYearsSummary = (): ReactNode => {
             ))}
 
             <tr className="bg-warning-100 border-t-2 border-warning-300 font-bold">
-              <td className="px-3 py-3 text-warning-900 border-r border-warning-200">
+              <td
+                className={`px-3 py-3 text-warning-900 border-r border-warning-200 ${STICKY_COL}`}
+              >
                 รวม
               </td>
               <MoneyCell value={totals.salary} bold />

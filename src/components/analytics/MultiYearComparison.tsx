@@ -249,6 +249,21 @@ const ChartTooltip = ({
 const yTickFormatter = (value: number): string =>
   formatTHB(value, { compact: true });
 
+/*
+ * F47 — the metric column (รายการ) stays pinned while the year columns scroll
+ * on a phone. The pinned cell inherits the row's colour so the zebra doesn't
+ * break, which means every row needs an *opaque* background of its own — a
+ * translucent one would let the scrolling numbers ghost through the pin.
+ */
+const STICKY_COL =
+  'sticky left-0 z-10 bg-inherit shadow-[8px_0_8px_-8px_rgb(2_6_23_/_0.22)]';
+const STICKY_CORNER =
+  'sticky left-0 z-20 bg-card shadow-[8px_0_8px_-8px_rgb(2_6_23_/_0.22)]';
+
+/** Same composite colour as the old translucent `bg-surface/40`, baked opaque. */
+const ZEBRA_ROW =
+  'bg-[color-mix(in_srgb,rgb(var(--bg-surface))_40%,rgb(var(--bg-card)))]';
+
 export interface MultiYearComparisonProps {
   /** Inner chart height in px. */
   height?: number;
@@ -495,13 +510,18 @@ export const MultiYearComparison = ({
               ? ` · ปีที่ Net All สูงสุด: ${maxNetAllYear}`
               : ''}
           </p>
+          <span className="md:hidden mt-0.5 block text-[10px] font-normal text-ink-400">
+            เลื่อนดูคอลัมน์อื่น →
+          </span>
         </header>
 
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
               <tr className="border-b border-ink-200 text-left">
-                <th className="py-2 pr-4 font-semibold text-ink-600">
+                <th
+                  className={`py-2 pr-4 font-semibold text-ink-600 ${STICKY_CORNER}`}
+                >
                   รายการ
                 </th>
                 {selectedYears.map((year) => {
@@ -551,13 +571,11 @@ export const MultiYearComparison = ({
               {METRIC_ROWS.map((row, rowIdx) => (
                 <tr
                   key={row.key}
-                  className={
-                    rowIdx % 2 === 0
-                      ? 'bg-card'
-                      : 'bg-surface/40'
-                  }
+                  className={rowIdx % 2 === 0 ? 'bg-card' : ZEBRA_ROW}
                 >
-                  <td className="py-2 pr-4 font-medium text-ink-700">
+                  <td
+                    className={`py-2 pr-4 font-medium text-ink-700 ${STICKY_COL}`}
+                  >
                     {row.label}
                   </td>
                   {selectedYears.map((year) => {

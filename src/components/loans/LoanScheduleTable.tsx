@@ -41,6 +41,18 @@ const formatScheduleDate = (iso: string): string => {
   return `${dt.getDate()} ${months[dt.getMonth()]} ${dt.getFullYear()}`;
 };
 
+/*
+ * F47 — งวด column pinned while the money columns scroll on a phone. The pin
+ * inherits its row's colour so the highlighted "current installment" row keeps
+ * its emerald tint all the way to the left edge instead of showing a card-white
+ * seam. Rows without a tint therefore need an explicit opaque `bg-card`.
+ */
+const STICKY_COL =
+  'sticky left-0 z-10 bg-inherit shadow-[8px_0_8px_-8px_rgb(2_6_23_/_0.22)]';
+/** thead carries `bg-surface`; its `<tr>` doesn't, so the pin names the colour. */
+const STICKY_CORNER =
+  'sticky left-0 z-20 bg-surface shadow-[8px_0_8px_-8px_rgb(2_6_23_/_0.22)]';
+
 export const LoanScheduleTable = ({
   loan,
 }: LoanScheduleTableProps): ReactNode => {
@@ -60,7 +72,12 @@ export const LoanScheduleTable = ({
   return (
     <section className="bg-card rounded-2xl border border-ink-200 shadow-sm">
       <header className="px-4 py-3 border-b border-ink-100 flex items-baseline justify-between">
-        <h2 className="text-sm font-semibold text-ink-700">ตารางผ่อนชำระ</h2>
+        <div>
+          <h2 className="text-sm font-semibold text-ink-700">ตารางผ่อนชำระ</h2>
+          <span className="md:hidden mt-0.5 block text-[10px] font-normal text-ink-400">
+            เลื่อนดูคอลัมน์อื่น →
+          </span>
+        </div>
         <span className="text-xs text-ink-400">
           {sorted.length} งวด · จบ {formatScheduleDate(sorted[sorted.length - 1]?.dueDate ?? '')}
         </span>
@@ -69,7 +86,9 @@ export const LoanScheduleTable = ({
         <table className="w-full text-sm">
           <thead className="bg-surface text-xs uppercase tracking-wider text-ink-500">
             <tr>
-              <th className="px-3 py-2 text-left font-semibold">งวด</th>
+              <th className={`px-3 py-2 text-left font-semibold ${STICKY_CORNER}`}>
+                งวด
+              </th>
               <th className="px-3 py-2 text-left font-semibold">วันที่</th>
               <th className="px-3 py-2 text-right font-semibold">สัดส่วน</th>
               <th className="px-3 py-2 text-right font-semibold">เงินต้น</th>
@@ -88,10 +107,10 @@ export const LoanScheduleTable = ({
                   className={`border-b border-ink-100 last:border-b-0 ${
                     isCurrent
                       ? 'bg-income-50 hover:bg-income-100'
-                      : 'hover:bg-hover'
+                      : 'bg-card hover:bg-hover'
                   } transition`}
                 >
-                  <td className="px-3 py-2 text-ink-700 font-medium">
+                  <td className={`px-3 py-2 text-ink-700 font-medium ${STICKY_COL}`}>
                     {row.installmentNumber}
                     {isCurrent && (
                       <span
@@ -124,9 +143,16 @@ export const LoanScheduleTable = ({
               );
             })}
             <tr className="bg-surface font-semibold">
-              <td colSpan={3} className="px-3 py-2.5 text-ink-700">
+              {/*
+                Was one `colSpan={3}` cell. A 3-column-wide pin would park a
+                fat block over the left third of the screen and swallow the
+                totals as they scroll under it — so the label gets its own
+                (pinned) cell and the two columns it used to cover stay empty.
+              */}
+              <td className={`px-3 py-2.5 text-ink-700 ${STICKY_COL}`}>
                 ยอดรวม
               </td>
+              <td colSpan={2} />
               <td className="px-3 py-2.5 text-right financial-number tabular-nums text-ink-900">
                 {formatNumber(totalPrincipal, { decimals: 2 })}
               </td>

@@ -28,6 +28,16 @@ interface PaymentLogTableProps {
 
 const VISIBLE_DEFAULT = 20;
 
+/*
+ * F47 — วันที่ column pinned while the rest scrolls on a phone. The pin takes
+ * its colour from the row (`bg-inherit`), so hovered rows keep one colour edge
+ * to edge; rows therefore carry an opaque `bg-card` of their own.
+ */
+const STICKY_COL =
+  'sticky left-0 z-10 bg-inherit shadow-[8px_0_8px_-8px_rgb(2_6_23_/_0.22)]';
+const STICKY_CORNER =
+  'sticky left-0 z-20 bg-surface shadow-[8px_0_8px_-8px_rgb(2_6_23_/_0.22)]';
+
 export const PaymentLogTable = ({
   loan,
   onDeleteExtra,
@@ -43,9 +53,14 @@ export const PaymentLogTable = ({
   return (
     <section className="bg-card rounded-2xl border border-ink-200 shadow-sm">
       <header className="px-4 py-3 border-b border-ink-100 flex items-baseline justify-between">
-        <h2 className="text-sm font-semibold text-ink-700">
-          ประวัติการชำระ
-        </h2>
+        <div>
+          <h2 className="text-sm font-semibold text-ink-700">
+            ประวัติการชำระ
+          </h2>
+          <span className="md:hidden mt-0.5 block text-[10px] font-normal text-ink-400">
+            เลื่อนดูคอลัมน์อื่น →
+          </span>
+        </div>
         <span className="text-xs text-ink-400">
           {log.length} รายการ · รวม{' '}
           <span className="financial-number tabular-nums text-ink-600">
@@ -66,7 +81,11 @@ export const PaymentLogTable = ({
             <table className="w-full text-sm">
               <thead className="bg-surface text-xs uppercase tracking-wider text-ink-500">
                 <tr>
-                  <th className="px-3 py-2 text-left font-semibold">วันที่</th>
+                  <th
+                    className={`px-3 py-2 text-left font-semibold ${STICKY_CORNER}`}
+                  >
+                    วันที่
+                  </th>
                   <th className="px-3 py-2 text-left font-semibold">
                     เลขอ้างอิง
                   </th>
@@ -81,9 +100,9 @@ export const PaymentLogTable = ({
                 {visible.map((row: PaymentLogEntry, idx) => (
                   <tr
                     key={`${row.source}-${row.extraId ?? row.date}-${idx}`}
-                    className="border-b border-ink-100 last:border-b-0 hover:bg-hover transition"
+                    className="border-b border-ink-100 last:border-b-0 bg-card hover:bg-hover transition"
                   >
-                    <td className="px-3 py-2 text-ink-600">
+                    <td className={`px-3 py-2 text-ink-600 ${STICKY_COL}`}>
                       {formatThaiDate(row.date)}
                     </td>
                     <td className="px-3 py-2 text-xs tabular-nums text-ink-400">

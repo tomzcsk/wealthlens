@@ -83,9 +83,24 @@ const COLUMN_HEADERS = [
 ] as const;
 
 const HEADER_CELL_BASE =
-  'sticky top-0 z-10 bg-card border-b border-ink-200 py-3 px-3 text-xs font-semibold uppercase tracking-wider text-ink-500';
+  'sticky top-0 bg-card border-b border-ink-200 py-3 px-3 text-xs font-semibold uppercase tracking-wider text-ink-500';
 
 const BODY_CELL_BASE = 'py-3 px-3 text-sm tabular-nums';
+
+/*
+ * F47 — the first column (เดือน) stays pinned while the rest of the table
+ * scrolls sideways on a phone. Two rules make it work:
+ *   1. the pinned cell must be OPAQUE, or the scrolling cells show through it;
+ *   2. it must take the *row's* colour (`bg-inherit`), not a hard-coded one,
+ *      or hovered / totals rows get a wrong-coloured seam down the left edge.
+ * Every `<tr>` therefore carries an opaque background of its own.
+ */
+const STICKY_COL =
+  'sticky left-0 z-10 bg-inherit shadow-[8px_0_8px_-8px_rgb(2_6_23_/_0.22)]';
+
+/** Header corner cell — above both the sticky header row and the sticky column. */
+const STICKY_CORNER =
+  'sticky left-0 z-20 bg-card shadow-[8px_0_8px_-8px_rgb(2_6_23_/_0.22)]';
 
 /** Excel-friendly UTF-8 BOM so Thai characters render correctly. */
 const UTF8_BOM = '﻿';
@@ -173,6 +188,9 @@ export const MonthlySummaryTable = ({ year }: MonthlySummaryTableProps) => {
           <p className="text-xs text-ink-500 mt-0.5">
             สรุปรายเดือนของปี {activeYear} — คลิกแถวเพื่อดูรายละเอียด
           </p>
+          <span className="md:hidden mt-0.5 block text-[10px] font-normal text-ink-400">
+            เลื่อนดูคอลัมน์อื่น →
+          </span>
         </div>
         <button
           type="button"
@@ -193,7 +211,9 @@ export const MonthlySummaryTable = ({ year }: MonthlySummaryTableProps) => {
                   scope="col"
                   className={clsx(
                     HEADER_CELL_BASE,
-                    idx === 0 ? 'text-left' : 'text-right',
+                    idx === 0
+                      ? ['text-left', STICKY_CORNER]
+                      : ['text-right', 'z-10'],
                   )}
                 >
                   {label}
@@ -290,9 +310,16 @@ const MonthRow = ({ payload, year, onSelect }: MonthRowProps) => {
       role="button"
       aria-label={`ดูรายละเอียด ${formatThaiMonth(summary.month, { long: true })} ${year}`}
       title={tooltip}
-      className="border-b border-ink-100 hover:bg-hover transition-colors cursor-pointer focus:outline-none focus:bg-hover focus:ring-2 focus:ring-inset focus:ring-primary-ink/30"
+      className="border-b border-ink-100 bg-card hover:bg-hover transition-colors cursor-pointer focus:outline-none focus:bg-hover focus:ring-2 focus:ring-inset focus:ring-primary-ink/30"
     >
-      <td className={clsx(BODY_CELL_BASE, 'font-medium text-left', cellMuted)}>
+      <td
+        className={clsx(
+          BODY_CELL_BASE,
+          'font-medium text-left',
+          cellMuted,
+          STICKY_COL,
+        )}
+      >
         {formatThaiMonth(summary.month)}
       </td>
       <td
@@ -399,8 +426,17 @@ const TotalsRow = ({ totals }: TotalsRowProps) => {
         : 'text-ink-500';
 
   return (
-    <tr className="border-t-2 border-ink-300 bg-surface/60 font-semibold">
-      <td className={clsx(BODY_CELL_BASE, 'text-left text-ink-900')}>รวม</td>
+    /*
+     * The tint used to be `bg-surface/60` — a *translucent* row. A pinned cell
+     * that inherits a translucent colour lets the scrolling numbers ghost
+     * through it. `color-mix` bakes the exact same 60%-surface-over-card colour
+     * into an opaque one, so the row looks identical (both themes) and the
+     * pinned cell is solid.
+     */
+    <tr className="border-t-2 border-ink-300 bg-[color-mix(in_srgb,rgb(var(--bg-surface))_60%,rgb(var(--bg-card)))] font-semibold">
+      <td className={clsx(BODY_CELL_BASE, 'text-left text-ink-900', STICKY_COL)}>
+        รวม
+      </td>
       <td className={clsx(BODY_CELL_BASE, 'text-right text-ink-900')}>
         {formatNumber(totals.salary)}
       </td>
