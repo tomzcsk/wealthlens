@@ -15,8 +15,51 @@ import { chromium, type Page } from 'playwright';
 
 import seedData from '../src/data/seedData';
 import { NAV_ITEMS } from '../src/lib/nav';
+import type { WealthLensData } from '../src/types';
 
 const PORT = 4178;
+
+/**
+ * ทองขนาด "ของจริง" — seedData ไม่มี goldHoldings เลย หน้า /gold จึงเคยถูกวัด
+ * ตอนที่มันว่างเปล่า (ไม่มีแถว = ไม่มีอะไรล้น = เขียวหลอก ๆ) ยอดของ Tom จริง ๆ คือ
+ * ระดับ ฿130,340 / ฿65,170 ต่อบาททอง — ตัวเลขที่ยาวพอจะดันช่องแตกบนจอ 390px
+ * ประตูที่ผ่านด้วยข้อมูลสวยกว่าความจริง คือประตูที่โกหก
+ */
+const VERIFY_DATA: WealthLensData = {
+  ...seedData,
+  goldHoldings: [
+    {
+      id: 'g1',
+      purchaseDate: '2026-06-10',
+      brand: 'MTS Gold',
+      type: 'bar',
+      purity: '96.5',
+      weightBaht: 2,
+      totalCost: 130_340,
+      paymentMethod: 'cash',
+    },
+    {
+      id: 'g2',
+      purchaseDate: '2024-12-15',
+      brand: 'ฮั่วเซ่งเฮง',
+      type: 'bar',
+      purity: '96.5',
+      weightBaht: 5,
+      totalCost: 214_750,
+      paymentMethod: 'cash',
+    },
+  ],
+  preferences: {
+    ...seedData.preferences,
+    // ตั้ง spot ไว้ให้คอลัมน์ "มูลค่าตลาด" มีตัวเลขจริง + updatedAt สด ๆ เพื่อกัน
+    // auto-fetch จาก สมาคมค้าทองคำ ตอนรัน gate (ผลลัพธ์จะได้ deterministic)
+    goldSpotPrice: {
+      '96.5': 52_150,
+      '99.99': 54_400,
+      updatedAt: new Date().toISOString(),
+    },
+  },
+};
 /**
  * ทุกหน้าในทะเบียนเมนู (F49) — เดิมเป็นรายการพิมพ์มือ เพิ่มหน้าใหม่แล้วมันหลุด
  * การตรวจเงียบ ๆ (F48 รอดมาได้เพราะมีคนจำได้ว่าต้องมาเติม '/growth' เอง).
@@ -72,7 +115,7 @@ const openApp = async (width: number, height: number): Promise<Page> => {
         }),
       );
     },
-    ['wealthlens_data', seedData] as const,
+    ['wealthlens_data', VERIFY_DATA] as const,
   );
   return ctx.newPage();
 };
@@ -185,6 +228,39 @@ for (const route of ROUTES) {
     if (!t.wide || t.rows === 0) continue;
     assert(`M4 ตาราง #${i + 1} (กว้าง ${t.w}px เกินจอ) ตรึงคอลัมน์แรก`, t.sticky);
   }
+
+  /*
+   * M7: ข้อความห้ามล้นออกนอก "ช่องของตัวเอง"
+   *
+   * M1 จับได้แค่ของที่ล้นออกนอก "จอ" — แต่บั๊กที่ Tom เจอบน /gold คือข้อความล้น
+   * ออกนอก grid cell ของตัวเอง (col-span-1 ≈ 20px แต่ "30.49g" กิน 41px) แล้ว
+   * ไหลไปนอนใต้ปุ่ม ขาย โดยหน้าเพจไม่ได้กว้างเกินจอเลยสักพิกเซล
+   *
+   * นับเฉพาะ leaf (ไม่มี element ลูก) ที่มีข้อความ และ overflow เป็น visible
+   * เท่านั้น — ตัวที่ตั้งใจให้เลื่อนได้ (overflow-x-auto) ไม่ใช่บั๊ก
+   *
+   * หมายเหตุ: ห้ามประกาศฟังก์ชัน "มีชื่อ" ในบล็อก evaluate (tsx/esbuild keepNames
+   * แทรก __name → ReferenceError ในหน้าเว็บ) — เขียนเป็นนิพจน์ล้วน
+   */
+  const spill = await page.evaluate(() =>
+    [...(document.querySelector('main')?.querySelectorAll('*') ?? [])]
+      .filter((e) => {
+        if (e.childElementCount > 0) return false;
+        if (!(e.textContent ?? '').trim()) return false;
+        const cs = getComputedStyle(e);
+        if (cs.overflowX !== 'visible' || cs.overflowY !== 'visible') return false;
+        return e.scrollWidth > e.clientWidth + 1;
+      })
+      .map(
+        (e) =>
+          `"${(e.textContent ?? '').trim().slice(0, 16)}" ต้องการ ${e.scrollWidth}px ช่องกว้าง ${e.clientWidth}px`,
+      ),
+  );
+  assert(
+    `M7 ข้อความไม่ล้นช่องตัวเอง (ล้น ${spill.length} จุด)`,
+    spill.length === 0,
+    spill.slice(0, 8).join(' · '),
+  );
 
   // M5: ปุ่มลอยไม่ทับ control อื่น
   const fabClash = await page.evaluate(() => {
