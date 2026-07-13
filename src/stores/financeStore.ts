@@ -2394,13 +2394,35 @@ export const useFinanceStore = create<FinanceState>()(
           // Bank accounts: prefer incoming; else migrate the incoming
           // payload's legacy keptBalances (same path as rehydrate); else
           // preserve local so a pre-F33 payload doesn't wipe bank data.
+          const migratedAccounts = data.bankAccounts
+            ? undefined
+            : migrateKeptToBankAccounts(data);
           const bankAccounts =
-            data.bankAccounts ??
-            migrateKeptToBankAccounts(data) ??
-            state.data.bankAccounts;
+            data.bankAccounts ?? migratedAccounts ?? state.data.bankAccounts;
+          // สมุดรายการต้องมาจาก "แหล่งเดียวกับบัญชี" เสมอ (lock-step เหมือน
+          // mergeData:590) — ไม่งั้นบัญชี local คู่กับสมุดที่หายไป = บัญชีมียอด
+          // โดยไม่มีรายการรองรับ (invariant F40 พังจากประตู restore).
+          //   บัญชีมาจาก payload/migrate → สมุดจาก payload (บัญชี migrate ไม่มี
+          //     tx → undefined ก็ถูก: ยอดมาจาก balances เป็นเซลล์ที่ยกเว้น invariant)
+          //   บัญชีมาจาก local (preserve) → สมุด local คู่กัน
+          const usePayloadJournal =
+            data.bankAccounts !== undefined || migratedAccounts !== undefined;
+          const bankTransactions = usePayloadJournal
+            ? data.bankTransactions
+            : state.data.bankTransactions;
+          // ดึง bank fields ออกจาก `...data` — ทั้งคู่ถูก set แบบ deterministic
+          // ด้านล่าง. ถ้าปล่อยให้ spread มาเอง payload ที่มีสมุดผีแต่ไม่มีบัญชี
+          // จะพา `data.bankTransactions` เข้ามาค้างเป็นรายการกำพร้า.
+          const {
+            bankAccounts: _ignoredAccounts,
+            bankTransactions: _ignoredTx,
+            ...restData
+          } = data;
+          void _ignoredAccounts;
+          void _ignoredTx;
           return {
             data: {
-              ...data,
+              ...restData,
               years,
               preferences,
               taxAllowances,
@@ -2408,6 +2430,7 @@ export const useFinanceStore = create<FinanceState>()(
               goldPriceHistory,
               loans,
               ...(bankAccounts ? { bankAccounts } : {}),
+              ...(bankTransactions ? { bankTransactions } : {}),
               lastUpdated: stamp,
             },
             lastUpdated: stamp,
