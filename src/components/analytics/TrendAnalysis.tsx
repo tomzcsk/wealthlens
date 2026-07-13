@@ -59,23 +59,6 @@ import { THAI_MONTHS_SHORT, formatTHB, formatThaiMonthYear } from '@/utils/forma
 /** UXUI.md §2 — Net Income violet. */
 const COLOR_NET = '#7C3AED';
 
-/**
- * Local mirror of UXUI.md §2 expense-category palette so Recharts can
- * consume them as `fill` strings (it can't read CSS variables). Identical
- * values to ExpensePieChart's local map — duplicated rather than centralised
- * to keep this component drop-in self-contained.
- */
-const CATEGORY_HEX_COLORS: Record<ExpenseCategory, string> = {
-  housing: '#6366F1',
-  vehicle: '#8B5CF6',
-  utilities: '#06B6D4',
-  subscription: '#F59E0B',
-  finance: '#EF4444',
-  entertainment: '#EC4899',
-  savings: '#10B981',
-  other: '#6B7280',
-};
-
 /** Stable id for the area-chart gradient `<defs>`. */
 const NET_GRADIENT_ID = 'wl-net-area-gradient';
 
@@ -191,7 +174,7 @@ const BarTooltip = ({ active, payload }: BarTooltipProps): ReactNode => {
     .map((entry) => {
       const cat = String(entry.dataKey ?? '') as ExpenseCategory;
       const numeric = typeof entry.value === 'number' ? entry.value : Number(entry.value ?? 0);
-      return { cat, numeric, color: entry.color ?? CATEGORY_HEX_COLORS[cat] };
+      return { cat, numeric, color: entry.color ?? EXPENSE_CATEGORIES[cat]?.hex };
     })
     .filter((r) => r.numeric > 0)
     .sort((a, b) => b.numeric - a.numeric);
@@ -522,7 +505,9 @@ const ExpenseStackedBarSection = ({ data, height }: ExpenseStackedBarSectionProp
                   dataKey={cat}
                   name={cat}
                   stackId="exp"
-                  fill={CATEGORY_HEX_COLORS[cat]}
+                  // literal hex — Recharts writes it to an SVG attribute, which
+                  // ignores var() (F46). Canonical: types/expense-categories.ts (F49)
+                  fill={EXPENSE_CATEGORIES[cat].hex}
                   hide={hidden[cat]}
                   {...anim}
                 />

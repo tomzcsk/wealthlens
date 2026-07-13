@@ -49,22 +49,6 @@ export interface ExpensePieChartProps {
 // Constants
 // ---------------------------------------------------------------------------
 
-/**
- * Per-task spec: keep diffs small by mirroring the 8 category hexes locally
- * rather than extending the EXPENSE_CATEGORIES type. Values are pulled
- * directly from UXUI.md §2 expense-category palette.
- */
-const CATEGORY_HEX_COLORS: Record<ExpenseCategory, string> = {
-  housing: '#6366F1',
-  vehicle: '#8B5CF6',
-  utilities: '#06B6D4',
-  subscription: '#F59E0B',
-  finance: '#EF4444',
-  entertainment: '#EC4899',
-  savings: '#10B981',
-  other: '#6B7280',
-};
-
 // ---------------------------------------------------------------------------
 // Internal shapes
 // ---------------------------------------------------------------------------
@@ -142,7 +126,10 @@ export const ExpensePieChart = ({ year, month, height = 320 }: ExpensePieChartPr
           icon: meta.icon,
           amount,
           share: sum > 0 ? amount / sum : 0,
-          color: CATEGORY_HEX_COLORS[cat],
+          // Literal hex, not `var(--cat-*)` — Recharts writes this into an SVG
+          // presentation attribute, which does not resolve CSS variables (F46).
+          // Canonical source: types/expense-categories.ts (F49).
+          color: meta.hex,
         };
       },
     );
