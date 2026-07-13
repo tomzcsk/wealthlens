@@ -6,7 +6,6 @@ import type { ReactNode } from 'react';
 
 import { AllYearsSummary } from '@/components/analytics/AllYearsSummary';
 import { AnomalyAlerts } from '@/components/analytics/AnomalyAlerts';
-import { BudgetForecast } from '@/components/analytics/BudgetForecast';
 import { MultiYearComparison } from '@/components/analytics/MultiYearComparison';
 import { SubscriptionManager } from '@/components/analytics/SubscriptionManager';
 import { TrendAnalysis } from '@/components/analytics/TrendAnalysis';
@@ -19,7 +18,6 @@ export const AnalyticsPage = (): ReactNode => {
       <MultiYearComparison />
       <SubscriptionManager />
       <TrendAnalysis />
-      <BudgetForecast />
       <AnomalyAlerts />
     </div>
   );
