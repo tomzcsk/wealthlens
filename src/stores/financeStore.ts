@@ -316,20 +316,41 @@ const reconcileIncomeLedger = (
 const reconcileExpenseLedger = (
   ledger: BankLedger,
   expenseId: string,
-  deduction: ExpenseSideEffectRefs | undefined,
+  oldDeduction: ExpenseSideEffectRefs | undefined,
+  newDeduction: ExpenseSideEffectRefs | undefined,
   label: string,
   date?: string,
-): BankLedger =>
-  reconcileBankMovements(
-    ledger,
+): BankLedger => {
+  // รายจ่ายรุ่นเก่า (F34→F40): หักยอดนอกสมุดไปแล้ว (มี sideEffects) แต่ไม่มี
+  // บรรทัดให้ revoke → คืนยอดนอกสมุดก่อน (mirror gold addRawBalance). ถ้ามี
+  // บรรทัดจริง เชื่อบรรทัด (revoke คืน tx.amount ที่ลงจริง) ไม่แตะ oldDeduction —
+  // บรรทัดคือ source of truth เมื่อมี (spec §7).
+  const hasLine = ledger.transactions.some(
     (tx) => tx.source.type === 'expense' && tx.source.expenseId === expenseId,
-    deduction
+  );
+  const base: BankLedger =
+    !hasLine && oldDeduction
+      ? {
+          ...ledger,
+          accounts: addRawBalance(
+            ledger.accounts,
+            oldDeduction.accountId,
+            oldDeduction.deductYear,
+            oldDeduction.deductMonth,
+            oldDeduction.deductAmount,
+          ),
+        }
+      : ledger;
+  return reconcileBankMovements(
+    base,
+    (tx) => tx.source.type === 'expense' && tx.source.expenseId === expenseId,
+    newDeduction
       ? [
           {
-            accountId: deduction.accountId,
-            year: deduction.deductYear,
-            month: deduction.deductMonth,
-            amount: -deduction.deductAmount,
+            accountId: newDeduction.accountId,
+            year: newDeduction.deductYear,
+            month: newDeduction.deductMonth,
+            amount: -newDeduction.deductAmount,
             label,
             source: { type: 'expense' as const, expenseId },
             ...(date ? { date } : {}),
@@ -337,6 +358,7 @@ const reconcileExpenseLedger = (
         ]
       : [],
   );
+};
 
 /**
  * บวก `delta` เข้าเซลล์ (บัญชี, ปี, เดือน) แบบ inline โดย "ไม่จดรายการ".
@@ -832,6 +854,7 @@ export const useFinanceStore = create<FinanceState>()(
                 reconcileExpenseLedger(
                   l,
                   newItem.id,
+                  undefined,
                   newDed,
                   newItem.name,
                   newItem.date,
@@ -885,6 +908,7 @@ export const useFinanceStore = create<FinanceState>()(
                   reconcileExpenseLedger(
                     l,
                     itemId,
+                    old.sideEffects,
                     newDed,
                     merged.name,
                     merged.date,
@@ -927,7 +951,7 @@ export const useFinanceStore = create<FinanceState>()(
           const ledgerPatch =
             target && state.data.bankAccounts !== undefined
               ? withLedger(state.data, (l) =>
-                  reconcileExpenseLedger(l, itemId, undefined, target.name, target.date),
+                  reconcileExpenseLedger(l, itemId, target.sideEffects, undefined, target.name, target.date),
                 )
               : {};
           // Keep the (possibly empty) month row to preserve historical
@@ -1696,7 +1720,7 @@ export const useFinanceStore = create<FinanceState>()(
               ? withLedger(state.data, (l) =>
                   swept.reduce(
                     (acc, item) =>
-                      reconcileExpenseLedger(acc, item.id, undefined, item.name, item.date),
+                      reconcileExpenseLedger(acc, item.id, item.sideEffects, undefined, item.name, item.date),
                     l,
                   ),
                 )
@@ -1836,7 +1860,7 @@ export const useFinanceStore = create<FinanceState>()(
           const ledgerPatch =
             doomed && state.data.bankAccounts !== undefined
               ? withLedger(state.data, (l) =>
-                  reconcileExpenseLedger(l, doomed.id, undefined, doomed.name, doomed.date),
+                  reconcileExpenseLedger(l, doomed.id, doomed.sideEffects, undefined, doomed.name, doomed.date),
                 )
               : {};
 
