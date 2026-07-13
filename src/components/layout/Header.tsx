@@ -51,10 +51,8 @@ export const Header = (): ReactNode => {
       className="sticky top-0 z-20 bg-card border-b border-ink-200 shadow-sm"
       role="banner"
     >
-      <div className="flex items-center gap-4 px-6 md:px-8 h-16">
-        {/* Spacer so the mobile hamburger doesn't collide with the title */}
-        <div className="md:hidden w-10" aria-hidden="true" />
-
+      {/* px-4 บนมือถือ: ไม่มีแฮมเบอร์เกอร์แล้ว (F47) ชื่อหน้าจึงได้ที่เต็ม ๆ */}
+      <div className="flex items-center gap-4 px-4 md:px-8 h-16">
         <h1 className="text-xl font-semibold text-ink-900 truncate">
           {titleFor(pathname)}
         </h1>
@@ -76,10 +74,11 @@ export const Header = (): ReactNode => {
             </select>
           </label>
 
+          {/* มือถือใช้ปุ่มลอย (AddFab) แทน — sm (640px) ยังเป็นมือถือแนวนอน */}
           <button
             type="button"
             onClick={() => navigate('/monthly')}
-            className="hidden sm:inline-flex items-center gap-1.5 bg-primary hover:bg-primary-dark text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-sm transition motion-safe:active:scale-[0.98]"
+            className="hidden md:inline-flex items-center gap-1.5 bg-primary hover:bg-primary-dark text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-sm transition motion-safe:active:scale-[0.98]"
           >
             <span aria-hidden="true">+</span>
             <span>เพิ่มรายการ</span>
