@@ -17,9 +17,9 @@ Single-page app, no backend, all data in browser LocalStorage
 
 | Need to know about... | Read this file |
 |----------------------|----------------|
-| Product goals, features, user stories | @prd.md |
-| Tech stack, architecture, data schema | @techstack.md |
-| UI design, colors, layout, components | @UXUI.md |
+| Product goals, features, user stories | @docs/prd.md |
+| Tech stack, architecture, data schema | @docs/techstack.md |
+| UI design, colors, layout, components | @docs/UXUI.md |
 | Feature list + build checkpoint status | @features.json |
 
 ---
@@ -110,7 +110,7 @@ npm run verify:mobile  # build + Playwright วัดจอจริง 390×844
 
 ## Data Quirks ที่ต้องรู้
 
-- **ปี 2023:** มีแค่ income data ไม่มี itemized expenses (ดู @prd.md#7-data-inventory)
+- **ปี 2023:** มีแค่ income data ไม่มี itemized expenses (ดู @docs/prd.md#7-data-inventory)
 - **ปี 2026 เพิ่ม `ลงทุน Dime`** ใน deductions — field นี้ optional ในปีอื่น
 - **`Net.`** = take-home เฉพาะเงินเดือน หลังหักทุกอย่าง
 - **`Net. All`** = Net. + Commission + รายได้อื่นๆ (F32) (ตัวเลข KPI หลัก)
@@ -122,9 +122,9 @@ npm run verify:mobile  # build + Playwright วัดจอจริง 390×844
 ## Reference Files (โหลดเมื่อต้องการ)
 
 ```
-@prd.md           # Features scope, user stories, success metrics
-@techstack.md     # Stack details, data schema TypeScript types
-@UXUI.md          # Colors, components, screen layouts, animations
+@docs/prd.md           # Features scope, user stories, success metrics
+@docs/techstack.md     # Stack details, data schema TypeScript types
+@docs/UXUI.md          # Colors, components, screen layouts, animations
 @features.json    # Build checklist with acceptance criteria
 ```
 
