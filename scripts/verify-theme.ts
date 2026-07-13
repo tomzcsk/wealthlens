@@ -302,17 +302,38 @@ for (const f of FAMILIES) {
   }
 }
 
-console.log('\n— R5f: hero กลับด้าน — ค่าเดียวสองโหมด และอ่านออกบนพื้น hero —');
-for (const token of ['bg-inverse', 'inverse-fg', 'inverse-muted', 'inverse-dim']) {
+// ---------- R5f: hero กลับด้าน ----------
+// หมึกบน hero (ขาว/เทาอ่อน/accent) ต้องค่าเดียวสองโหมด — มันอยู่บนพื้นเข้มเสมอ
+// แต่ **ตัวพื้น hero เองไม่ต้องเท่ากันสองโหมด** — และห้ามเท่ากับพื้นหน้าด้วย
+// (เคยเป็นบั๊กจริง: มืดแล้ว bg-inverse = bg-surface เป๊ะ → การ์ด hero กลืนหายทั้งใบ)
+console.log('\n— R5f: hero กลับด้าน — หมึกคงที่ · พื้นต้องมืดและต้องเห็นเป็นการ์ด —');
+for (const token of ['inverse-fg', 'inverse-muted', 'inverse-dim']) {
   assert(`${token}: สว่าง = มืด`, LIGHT[token] === DARK[token]);
 }
-for (const token of ['inverse-fg', 'inverse-muted', 'inverse-dim']) {
-  const r = contrast(hexOf(LIGHT[token]), hexOf(LIGHT['bg-inverse']));
-  assert(`${token} บน bg-inverse = ${r.toFixed(2)}`, r >= 4.5);
-}
-for (const f of FAMILIES) {
-  const r = contrast(hexOf(LIGHT[`c-${f}-on-fill`]), hexOf(LIGHT['bg-inverse']));
-  assert(`c-${f}-on-fill บน bg-inverse = ${r.toFixed(2)}`, r >= 4.5);
+for (const mode of [
+  { name: 'สว่าง', map: LIGHT },
+  { name: 'มืด', map: DARK },
+]) {
+  for (const token of ['inverse-fg', 'inverse-muted', 'inverse-dim']) {
+    const r = contrast(hexOf(mode.map[token]), hexOf(mode.map['bg-inverse']));
+    assert(`${mode.name}: ${token} บน bg-inverse = ${r.toFixed(2)}`, r >= 4.5);
+  }
+  for (const f of FAMILIES) {
+    const r = contrast(
+      hexOf(mode.map[`c-${f}-on-fill`]),
+      hexOf(mode.map['bg-inverse']),
+    );
+    assert(
+      `${mode.name}: c-${f}-on-fill บน bg-inverse = ${r.toFixed(2)}`,
+      r >= 4.5,
+    );
+  }
+  // การ์ดที่สีเท่าพื้นหน้าเป๊ะ = ไม่มีการ์ด
+  assert(
+    `${mode.name}: bg-inverse ≠ bg-surface (hero ต้องยังเป็นการ์ด)`,
+    mode.map['bg-inverse'] !== mode.map['bg-surface'],
+    `ทั้งคู่ = ${mode.map['bg-inverse']}`,
+  );
 }
 
 // ---------- R5g: พื้นที่ต้อง "ไม่รู้จักโหมด" — ค่าเดียวกันเป๊ะสองโหมด ----------
