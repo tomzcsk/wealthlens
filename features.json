@@ -4,7 +4,7 @@
     "description": "Personal Finance Dashboard สำหรับติดตามรายรับ-รายจ่ายส่วนตัว",
     "version": "1.3.0",
     "created": "2026-05-06",
-    "lastUpdated": "2026-07-10",
+    "lastUpdated": "2026-07-13",
     "owner": "Tom",
     "status": "shipped",
     "storageStrategy": "LocalStorage (primary) + Google Drive Sync (cloud backup) + JSON Export (emergency)"
@@ -1421,6 +1421,40 @@
             "completedAt": "2026-07-10",
             "notes": "Commits: be50684 (deleteIncome), dd8a33f (deleteBankAccount) | Specs: docs/superpowers/specs/2026-07-10-delete-income-ledger-gap.md, docs/superpowers/specs/2026-07-10-delete-bank-account-guard.md | Files: utils/bankAccountUsage.ts (ใหม่), scripts/verify-delete-income.ts (ใหม่), scripts/verify-delete-bank-account.ts (ใหม่), stores/financeStore.ts, utils/actionMessages.ts, components/forms/IncomeForm.tsx, pages/BankAccountsPage.tsx | รู้แต่ไม่แก้: applyBankDelta ทิ้งคีย์ยอดศูนย์ ({'2027':{'7':0}}) เมื่อ revert จนยอดเป็น 0 — ไม่กระทบตัวเลขใด มีมาก่อนงานนี้ทุกเส้นทาง แก้ที่นั่น = แตะจุดที่ทุก flow เรียกผ่าน Tom ตัดสินให้ปล่อยไว้"
           }
+        },
+        {
+          "id": "F45",
+          "name": "Ledger Integrity Sweep (ปิดแพทเทิร์นลืมเก็บกวาดให้ครบทุกประตู)",
+          "description": "ต่อจาก F44 — กวาดแพทเทิร์น 'การเปลี่ยนแปลงที่ลืมเก็บกวาดสิ่งที่ชี้มา' ให้ทั่วทั้ง 4 ประตู (delete/mutate/import/restore) พบเพิ่ม 5 บั๊กเงินเงียบ ทุกตัว reproduce ด้วย probe จริง + TDD แดงก่อนแก้",
+          "status": "completed",
+          "priority": "P0",
+          "phase": "phase_4",
+          "acceptanceCriteria": [
+            "delete: deleteLoan/deleteExtraPayment ลบ ExpenseItem (โปะหนี้+createExpenseEntry) ผ่าน reconcileExpenseLedger คืนยอดบัญชี ไม่ทิ้ง tx กำพร้า (เดิม filter row.items ตรง ๆ)",
+            "restore: เพิ่มหมวด 'gold' เข้า VALID_SAVINGS_CATEGORIES — backup ของผู้ใช้เอง (มี gold savings) import กลับไม่ได้ทั้งไฟล์; เปลี่ยนเป็น Record<SavingsCategory,true> กันเพิ่มหมวดใหม่แล้วลืม (typecheck แดง)",
+            "restore: replaceAllData lock-step bankAccounts↔bankTransactions (สมุดมาจากแหล่งเดียวกับบัญชี) + destructure bank fields ออกจาก ...data กันสมุดผีค้าง",
+            "import: validateBackup ตรวจ array member (ไม่ใช่แค่ Array.isArray) + referential integrity (pointer ชี้บัญชี/หนี้ที่ไม่มี → ปฏิเสธ); conservative นับ acct-krungsri ที่จะ migrate + gold ref ไม่มี accountId ข้าม",
+            "mutate: reconcileExpenseLedger +oldDeduction param — รายจ่าย legacy (F34→F40, มี sideEffects ไม่มีบรรทัด) ลบ/แก้แล้วคืนยอดนอกสมุด (mirror gold addRawBalance)",
+            "reproduce ก่อนเชื่อ: subagent audit รายงาน ผมรัน probe จริงยืนยันเองทุกข้อ (จับ false-positive ของ subagent + ของตัวเองได้)",
+            "ยืนยันกับข้อมูลจริงบน Drive (อ่านอย่างเดียว): ไม่มีบั๊กตัวไหนทำข้อมูลจริงเสียหาย (tx 32 เป็น backfill ล้วน, ไม่มี sideEffects/depositSideEffects) → ไม่ต้อง migration; acceptance บังคับไฟล์จริงผ่าน validator ใหม่",
+            "verify เดิม 4 ตัวที่แดงจาก referential check ไม่ใช่ regression — payload minimal ที่ pointer ไม่ครบ (store จริงไม่สร้าง) แก้ให้สมจริง",
+            "Verified: 7 verify scripts ใหม่ (delete-income 25, delete-bank-account 20, loan-expense-revert 16, backup-categories, replace-lockstep, import-integrity, legacy-expense-deduction) แดงก่อนแก้ 11/4/6/2/1/10/3 + verify suite รวม 19→26 ไม่ regress + typecheck + lint + build + UI run จริง (delete flows)"
+          ],
+          "estimatedHours": 8,
+          "dependencies": [
+            "F25",
+            "F33",
+            "F34",
+            "F37",
+            "F39",
+            "F40",
+            "F44"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-07-13",
+            "notes": "Spec: docs/superpowers/specs/2026-07-13-ledger-integrity-sweep.md | Commits: 2e1cce6 (loan/extra payment), da0c3c0 (gold category), 22492dc (replaceAllData lock-step), c62a1ce (import array+referential), 7d11d33 (legacy expense) | Files: stores/financeStore.ts (reconcileExpenseLedger +oldDeduction, deleteLoan/deleteExtraPayment revoke, replaceAllData lock-step), utils/exportImport.ts (gold category + validateBankAccount/BankTransaction + referential integrity) | verify ใหม่ 7 ไฟล์ + แก้ 4 ไฟล์เดิม (payload สมจริง) | รู้แต่ไม่แก้: applyBankDelta คีย์ยอดศูนย์ (สืบทอดจาก F44); legacy expense ที่เซลล์ผสมใช้บรรทัด virtual 'ยอดก่อนมีรายการ' (F40 design)"
+          }
         }
       ]
     }
@@ -1510,8 +1544,8 @@
     }
   },
   "progressSummary": {
-    "totalFeatures": 52,
-    "completed": 52,
+    "totalFeatures": 53,
+    "completed": 53,
     "inProgress": 0,
     "pending": 0,
     "overallProgress": "100%",
