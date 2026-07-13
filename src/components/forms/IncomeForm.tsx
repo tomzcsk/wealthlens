@@ -240,18 +240,18 @@ const NumberInput = ({
   );
 
   const inputClass = [
-    'w-full bg-slate-50 border rounded-lg px-3 py-2 text-right tabular-nums',
+    'w-full bg-surface border rounded-lg px-3 py-2 text-right tabular-nums',
     'focus:outline-none focus:ring-2',
     error
-      ? 'border-expense focus:ring-expense focus:border-expense'
-      : 'border-slate-200 focus:ring-primary focus:border-primary',
+      ? 'border-expense-ink focus:ring-expense-ink focus:border-expense-ink'
+      : 'border-ink-200 focus:ring-primary-ink focus:border-primary-ink',
   ].join(' ');
 
   return (
     <div className="grid grid-cols-[140px_1fr] items-start gap-3">
       <label
         htmlFor={id}
-        className="text-sm text-slate-700 pt-2 select-none"
+        className="text-sm text-ink-700 pt-2 select-none"
       >
         {label}
       </label>
@@ -274,18 +274,18 @@ const NumberInput = ({
           />
           <span
             aria-hidden="true"
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-400 text-sm pointer-events-none"
           >
             {suffix}
           </span>
         </div>
         {error && (
-          <p id={`${id}-error`} className="mt-1 text-xs text-expense">
+          <p id={`${id}-error`} className="mt-1 text-xs text-expense-ink">
             {error}
           </p>
         )}
         {!error && hint && (
-          <p id={`${id}-hint`} className="mt-1 text-xs text-slate-400">
+          <p id={`${id}-hint`} className="mt-1 text-xs text-ink-400">
             {hint}
           </p>
         )}
@@ -311,13 +311,13 @@ const SummaryRow = ({
 }: SummaryRowProps): ReactNode => {
   const valueClass =
     emphasis === 'netAll'
-      ? 'text-net font-semibold tabular-nums text-base'
+      ? 'text-net-ink font-semibold tabular-nums text-base'
       : emphasis === 'net'
-        ? 'text-slate-900 font-semibold tabular-nums'
-        : 'text-slate-700 tabular-nums';
+        ? 'text-ink-900 font-semibold tabular-nums'
+        : 'text-ink-700 tabular-nums';
   return (
     <>
-      <div className="text-slate-500">{label}</div>
+      <div className="text-ink-500">{label}</div>
       <div className={`text-right ${valueClass}`}>{formatTHB(value)}</div>
     </>
   );
@@ -361,7 +361,7 @@ const DepositCheckbox = ({
       <label
         className={[
           'flex items-center gap-2 text-xs select-none',
-          disabled ? 'text-slate-400 cursor-not-allowed' : 'text-slate-600 cursor-pointer',
+          disabled ? 'text-ink-400 cursor-not-allowed' : 'text-ink-600 cursor-pointer',
         ].join(' ')}
       >
         <input
@@ -370,11 +370,11 @@ const DepositCheckbox = ({
           disabled={disabled}
           onChange={(e) => onChange(e.target.checked)}
           aria-label={ariaLabel}
-          className="h-4 w-4 rounded border-slate-300 text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+          className="h-4 w-4 rounded border-ink-300 text-primary-ink focus:outline-none focus:ring-2 focus:ring-primary-ink/30 disabled:opacity-50"
         />
         {label}
       </label>
-      {helper && <div className="mt-1 text-xs text-slate-400">{helper}</div>}
+      {helper && <div className="mt-1 text-xs text-ink-400">{helper}</div>}
     </div>
   </div>
 );
@@ -783,10 +783,10 @@ export const IncomeForm = ({
           to one year+month chosen by the parent. */}
       <div className="mb-5 flex items-end justify-between gap-3">
         <div>
-          <div className="text-xs text-slate-400 uppercase tracking-wide">
+          <div className="text-xs text-ink-400 uppercase tracking-wide">
             เดือน
           </div>
-          <div className="text-lg font-semibold text-slate-900 mt-0.5">
+          <div className="text-lg font-semibold text-ink-900 mt-0.5">
             {monthLabel}
           </div>
         </div>
@@ -794,7 +794,7 @@ export const IncomeForm = ({
           <button
             type="button"
             onClick={handleFillDefaults}
-            className="px-3 py-1.5 text-sm font-medium text-primary border border-primary rounded-md hover:bg-primary-light transition"
+            className="px-3 py-1.5 text-sm font-medium text-primary-ink border border-primary-ink rounded-md hover:bg-primary-50 transition"
             title="ดึงค่าเริ่มต้นจาก Settings → ค่าเริ่มต้นรายได้"
           >
             📋 เติมจากค่าเริ่มต้น
@@ -802,7 +802,7 @@ export const IncomeForm = ({
         )}
       </div>
       {!incomeDefaults && (
-        <p className="mb-4 text-xs text-slate-400">
+        <p className="mb-4 text-xs text-ink-400">
           💡 ตั้งค่า Settings → ค่าเริ่มต้นรายได้ เพื่อ pre-fill เดือนใหม่
           ในคลิกเดียว
         </p>
@@ -836,7 +836,7 @@ export const IncomeForm = ({
                   ยังไม่มีบัญชีเงินเดือน — เพิ่มก่อน{' '}
                   <Link
                     to="/accounts"
-                    className="text-primary underline underline-offset-2 hover:text-primary-dark"
+                    className="text-primary-ink underline underline-offset-2 hover:text-primary-700"
                   >
                     ไปเพิ่มบัญชี
                   </Link>
@@ -893,7 +893,7 @@ export const IncomeForm = ({
       </div>
 
       {/* --- Deductions section --- */}
-      <hr className="border-slate-200 my-6" />
+      <hr className="border-ink-200 my-6" />
       <SectionHeader title="หัก (Deductions)" />
       <div className="space-y-3">
         <NumberInput
@@ -923,9 +923,9 @@ export const IncomeForm = ({
       </div>
 
       {/* --- Live summary --- */}
-      <hr className="border-slate-200 my-6" />
+      <hr className="border-ink-200 my-6" />
       <SectionHeader title="สรุป" />
-      <div className="bg-slate-50 rounded-lg p-4 grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
+      <div className="bg-surface rounded-lg p-4 grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
         <SummaryRow label="รวมรายได้" value={summary.grossIncome} />
         <SummaryRow label="รวมหัก" value={summary.totalDeductions} />
         <SummaryRow label="Net." value={summary.netSalary} emphasis="net" />
@@ -943,7 +943,7 @@ export const IncomeForm = ({
             <button
               type="button"
               onClick={onCancel}
-              className="border border-slate-200 px-4 py-2 rounded-lg hover:bg-slate-50 text-sm text-slate-700"
+              className="border border-ink-200 px-4 py-2 rounded-lg hover:bg-hover text-sm text-ink-700"
             >
               ยกเลิก
             </button>
@@ -952,7 +952,7 @@ export const IncomeForm = ({
             <button
               type="button"
               onClick={handleDelete}
-              className="text-expense hover:bg-expense-light px-4 py-2 rounded-lg text-sm"
+              className="text-expense-ink hover:bg-expense-50 px-4 py-2 rounded-lg text-sm"
             >
               ลบ
             </button>
@@ -988,7 +988,7 @@ export const IncomeForm = ({
 // ---------------------------------------------------------------------------
 
 const SectionHeader = ({ title }: { title: string }): ReactNode => (
-  <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+  <h3 className="text-xs font-semibold text-ink-500 uppercase tracking-wider mb-3">
     {title}
   </h3>
 );

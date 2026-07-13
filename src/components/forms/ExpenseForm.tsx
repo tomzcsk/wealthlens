@@ -362,9 +362,9 @@ export const ExpenseForm = ({
   // -------------------------------------------------------------------------
 
   const inputBaseClass =
-    'w-full bg-slate-50 border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition';
-  const labelClass = 'block text-xs font-medium text-slate-600 mb-1';
-  const errorClass = 'mt-1 text-xs text-expense';
+    'w-full bg-surface border border-ink-200 rounded-md px-3 py-2 text-sm text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-primary-ink focus:border-transparent transition';
+  const labelClass = 'block text-xs font-medium text-ink-600 mb-1';
+  const errorClass = 'mt-1 text-xs text-expense-ink';
 
   return (
     <form
@@ -421,7 +421,7 @@ export const ExpenseForm = ({
               </option>
             ))}
           </select>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-ink-500">
             เลือกเมื่อรายจ่ายนี้คือการผ่อนชำระหนี้ก้อนนั้น — ยอดคงเหลือของหนี้จะลดตามยอดจริงที่จ่าย
           </p>
         </div>
@@ -486,9 +486,9 @@ export const ExpenseForm = ({
         </label>
 
         {isEdit && (
-          <div className="flex items-center justify-between rounded-md bg-slate-50 border border-slate-200 px-3 py-2 mb-2">
-            <span className="text-xs text-slate-500">ยอดเดิม</span>
-            <span className="text-sm font-medium tabular-nums text-slate-700">
+          <div className="flex items-center justify-between rounded-md bg-surface border border-ink-200 px-3 py-2 mb-2">
+            <span className="text-xs text-ink-500">ยอดเดิม</span>
+            <span className="text-sm font-medium tabular-nums text-ink-700">
               {formatTHB(baseAmount)}
             </span>
           </div>
@@ -513,19 +513,19 @@ export const ExpenseForm = ({
               : undefined
           }
         />
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-xs text-ink-500">
           {isEdit
             ? 'ปรับยอด · บวก = เพิ่ม · ลบ = ลด · เว้นว่าง = คงเดิม'
             : 'พิมพ์จำนวนเงิน (ใส่ - ข้างหน้าเพื่อลดยอด)'}
         </p>
 
-        <div className="flex items-center justify-between rounded-md bg-primary-light border border-blue-100 px-3 py-2 mt-2">
-          <span className="text-sm text-slate-600">ยอดใหม่หลังบันทึก</span>
+        <div className="flex items-center justify-between rounded-md bg-primary-50 border border-primary-100 px-3 py-2 mt-2">
+          <span className="text-sm text-ink-600">ยอดใหม่หลังบันทึก</span>
           <span className="flex items-baseline gap-2">
             {amountDelta !== null && amountDelta !== 0 && (
               <span
                 className={`text-xs tabular-nums ${
-                  amountDelta > 0 ? 'text-income' : 'text-expense'
+                  amountDelta > 0 ? 'text-income-ink' : 'text-expense-ink'
                 }`}
               >
                 {amountDelta > 0 ? '+' : '−'}
@@ -534,7 +534,7 @@ export const ExpenseForm = ({
             )}
             <span
               className={`text-lg font-semibold tabular-nums ${
-                newAmount < 0 ? 'text-expense' : 'text-slate-800'
+                newAmount < 0 ? 'text-expense-ink' : 'text-ink-800'
               }`}
             >
               {formatTHB(newAmount)}
@@ -564,7 +564,7 @@ export const ExpenseForm = ({
           }
           className={inputBaseClass}
         />
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-xs text-ink-500">
           เว้นว่างได้ — ปล่อยว่างถ้าไม่อยากระบุวันที่
         </p>
       </div>
@@ -578,9 +578,9 @@ export const ExpenseForm = ({
           onChange={(e: ChangeEvent<HTMLInputElement>) =>
             setIsRecurring(e.target.checked)
           }
-          className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary focus:ring-2"
+          className="h-4 w-4 rounded border-ink-300 text-primary-ink focus:ring-primary-ink focus:ring-2"
         />
-        <label htmlFor={recurringId} className="text-sm text-slate-700 select-none">
+        <label htmlFor={recurringId} className="text-sm text-ink-700 select-none">
           รายการประจำเดือน
         </label>
       </div>
@@ -596,11 +596,11 @@ export const ExpenseForm = ({
             onChange={(e: ChangeEvent<HTMLInputElement>) =>
               setReimbursable(e.target.checked)
             }
-            className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary focus:ring-2"
+            className="h-4 w-4 rounded border-ink-300 text-primary-ink focus:ring-primary-ink focus:ring-2"
           />
           <label
             htmlFor={reimbursableId}
-            className="text-sm text-slate-700 select-none"
+            className="text-sm text-ink-700 select-none"
           >
             เบิกบริษัท (จ่ายก่อนแล้วเบิกคืน)
           </label>
@@ -612,8 +612,8 @@ export const ExpenseForm = ({
               onClick={() => setReimbursementStatus('pending')}
               className={`px-3 py-1.5 text-xs font-medium rounded-md border transition ${
                 reimbursementStatus === 'pending'
-                  ? 'bg-amber-50 border-amber-300 text-amber-800'
-                  : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+                  ? 'bg-warning-50 border-warning-300 text-warning-800'
+                  : 'bg-card border-ink-200 text-ink-500 hover:bg-hover'
               }`}
               aria-pressed={reimbursementStatus === 'pending'}
             >
@@ -624,8 +624,8 @@ export const ExpenseForm = ({
               onClick={() => setReimbursementStatus('received')}
               className={`px-3 py-1.5 text-xs font-medium rounded-md border transition ${
                 reimbursementStatus === 'received'
-                  ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
-                  : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+                  ? 'bg-income-50 border-income-300 text-income-800'
+                  : 'bg-card border-ink-200 text-ink-500 hover:bg-hover'
               }`}
               aria-pressed={reimbursementStatus === 'received'}
             >
@@ -634,7 +634,7 @@ export const ExpenseForm = ({
             {reimbursementStatus === 'received' &&
               initialValues?.reimbursement?.status === 'received' &&
               initialValues.reimbursement.receivedDate != null && (
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-ink-500">
                   ได้คืน {initialValues.reimbursement.receivedDate}
                 </span>
               )}
@@ -645,7 +645,7 @@ export const ExpenseForm = ({
       {/* Footer: actions + quick-add flash */}
       <div className="flex items-center justify-between pt-2">
         <span
-          className={`text-xs text-income transition-opacity duration-200 ${showFlash ? 'opacity-100' : 'opacity-0'}`}
+          className={`text-xs text-income-ink transition-opacity duration-200 ${showFlash ? 'opacity-100' : 'opacity-0'}`}
           aria-live="polite"
         >
           {showFlash ? 'เพิ่มแล้ว ✓' : ' '}
@@ -655,7 +655,7 @@ export const ExpenseForm = ({
             <button
               type="button"
               onClick={onCancel}
-              className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition"
+              className="px-4 py-2 text-sm font-medium text-ink-700 bg-card border border-ink-200 rounded-md hover:bg-hover transition"
             >
               ยกเลิก
             </button>

@@ -208,7 +208,7 @@ export const RecurringFillModal = ({
       <div className="px-6 pt-3">
         <p
           className={`text-xs ${
-            initialItems.length === 0 ? 'text-amber-600' : 'text-slate-500'
+            initialItems.length === 0 ? 'text-warning-ink' : 'text-ink-500'
           }`}
         >
           {hint}
@@ -218,7 +218,7 @@ export const RecurringFillModal = ({
       <div className="px-6 py-3">
         {rows.length > 0 && (
           <div
-            className={`${GRID} px-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400`}
+            className={`${GRID} px-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-ink-400`}
           >
             <span />
             <span>ชื่อรายการ</span>
@@ -236,13 +236,13 @@ export const RecurringFillModal = ({
               // is removed, because 🗑️ here only clears the recurring flag.
               <div
                 key={r.key}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-amber-50 border border-amber-200 px-3 py-2"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-warning-50 border border-warning-200 px-3 py-2"
               >
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-amber-900 truncate">
+                  <p className="text-sm font-medium text-warning-900 truncate">
                     เลิกเป็นรายการประจำ “{r.originalName ?? r.name}”?
                   </p>
-                  <p className="text-[11px] text-amber-700">
+                  <p className="text-[11px] text-warning-700">
                     เอาป้าย “ประจำ” ออกจากทุกเดือน — ไม่ลบยอดเงินหรือรายการเดิม
                   </p>
                 </div>
@@ -250,7 +250,7 @@ export const RecurringFillModal = ({
                   <button
                     type="button"
                     onClick={() => confirmStop(r)}
-                    className="rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 transition"
+                    className="rounded-md bg-warning px-3 py-1.5 text-xs font-semibold text-white hover:bg-warning-dark transition"
                   >
                     ✓ เลิกเป็นรายการประจำ
                   </button>
@@ -258,7 +258,7 @@ export const RecurringFillModal = ({
                     type="button"
                     onClick={() => setConfirmKey(null)}
                     aria-label="ยกเลิก"
-                    className="rounded-md px-3 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-100 transition"
+                    className="rounded-md px-3 py-1.5 text-xs font-medium text-ink-500 hover:bg-raised transition"
                   >
                     ✕
                   </button>
@@ -271,8 +271,8 @@ export const RecurringFillModal = ({
                 r.locked
                   ? 'opacity-55'
                   : r.included
-                    ? 'hover:bg-slate-50'
-                    : 'opacity-50 hover:bg-slate-50'
+                    ? 'hover:bg-hover'
+                    : 'opacity-50 hover:bg-hover'
               }`}
             >
               <input
@@ -287,7 +287,7 @@ export const RecurringFillModal = ({
               {/* Name (+ status badge) */}
               <div className="flex items-center gap-1.5 min-w-0">
                 {r.locked ? (
-                  <span className="flex-1 truncate text-sm text-slate-700">
+                  <span className="flex-1 truncate text-sm text-ink-700">
                     {r.name}
                   </span>
                 ) : (
@@ -296,11 +296,11 @@ export const RecurringFillModal = ({
                     value={r.name}
                     placeholder="ชื่อรายการ"
                     onChange={(e) => patchRow(r.key, { name: e.target.value })}
-                    className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm text-slate-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-light"
+                    className="w-full rounded-md border border-ink-200 px-2.5 py-1.5 text-sm text-ink-900 focus:border-primary-ink focus:outline-none focus:ring-2 focus:ring-primary-50"
                   />
                 )}
                 {r.status === 'present' && (
-                  <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
+                  <span className="shrink-0 rounded bg-raised px-1.5 py-0.5 text-[10px] font-medium text-ink-500">
                     🔒 มีแล้ว
                   </span>
                 )}
@@ -310,7 +310,7 @@ export const RecurringFillModal = ({
                 value={r.category}
                 disabled={r.locked}
                 onChange={(e) => patchRow(r.key, { category: e.target.value })}
-                className="w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-900 cursor-pointer focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-light disabled:cursor-not-allowed disabled:bg-slate-50"
+                className="w-full rounded-md border border-ink-200 bg-card px-2 py-1.5 text-xs text-ink-900 cursor-pointer focus:border-primary-ink focus:outline-none focus:ring-2 focus:ring-primary-50 disabled:cursor-not-allowed disabled:bg-hover"
               >
                 {categories.map((c) => (
                   <option key={c.value} value={c.value}>
@@ -328,7 +328,7 @@ export const RecurringFillModal = ({
                   patchRow(r.key, { amount: Number(e.target.value) || 0 })
                 }
                 aria-label={`จำนวนเงิน ${r.name || 'รายการ'}`}
-                className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm text-right text-slate-900 tabular-nums focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-light disabled:cursor-not-allowed disabled:bg-slate-50"
+                className="w-full rounded-md border border-ink-200 px-2.5 py-1.5 text-sm text-right text-ink-900 tabular-nums focus:border-primary-ink focus:outline-none focus:ring-2 focus:ring-primary-50 disabled:cursor-not-allowed disabled:bg-hover"
               />
 
               {/* Trash is available on EVERY row — including locked 'present'
@@ -347,7 +347,7 @@ export const RecurringFillModal = ({
                     ? 'เลิกเป็นรายการประจำ'
                     : 'ลบรายการนี้ออกจากรายการที่จะเติม'
                 }
-                className="text-slate-400 hover:text-expense transition text-sm"
+                className="text-ink-400 hover:text-expense-ink transition text-sm"
               >
                 🗑️
               </button>
@@ -359,17 +359,17 @@ export const RecurringFillModal = ({
         <button
           type="button"
           onClick={addRow}
-          className="mt-2 w-full rounded-md border border-dashed border-primary bg-primary-light px-3 py-2 text-sm font-medium text-primary hover:bg-blue-100 transition"
+          className="mt-2 w-full rounded-md border border-dashed border-primary-ink bg-primary-50 px-3 py-2 text-sm font-medium text-primary-ink hover:bg-primary-100 transition"
         >
           + เพิ่มรายการ
         </button>
       </div>
 
       {/* Footer — sticky so it stays in view while the row list scrolls. */}
-      <div className="sticky bottom-0 flex items-center justify-between gap-3 border-t border-slate-200 bg-white px-6 py-3.5">
-        <div className="text-sm text-slate-500">
+      <div className="sticky bottom-0 flex items-center justify-between gap-3 border-t border-ink-200 bg-card px-6 py-3.5">
+        <div className="text-sm text-ink-500">
           รวม (ที่เลือก):{' '}
-          <span className="text-base font-semibold text-slate-900 tabular-nums">
+          <span className="text-base font-semibold text-ink-900 tabular-nums">
             {formatTHB(total)}
           </span>
         </div>
@@ -377,7 +377,7 @@ export const RecurringFillModal = ({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md px-4 py-2 text-sm font-medium text-slate-500 hover:bg-slate-100 transition"
+            className="rounded-md px-4 py-2 text-sm font-medium text-ink-500 hover:bg-raised transition"
           >
             ยกเลิก
           </button>
@@ -385,7 +385,7 @@ export const RecurringFillModal = ({
             type="button"
             onClick={handleConfirm}
             disabled={kept.length === 0}
-            className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark transition disabled:cursor-not-allowed disabled:bg-slate-300"
+            className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark transition disabled:cursor-not-allowed disabled:bg-ink-300"
           >
             ยืนยันเติม {kept.length} รายการ
           </button>

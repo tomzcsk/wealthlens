@@ -96,8 +96,8 @@ export const SellGoldForm = ({
   };
 
   const inputBaseClass =
-    'w-full bg-slate-50 border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition';
-  const labelClass = 'block text-xs font-medium text-slate-600 mb-1';
+    'w-full bg-surface border border-ink-200 rounded-md px-3 py-2 text-sm text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-primary-ink focus:border-transparent transition';
+  const labelClass = 'block text-xs font-medium text-ink-600 mb-1';
 
   return (
     <form
@@ -105,12 +105,12 @@ export const SellGoldForm = ({
       className="space-y-4"
       aria-label="บันทึกการขายทอง"
     >
-      <div className="rounded-md bg-slate-50 border border-slate-200 px-4 py-3 text-sm">
-        <p className="text-slate-700">
+      <div className="rounded-md bg-surface border border-ink-200 px-4 py-3 text-sm">
+        <p className="text-ink-700">
           <span className="font-semibold">{holding.brand}</span> ·{' '}
           {holding.weightBaht} บาท · ซื้อเมื่อ {holding.purchaseDate}
         </p>
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-xs text-ink-500">
           ต้นทุน {formatTHB(holding.totalCost)}
         </p>
       </div>
@@ -147,7 +147,7 @@ export const SellGoldForm = ({
           className={`${inputBaseClass} financial-number text-right`}
         />
         {touched.soldPrice && !(soldPrice > 0) && (
-          <p className="mt-1 text-xs text-expense">ราคาขายต้องมากกว่า 0</p>
+          <p className="mt-1 text-xs text-expense-ink">ราคาขายต้องมากกว่า 0</p>
         )}
       </div>
 
@@ -171,17 +171,17 @@ export const SellGoldForm = ({
         <div
           className={`rounded-md px-4 py-3 text-sm border ${
             pnl.value >= 0
-              ? 'bg-emerald-50 border-emerald-200'
-              : 'bg-red-50 border-red-200'
+              ? 'bg-income-50 border-income-200'
+              : 'bg-expense-50 border-expense-200'
           }`}
         >
           <div className="flex items-baseline justify-between gap-2">
-            <span className="text-slate-700 font-medium">
+            <span className="text-ink-700 font-medium">
               {pnl.value >= 0 ? 'กำไร' : 'ขาดทุน'}
             </span>
             <span
               className={`financial-number font-bold text-lg ${
-                pnl.value >= 0 ? 'text-emerald-700' : 'text-red-700'
+                pnl.value >= 0 ? 'text-income-700' : 'text-expense-700'
               }`}
             >
               {pnl.value >= 0 ? '+' : ''}
@@ -197,7 +197,7 @@ export const SellGoldForm = ({
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition"
+            className="px-4 py-2 text-sm font-medium text-ink-700 bg-card border border-ink-200 rounded-md hover:bg-hover transition"
           >
             ยกเลิก
           </button>

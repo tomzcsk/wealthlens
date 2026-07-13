@@ -95,9 +95,9 @@ export const TaxAllowanceForm = ({
   };
 
   return (
-    <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
+    <section className="bg-card rounded-2xl border border-ink-200 shadow-sm p-6 space-y-5">
       <header className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-slate-900">ลดหย่อน</h2>
+        <h2 className="text-lg font-semibold text-ink-900">ลดหย่อน</h2>
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
@@ -105,17 +105,17 @@ export const TaxAllowanceForm = ({
             onChange={(e) =>
               onChange({ ...value, spouseNoIncome: e.target.checked })
             }
-            className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+            className="h-4 w-4 rounded border-ink-300 text-primary-ink focus:ring-primary-ink"
           />
-          <span className="text-sm text-slate-700">
-            คู่สมรสไม่มีเงินได้ <span className="text-slate-400">(60,000)</span>
+          <span className="text-sm text-ink-700">
+            คู่สมรสไม่มีเงินได้ <span className="text-ink-400">(60,000)</span>
           </span>
         </label>
       </header>
 
       {GROUPS.map((group) => (
         <fieldset key={group.title} className="space-y-3">
-          <legend className="text-sm font-semibold text-slate-600">
+          <legend className="text-sm font-semibold text-ink-600">
             {group.title}
           </legend>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
@@ -153,8 +153,8 @@ interface CountFieldProps {
 
 const CountField = ({ def, count, line, onChange }: CountFieldProps): ReactNode => (
   <label className="block">
-    <span className="text-xs font-medium text-slate-600">
-      {def.label} <span className="text-slate-400">({def.hint})</span>
+    <span className="text-xs font-medium text-ink-600">
+      {def.label} <span className="text-ink-400">({def.hint})</span>
     </span>
     <div className="mt-1 flex items-center gap-2">
       <input
@@ -163,11 +163,11 @@ const CountField = ({ def, count, line, onChange }: CountFieldProps): ReactNode 
         value={count === 0 ? '' : String(count)}
         onChange={(e) => onChange(e.target.value)}
         placeholder="0"
-        className="w-16 rounded-lg border border-slate-300 px-2 py-1.5 text-sm tabular-nums text-right focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+        className="w-16 rounded-lg border border-ink-300 px-2 py-1.5 text-sm tabular-nums text-right focus:border-primary-ink focus:outline-none focus:ring-2 focus:ring-primary-ink/30"
       />
-      <span className="text-xs text-slate-500">คน</span>
+      <span className="text-xs text-ink-500">คน</span>
       {line && line.applied > 0 && (
-        <span className="text-xs tabular-nums text-slate-500">
+        <span className="text-xs tabular-nums text-ink-500">
           = {formatTHB(line.applied)}
         </span>
       )}
@@ -185,8 +185,8 @@ interface MoneyFieldProps {
 
 const MoneyField = ({ def, amount, line, onChange }: MoneyFieldProps): ReactNode => (
   <label className="block">
-    <span className="text-xs font-medium text-slate-600">
-      {def.label} <span className="text-slate-400">({def.hint})</span>
+    <span className="text-xs font-medium text-ink-600">
+      {def.label} <span className="text-ink-400">({def.hint})</span>
     </span>
     <div className="mt-1 flex items-center gap-2">
       <input
@@ -195,7 +195,7 @@ const MoneyField = ({ def, amount, line, onChange }: MoneyFieldProps): ReactNode
         value={amount === 0 ? '' : formatNumber(amount)}
         onChange={(e) => onChange(e.target.value)}
         placeholder="0"
-        className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm tabular-nums text-right focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+        className="w-full rounded-lg border border-ink-300 px-3 py-1.5 text-sm tabular-nums text-right focus:border-primary-ink focus:outline-none focus:ring-2 focus:ring-primary-ink/30"
       />
       <CapBadge line={line} />
     </div>
@@ -205,7 +205,7 @@ const MoneyField = ({ def, amount, line, onChange }: MoneyFieldProps): ReactNode
 const CapBadge = ({ line }: { line: AllowanceLine | undefined }): ReactNode => {
   if (!line || !line.capped) return null;
   return (
-    <span className="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
+    <span className="shrink-0 rounded-full bg-warning-50 px-2 py-0.5 text-xs font-medium text-warning-700">
       ใช้ได้ {formatTHB(line.applied)}
     </span>
   );

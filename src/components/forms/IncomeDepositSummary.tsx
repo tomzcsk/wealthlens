@@ -56,44 +56,44 @@ export const IncomeDepositSummary = ({
       size="sm"
     >
       <div className="px-6 py-5 space-y-4">
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-ink-600">
           จะบันทึกรายได้เดือน {monthLabel} และฝากเงินเข้าบัญชี:
         </p>
 
         {salaryUnderwater && (
-          <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+          <div className="rounded-lg border border-warning-200 bg-warning-50 px-3 py-2 text-sm text-warning-700">
             ยอดหักมากกว่าเงินเดือน — จะฝาก ฿0
           </div>
         )}
 
-        <div className="rounded-lg border border-slate-200 divide-y divide-slate-100">
+        <div className="rounded-lg border border-ink-200 divide-y divide-ink-100">
           {refs.map((ref) => (
             <div
               key={ref.source}
               className="flex items-center justify-between gap-3 px-3 py-2 text-sm"
             >
               <div className="min-w-0">
-                <div className="text-slate-700">{SOURCE_LABEL[ref.source]}</div>
-                <div className="text-xs text-slate-400 truncate">
+                <div className="text-ink-700">{SOURCE_LABEL[ref.source]}</div>
+                <div className="text-xs text-ink-400 truncate">
                   → {nameOf(ref.accountId)}
                 </div>
               </div>
-              <div className="text-income font-semibold tabular-nums whitespace-nowrap">
+              <div className="text-income-ink font-semibold tabular-nums whitespace-nowrap">
                 +{formatTHB(ref.amount, { decimals: 0 })}
               </div>
             </div>
           ))}
 
-          <div className="flex items-center justify-between gap-3 px-3 py-2 text-sm bg-slate-50">
-            <div className="font-medium text-slate-700">รวมเข้าบัญชี</div>
-            <div className="font-bold text-slate-900 tabular-nums whitespace-nowrap">
+          <div className="flex items-center justify-between gap-3 px-3 py-2 text-sm bg-surface">
+            <div className="font-medium text-ink-700">รวมเข้าบัญชี</div>
+            <div className="font-bold text-ink-900 tabular-nums whitespace-nowrap">
               {formatTHB(total, { decimals: 0 })}
             </div>
           </div>
         </div>
 
         {previousTotal !== null && (
-          <p className="text-xs text-slate-500 tabular-nums">
+          <p className="text-xs text-ink-500 tabular-nums">
             ยอดฝากเดิม {formatTHB(previousTotal, { decimals: 0 })} → ใหม่{' '}
             {formatTHB(total, { decimals: 0 })}
           </p>
@@ -103,7 +103,7 @@ export const IncomeDepositSummary = ({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="rounded-lg border border-ink-300 px-4 py-2 text-sm font-medium text-ink-700 hover:bg-hover"
           >
             ยกเลิก
           </button>

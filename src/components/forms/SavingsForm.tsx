@@ -233,9 +233,9 @@ export const SavingsForm = ({
   };
 
   const inputBaseClass =
-    'w-full bg-slate-50 border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition';
-  const labelClass = 'block text-xs font-medium text-slate-600 mb-1';
-  const errorClass = 'mt-1 text-xs text-expense';
+    'w-full bg-surface border border-ink-200 rounded-md px-3 py-2 text-sm text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-primary-ink focus:border-transparent transition';
+  const labelClass = 'block text-xs font-medium text-ink-600 mb-1';
+  const errorClass = 'mt-1 text-xs text-expense-ink';
 
   return (
     <form
@@ -335,11 +335,11 @@ export const SavingsForm = ({
           onChange={(e: ChangeEvent<HTMLInputElement>) =>
             setIsRecurring(e.target.checked)
           }
-          className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary focus:ring-2"
+          className="h-4 w-4 rounded border-ink-300 text-primary-ink focus:ring-primary-ink focus:ring-2"
         />
         <label
           htmlFor={recurringId}
-          className="text-sm text-slate-700 select-none"
+          className="text-sm text-ink-700 select-none"
         >
           รายการประจำเดือน
         </label>
@@ -347,7 +347,7 @@ export const SavingsForm = ({
 
       <div className="flex items-center justify-between pt-2">
         <span
-          className={`text-xs text-income transition-opacity duration-200 ${showFlash ? 'opacity-100' : 'opacity-0'}`}
+          className={`text-xs text-income-ink transition-opacity duration-200 ${showFlash ? 'opacity-100' : 'opacity-0'}`}
           aria-live="polite"
         >
           {showFlash ? 'เพิ่มแล้ว ✓' : ' '}
@@ -357,7 +357,7 @@ export const SavingsForm = ({
             <button
               type="button"
               onClick={onCancel}
-              className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition"
+              className="px-4 py-2 text-sm font-medium text-ink-700 bg-card border border-ink-200 rounded-md hover:bg-hover transition"
             >
               ยกเลิก
             </button>

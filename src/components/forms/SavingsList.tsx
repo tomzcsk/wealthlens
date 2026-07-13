@@ -68,26 +68,26 @@ const SavingsRow = ({
 }: SavingsRowProps): ReactNode => {
   const meta = SAVINGS_CATEGORIES[item.category];
   return (
-    <div className="group flex items-center gap-3 px-3 py-2 rounded-md hover:bg-slate-50 transition">
+    <div className="group flex items-center gap-3 px-3 py-2 rounded-md hover:bg-hover transition">
       {showIcon && (
         <span aria-hidden="true" className="text-base w-6 text-center">
           {meta.icon}
         </span>
       )}
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-slate-900 truncate">
+        <p className="text-sm text-ink-900 truncate">
           {item.name}
           {item.isRecurring && (
             <span
               title="รายการประจำเดือน"
-              className="ml-2 inline-block px-1.5 py-0.5 text-[10px] font-medium text-primary bg-primary-light rounded"
+              className="ml-2 inline-block px-1.5 py-0.5 text-[10px] font-medium text-primary-ink bg-primary-50 rounded"
             >
               ประจำ
             </span>
           )}
         </p>
       </div>
-      <span className="text-sm financial-number text-slate-900 tabular-nums">
+      <span className="text-sm financial-number text-ink-900 tabular-nums">
         {formatTHB(item.amount)}
       </span>
       <div className="flex items-center gap-1">
@@ -95,7 +95,7 @@ const SavingsRow = ({
           type="button"
           onClick={() => onEdit(item)}
           aria-label={`แก้ไข ${item.name}`}
-          className="p-1 text-slate-400 hover:text-primary transition"
+          className="p-1 text-ink-400 hover:text-primary-ink transition"
         >
           ✏️
         </button>
@@ -103,7 +103,7 @@ const SavingsRow = ({
           type="button"
           onClick={() => onDelete(item)}
           aria-label={`ลบ ${item.name}`}
-          className="p-1 text-slate-400 hover:text-expense transition"
+          className="p-1 text-ink-400 hover:text-expense-ink transition"
         >
           🗑️
         </button>
@@ -146,13 +146,13 @@ const BankBalanceRow = ({
       type="button"
       onClick={onEdit}
       title={`ยอด ${account.name} เดือนนี้ — คลิกเพื่อแก้`}
-      className="group w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-slate-50 transition text-left"
+      className="group w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-hover transition text-left"
     >
       <BankAvatar account={account} size="sm" />
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-slate-900 truncate">
+        <p className="text-sm text-ink-900 truncate">
           {account.name}
-          <span className="ml-2 inline-block px-1.5 py-0.5 text-[10px] font-medium text-amber-800 bg-amber-100 rounded">
+          <span className="ml-2 inline-block px-1.5 py-0.5 text-[10px] font-medium text-warning-800 bg-warning-100 rounded">
             รวมทั้งปี {formatTHB(annual)}
           </span>
         </p>
@@ -160,17 +160,17 @@ const BankBalanceRow = ({
       <span
         className={`text-sm financial-number tabular-nums ${
           !hasValue
-            ? 'text-slate-400 italic'
+            ? 'text-ink-400 italic'
             : isNegative
-              ? 'text-red-700'
-              : 'text-slate-900'
+              ? 'text-expense-700'
+              : 'text-ink-900'
         }`}
       >
         {hasValue ? formatTHB(monthly) : '+ ใส่ยอด'}
       </span>
       <span
         aria-hidden="true"
-        className="p-1 text-slate-400 group-hover:text-primary transition"
+        className="p-1 text-ink-400 group-hover:text-primary-ink transition"
       >
         ✏️
       </span>
@@ -305,21 +305,21 @@ export const SavingsList = ({
             type="button"
             onClick={handleFillRecurring}
             title="เติมรายการออมประจำจากเดือนล่าสุดที่มี (ข้ามรายการที่มีแล้ว)"
-            className="px-3 py-1.5 text-sm font-medium text-slate-600 border border-slate-200 rounded-md hover:bg-slate-50 transition"
+            className="px-3 py-1.5 text-sm font-medium text-ink-600 border border-ink-200 rounded-md hover:bg-hover transition"
           >
             📋 เติมรายการประจำ
           </button>
           <button
             type="button"
             onClick={() => openAdd()}
-            className="px-3 py-1.5 text-sm font-medium text-primary bg-primary-light rounded-md hover:bg-primary hover:text-white transition"
+            className="px-3 py-1.5 text-sm font-medium text-primary-ink bg-primary-50 rounded-md hover:bg-primary hover:text-white transition"
           >
             + เพิ่มรายการออม
           </button>
         </div>
       )}
 
-      <div className="bg-white rounded-lg border border-slate-200 divide-y divide-slate-100">
+      <div className="bg-card rounded-lg border border-ink-200 divide-y divide-ink-100">
         {/* Bank accounts — always rendered, always editable, one row each.
             Sits as its own pseudo-category above Dime / ออมเที่ยว / etc. so
             Tom sees one unified savings list per month. */}
@@ -329,24 +329,24 @@ export const SavingsList = ({
               type="button"
               onClick={() => setBankCollapsed((c) => !c)}
               aria-expanded={!bankCollapsed}
-              className="w-full flex items-center justify-between px-3 py-1.5 rounded-md hover:bg-slate-50 transition"
+              className="w-full flex items-center justify-between px-3 py-1.5 rounded-md hover:bg-hover transition"
             >
               <div className="flex items-center gap-2">
                 <span
                   aria-hidden="true"
-                  className="w-3 text-[10px] text-slate-400"
+                  className="w-3 text-[10px] text-ink-400"
                 >
                   {bankCollapsed ? '▸' : '▾'}
                 </span>
                 <span aria-hidden="true">💼</span>
-                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-500">
                   บัญชีธนาคาร
                 </h3>
-                <span className="text-[10px] text-slate-400">
+                <span className="text-[10px] text-ink-400">
                   ({accounts.length})
                 </span>
               </div>
-              <span className="text-xs financial-number tabular-nums text-slate-500">
+              <span className="text-xs financial-number tabular-nums text-ink-500">
                 {formatTHB(sumBankMonth(accounts, year, month))}
               </span>
             </button>
@@ -380,11 +380,11 @@ export const SavingsList = ({
                 <div className="flex items-center justify-between px-3 py-1.5">
                   <div className="flex items-center gap-2">
                     <span aria-hidden="true">{meta.icon}</span>
-                    <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-500">
                       {meta.label}
                     </h3>
                   </div>
-                  <span className="text-xs financial-number text-slate-500 tabular-nums">
+                  <span className="text-xs financial-number text-ink-500 tabular-nums">
                     {formatTHB(subtotal)}
                   </span>
                 </div>
@@ -416,14 +416,14 @@ export const SavingsList = ({
         )}
 
         {items.length === 0 && (
-          <div className="px-4 py-3 text-center text-xs text-slate-400 italic">
+          <div className="px-4 py-3 text-center text-xs text-ink-400 italic">
             ยังไม่มีรายการออม/ลงทุนเพิ่มเติม — กด "+ เพิ่มรายการออม" ด้านบน
           </div>
         )}
 
-        <div className="flex items-center justify-between px-4 py-3 bg-slate-50">
-          <span className="text-sm font-semibold text-slate-700">รวมออม</span>
-          <span className="text-base font-semibold text-slate-900 financial-number tabular-nums">
+        <div className="flex items-center justify-between px-4 py-3 bg-surface">
+          <span className="text-sm font-semibold text-ink-700">รวมออม</span>
+          <span className="text-base font-semibold text-ink-900 financial-number tabular-nums">
             {formatTHB(total)}
           </span>
         </div>

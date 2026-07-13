@@ -97,19 +97,19 @@ const ExpenseRow = ({
       ? loans.find((l) => l.id === item.loanId)
       : undefined;
   return (
-    <div className="group flex items-center gap-3 px-3 py-2 rounded-md hover:bg-slate-50 transition">
+    <div className="group flex items-center gap-3 px-3 py-2 rounded-md hover:bg-hover transition">
       {showIcon && (
         <span aria-hidden="true" className="text-base w-6 text-center">
           {meta.icon}
         </span>
       )}
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-slate-900 truncate">
+        <p className="text-sm text-ink-900 truncate">
           {item.name}
           {installment != null && (
             <span
               title={`ผ่อนทั้งหมด ${formatTHB(installment.totalAmount)} ÷ ${installment.totalMonths} งวด`}
-              className="ml-2 inline-block px-1.5 py-0.5 text-[10px] font-medium text-slate-700 bg-slate-100 border border-slate-200 rounded-full"
+              className="ml-2 inline-block px-1.5 py-0.5 text-[10px] font-medium text-ink-700 bg-raised border border-ink-200 rounded-full"
             >
               ผ่อน {installment.sequence}/{installment.totalMonths}
             </span>
@@ -117,7 +117,7 @@ const ExpenseRow = ({
           {item.isRecurring && installment == null && (
             <span
               title="รายการประจำเดือน"
-              className="ml-2 inline-block px-1.5 py-0.5 text-[10px] font-medium text-primary bg-primary-light rounded"
+              className="ml-2 inline-block px-1.5 py-0.5 text-[10px] font-medium text-primary-ink bg-primary-50 rounded"
             >
               ประจำ
             </span>
@@ -136,8 +136,8 @@ const ExpenseRow = ({
               }
               className={`ml-2 inline-block px-1.5 py-0.5 text-[10px] font-medium rounded border transition cursor-pointer ${
                 reimbursement.status === 'pending'
-                  ? 'text-amber-800 bg-amber-100 border-amber-200 hover:bg-amber-200'
-                  : 'text-emerald-800 bg-emerald-100 border-emerald-200 hover:bg-emerald-200'
+                  ? 'text-warning-800 bg-warning-100 border-warning-200 hover:bg-warning-200'
+                  : 'text-income-800 bg-income-100 border-income-200 hover:bg-income-200'
               }`}
             >
               {reimbursement.status === 'pending' ? '🟡 รอเบิก' : '🟢 เบิกแล้ว'}
@@ -146,7 +146,7 @@ const ExpenseRow = ({
           {paymentAccount != null && (
             <span
               title={`จ่ายผ่าน ${paymentAccount.name}`}
-              className="ml-2 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium text-slate-600 bg-slate-100"
+              className="ml-2 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium text-ink-600 bg-raised"
             >
               💳 {paymentAccount.name}
             </span>
@@ -154,19 +154,19 @@ const ExpenseRow = ({
           {linkedLoan != null && (
             <span
               title={`ชำระหนี้ ${linkedLoan.name}`}
-              className="ml-2 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium text-amber-700 bg-amber-50"
+              className="ml-2 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium text-warning-700 bg-warning-50"
             >
               💰 {linkedLoan.name}
             </span>
           )}
         </p>
         {item.date != null && item.date !== '' && (
-          <p className="text-[11px] text-slate-400 tabular-nums">
+          <p className="text-[11px] text-ink-400 tabular-nums">
             🗓️ {formatThaiDate(item.date)}
           </p>
         )}
       </div>
-      <span className="text-sm financial-number text-slate-900 tabular-nums">
+      <span className="text-sm financial-number text-ink-900 tabular-nums">
         {formatTHB(item.amount)}
       </span>
       <div className="flex items-center gap-1">
@@ -174,7 +174,7 @@ const ExpenseRow = ({
           type="button"
           onClick={() => onEdit(item)}
           aria-label={`แก้ไข ${item.name}`}
-          className="p-1 text-slate-400 hover:text-primary transition"
+          className="p-1 text-ink-400 hover:text-primary-ink transition"
         >
           ✏️
         </button>
@@ -182,7 +182,7 @@ const ExpenseRow = ({
           type="button"
           onClick={() => onDelete(item)}
           aria-label={`ลบ ${item.name}`}
-          className="p-1 text-slate-400 hover:text-expense transition"
+          className="p-1 text-ink-400 hover:text-expense-ink transition"
         >
           🗑️
         </button>
@@ -394,20 +394,20 @@ export const ExpenseList = ({
   // Empty state: short prompt + primary CTA that opens the add modal.
   if (items.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-slate-200 bg-white p-8 text-center">
-        <p className="text-sm text-slate-500 mb-4">ยังไม่มีรายการค่าใช้จ่าย</p>
+      <div className="rounded-lg border border-dashed border-ink-200 bg-card p-8 text-center">
+        <p className="text-sm text-ink-500 mb-4">ยังไม่มีรายการค่าใช้จ่าย</p>
         <div className="flex items-center justify-center gap-2 flex-wrap">
           <button
             type="button"
             onClick={handleFillRecurring}
-            className="px-4 py-2 text-sm font-medium text-primary border border-primary rounded-md hover:bg-primary-light transition"
+            className="px-4 py-2 text-sm font-medium text-primary-ink border border-primary-ink rounded-md hover:bg-primary-50 transition"
           >
             📋 เติมรายการประจำ
           </button>
           <button
             type="button"
             onClick={() => setInstallmentModalOpen(true)}
-            className="px-4 py-2 text-sm font-medium text-slate-700 border border-slate-300 rounded-md hover:bg-slate-50 transition"
+            className="px-4 py-2 text-sm font-medium text-ink-700 border border-ink-300 rounded-md hover:bg-hover transition"
           >
             💳 ผ่อนของ
           </button>
@@ -493,7 +493,7 @@ export const ExpenseList = ({
             type="button"
             onClick={handleFillRecurring}
             title="เติมรายการประจำจากเดือนล่าสุดที่มี (ข้ามรายการที่มีแล้ว)"
-            className="px-3 py-1.5 text-sm font-medium text-slate-600 border border-slate-200 rounded-md hover:bg-slate-50 transition"
+            className="px-3 py-1.5 text-sm font-medium text-ink-600 border border-ink-200 rounded-md hover:bg-hover transition"
           >
             📋 เติมรายการประจำ
           </button>
@@ -501,21 +501,21 @@ export const ExpenseList = ({
             type="button"
             onClick={() => setInstallmentModalOpen(true)}
             title="ผ่อน 0% หรือผ่อนหลายงวด — ระบบจะกระจายงวดให้ในเดือนต่อๆ ไปอัตโนมัติ"
-            className="px-3 py-1.5 text-sm font-medium text-slate-700 border border-slate-300 rounded-md hover:bg-slate-50 transition"
+            className="px-3 py-1.5 text-sm font-medium text-ink-700 border border-ink-300 rounded-md hover:bg-hover transition"
           >
             💳 ผ่อนของ
           </button>
           <button
             type="button"
             onClick={() => openAdd()}
-            className="px-3 py-1.5 text-sm font-medium text-primary bg-primary-light rounded-md hover:bg-primary hover:text-white transition"
+            className="px-3 py-1.5 text-sm font-medium text-primary-ink bg-primary-50 rounded-md hover:bg-primary hover:text-white transition"
           >
             + เพิ่มค่าใช้จ่าย
           </button>
         </div>
       )}
 
-      <div className="bg-white rounded-lg border border-slate-200 divide-y divide-slate-100">
+      <div className="bg-card rounded-lg border border-ink-200 divide-y divide-ink-100">
         {groupByCategory ? (
           [...grouped.entries()].map(([cat, rows]) => {
             const meta = EXPENSE_CATEGORIES[cat];
@@ -525,11 +525,11 @@ export const ExpenseList = ({
                 <div className="flex items-center justify-between px-3 py-1.5">
                   <div className="flex items-center gap-2">
                     <span aria-hidden="true">{meta.icon}</span>
-                    <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-500">
                       {meta.label}
                     </h3>
                   </div>
-                  <span className="text-xs financial-number text-slate-500 tabular-nums">
+                  <span className="text-xs financial-number text-ink-500 tabular-nums">
                     {formatTHB(subtotal)}
                   </span>
                 </div>
@@ -567,9 +567,9 @@ export const ExpenseList = ({
         )}
 
         {/* Footer total — matches "รวมจ่าย:" in UXUI.md §5.3. */}
-        <div className="flex items-center justify-between px-4 py-3 bg-slate-50">
-          <span className="text-sm font-semibold text-slate-700">รวมจ่าย</span>
-          <span className="text-base font-semibold text-slate-900 financial-number tabular-nums">
+        <div className="flex items-center justify-between px-4 py-3 bg-surface">
+          <span className="text-sm font-semibold text-ink-700">รวมจ่าย</span>
+          <span className="text-base font-semibold text-ink-900 financial-number tabular-nums">
             {formatTHB(total)}
           </span>
         </div>
@@ -638,12 +638,12 @@ export const ExpenseList = ({
         {pendingInstallmentDelete?.installment != null && (
           <div className="px-6 py-5 space-y-4">
             <div>
-              <p className="text-sm text-slate-700">
+              <p className="text-sm text-ink-700">
                 <span className="font-semibold">{pendingInstallmentDelete.name}</span>{' '}
                 — งวด {pendingInstallmentDelete.installment.sequence}/
                 {pendingInstallmentDelete.installment.totalMonths}
               </p>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-ink-500">
                 ยอดรวมแผน {formatTHB(pendingInstallmentDelete.installment.totalAmount)}
               </p>
             </div>
@@ -651,39 +651,39 @@ export const ExpenseList = ({
               <button
                 type="button"
                 onClick={confirmDeleteSingleInstallment}
-                className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 text-left transition"
+                className="px-4 py-2 text-sm font-medium text-ink-700 bg-card border border-ink-300 rounded-md hover:bg-hover text-left transition"
               >
                 <span className="block">ลบเฉพาะเดือนนี้</span>
-                <span className="block text-xs text-slate-500 mt-0.5">
+                <span className="block text-xs text-ink-500 mt-0.5">
                   คงเหลืออีก {pendingInstallmentDelete.installment.totalMonths - 1} งวดในเดือนอื่น
                 </span>
               </button>
               <button
                 type="button"
                 onClick={confirmUntagPlan}
-                className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 text-left transition"
+                className="px-4 py-2 text-sm font-medium text-ink-700 bg-card border border-ink-300 rounded-md hover:bg-hover text-left transition"
               >
                 <span className="block">ยกเลิกสถานะผ่อน (เก็บทุกรายการ)</span>
-                <span className="block text-xs text-slate-500 mt-0.5">
+                <span className="block text-xs text-ink-500 mt-0.5">
                   เอา badge ผ่อนออก แต่เก็บรายการรายจ่ายทุกเดือนไว้
                 </span>
               </button>
               <button
                 type="button"
                 onClick={confirmDeleteEntirePlan}
-                className="px-4 py-2 text-sm font-medium text-white bg-expense rounded-md hover:bg-red-700 text-left transition"
+                className="px-4 py-2 text-sm font-medium text-white bg-expense rounded-md hover:bg-expense-dark text-left transition"
               >
                 <span className="block">
                   ลบทั้งแผน ({pendingInstallmentDelete.installment.totalMonths} งวด)
                 </span>
-                <span className="block text-xs text-red-100 mt-0.5">
+                <span className="block text-xs text-expense-on-fill-100 mt-0.5">
                   ลบทุกงวดของ '{pendingInstallmentDelete.name}' ออกจากทุกเดือน
                 </span>
               </button>
               <button
                 type="button"
                 onClick={() => setPendingInstallmentDelete(null)}
-                className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-md transition"
+                className="px-4 py-2 text-sm font-medium text-ink-600 hover:bg-hover rounded-md transition"
               >
                 ยกเลิก
               </button>

@@ -223,14 +223,14 @@ export const GoldForm = ({
   };
 
   const inputBaseClass =
-    'w-full bg-slate-50 border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition';
-  const labelClass = 'block text-xs font-medium text-slate-600 mb-1';
-  const errorClass = 'mt-1 text-xs text-expense';
+    'w-full bg-surface border border-ink-200 rounded-md px-3 py-2 text-sm text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-primary-ink focus:border-transparent transition';
+  const labelClass = 'block text-xs font-medium text-ink-600 mb-1';
+  const errorClass = 'mt-1 text-xs text-expense-ink';
   const radioBtnClass = (active: boolean): string =>
     `flex-1 px-3 py-2 text-sm font-medium rounded-md border transition cursor-pointer ${
       active
-        ? 'bg-primary text-white border-primary'
-        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+        ? 'bg-primary text-white border-primary-ink'
+        : 'bg-card border-ink-200 text-ink-700 hover:bg-hover'
     }`;
 
   return (
@@ -259,7 +259,7 @@ export const GoldForm = ({
           <p className={errorClass}>{errors.purchaseDate}</p>
         )}
         {isEdit && (
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 text-xs text-ink-400">
             วันที่ + ราคา + วิธีจ่าย แก้ไขไม่ได้หลังสร้างแล้ว — ถ้าจะแก้
             ให้ลบแล้วเพิ่มใหม่
           </p>
@@ -352,7 +352,7 @@ export const GoldForm = ({
             className={`${inputBaseClass} financial-number text-right ${isEdit ? 'opacity-60 cursor-not-allowed' : ''}`}
           />
           {weightBaht > 0 && (
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-ink-500">
               = {formatNumber(weightBaht * GRAMS_PER_BAHT, { decimals: 3 })} กรัม
             </p>
           )}
@@ -399,7 +399,7 @@ export const GoldForm = ({
           placeholder="42,000"
           className={`${inputBaseClass} financial-number text-right`}
         />
-        <p className="mt-1 text-xs text-slate-400">
+        <p className="mt-1 text-xs text-ink-400">
           ใช้คำนวณ markup% เทียบกับราคาที่จ่ายจริง
         </p>
       </div>
@@ -450,18 +450,18 @@ export const GoldForm = ({
 
       {/* Live preview */}
       {preview && (
-        <div className="rounded-md bg-amber-50 border border-amber-200 px-4 py-3 text-sm space-y-1">
+        <div className="rounded-md bg-warning-50 border border-warning-200 px-4 py-3 text-sm space-y-1">
           <div className="flex items-baseline justify-between gap-2">
-            <span className="text-slate-600">ราคา/บาททอง</span>
-            <span className="financial-number font-semibold text-amber-900">
+            <span className="text-ink-600">ราคา/บาททอง</span>
+            <span className="financial-number font-semibold text-warning-900">
               {formatTHB(preview.pricePerBaht, { decimals: 0 })}
             </span>
           </div>
           {preview.markup != null && (
-            <div className="flex items-baseline justify-between gap-2 text-xs text-slate-600">
+            <div className="flex items-baseline justify-between gap-2 text-xs text-ink-600">
               <span>markup vs spot</span>
               <span
-                className={`financial-number ${preview.markup >= 0 ? 'text-amber-700' : 'text-emerald-700'}`}
+                className={`financial-number ${preview.markup >= 0 ? 'text-warning-700' : 'text-income-700'}`}
               >
                 {preview.markup >= 0 ? '+' : ''}
                 {preview.markup.toFixed(2)}%
@@ -469,11 +469,11 @@ export const GoldForm = ({
             </div>
           )}
           {!isEdit && preview.monthLabel && (
-            <div className="pt-2 mt-2 border-t border-amber-200 text-xs text-slate-600">
+            <div className="pt-2 mt-2 border-t border-warning-200 text-xs text-ink-600">
               {paymentMethod === 'cash' ? (
                 <>
                   💸 จะเพิ่ม{' '}
-                  <span className="font-semibold text-amber-900">
+                  <span className="font-semibold text-warning-900">
                     ออม/ลงทุน {formatTHB(totalCost)}
                   </span>{' '}
                   ในเดือน {preview.monthLabel}
@@ -481,7 +481,7 @@ export const GoldForm = ({
               ) : (
                 <>
                   🏦 จะหัก{' '}
-                  <span className="font-semibold text-amber-900">
+                  <span className="font-semibold text-warning-900">
                     บัญชีกรุงศรี {formatTHB(totalCost)}
                   </span>{' '}
                   ของเดือน {preview.monthLabel}
@@ -497,7 +497,7 @@ export const GoldForm = ({
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition"
+            className="px-4 py-2 text-sm font-medium text-ink-700 bg-card border border-ink-200 rounded-md hover:bg-hover transition"
           >
             ยกเลิก
           </button>
