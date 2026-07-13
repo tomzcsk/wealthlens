@@ -56,6 +56,8 @@ eq('เบิก flip ไม่หักซ้ำ', bal(same, 'A', 2026, 7), 800
 const backup = {
   version: '1.0.0',
   lastUpdated: 'x',
+  // บัญชี A ต้องมีจริง — paymentAccountId + sideEffects ชี้มา (referential integrity)
+  bankAccounts: [{ id: 'A', name: 'A', balances: { '2026': { '7': -500 } } }],
   years: {
     '2026': {
       income: [],

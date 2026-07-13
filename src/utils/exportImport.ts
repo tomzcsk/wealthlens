@@ -15,7 +15,9 @@
  * because it carries forward-compat metadata we don't yet know about.
  */
 
+import { KRUNGSRI_ACCOUNT_ID } from '@/utils/bankAccounts';
 import type {
+  BankAccount,
   BankTransaction,
   ExpenseCategory,
   ExpenseItem,
@@ -261,6 +263,82 @@ const validateExpenseItem = (
   return item;
 };
 
+const validateBankAccount = (
+  raw: unknown,
+  path: string,
+  ctx: Ctx,
+): BankAccount | null => {
+  if (!isObject(raw)) {
+    fail(ctx, path, 'must be an object');
+    return null;
+  }
+  let ok = true;
+  if (!isString(raw.id) || raw.id.length === 0) {
+    fail(ctx, `${path}.id`, 'must be a non-empty string');
+    ok = false;
+  }
+  if (!isString(raw.name)) {
+    fail(ctx, `${path}.name`, 'must be a string');
+    ok = false;
+  }
+  if (!isObject(raw.balances)) {
+    fail(ctx, `${path}.balances`, 'must be an object');
+    ok = false;
+  } else {
+    for (const [y, months] of Object.entries(raw.balances)) {
+      if (!isObject(months)) {
+        fail(ctx, `${path}.balances.${y}`, 'must be an object');
+        ok = false;
+        continue;
+      }
+      for (const [m, v] of Object.entries(months)) {
+        if (!isFiniteNumber(v)) {
+          fail(ctx, `${path}.balances.${y}.${m}`, 'must be a finite number');
+          ok = false;
+        }
+      }
+    }
+  }
+  return ok ? (raw as unknown as BankAccount) : null;
+};
+
+const validateBankTransaction = (
+  raw: unknown,
+  path: string,
+  ctx: Ctx,
+): BankTransaction | null => {
+  if (!isObject(raw)) {
+    fail(ctx, path, 'must be an object');
+    return null;
+  }
+  let ok = true;
+  if (!isString(raw.id) || raw.id.length === 0) {
+    fail(ctx, `${path}.id`, 'must be a non-empty string');
+    ok = false;
+  }
+  if (!isString(raw.accountId) || raw.accountId.length === 0) {
+    fail(ctx, `${path}.accountId`, 'must be a non-empty string');
+    ok = false;
+  }
+  if (!isFiniteNumber(raw.year)) {
+    fail(ctx, `${path}.year`, 'must be a finite number');
+    ok = false;
+  }
+  if (!isMonthInt(raw.month)) {
+    fail(ctx, `${path}.month`, 'must be an integer 1-12');
+    ok = false;
+  }
+  if (!isFiniteNumber(raw.amount)) {
+    fail(ctx, `${path}.amount`, 'must be a finite number');
+    ok = false;
+  }
+  if (!isObject(raw.source) || !isString(raw.source.type)) {
+    fail(ctx, `${path}.source`, 'must be an object with a string `type`');
+    ok = false;
+  }
+  return ok ? (raw as unknown as BankTransaction) : null;
+};
+
 const validateExpenseRow = (
   raw: unknown,
   path: string,
@@ -463,19 +541,104 @@ export const validateBackup = (parsed: unknown): ValidationResult => {
   const loans = Array.isArray(parsed.loans)
     ? (parsed.loans as WealthLensData['loans'])
     : undefined;
-  const bankAccounts = Array.isArray(parsed.bankAccounts)
-    ? (parsed.bankAccounts as WealthLensData['bankAccounts'])
-    : undefined;
+  // bankAccounts / bankTransactions: validate each member, not just
+  // Array.isArray. A junk member ([42, null, 'nope']) used to pass then crash
+  // the render with a white screen; now the whole file is rejected up front.
+  let bankAccounts: BankAccount[] | undefined;
+  if (parsed.bankAccounts !== undefined) {
+    if (!Array.isArray(parsed.bankAccounts)) {
+      fail(ctx, 'bankAccounts', 'must be an array');
+    } else {
+      bankAccounts = [];
+      parsed.bankAccounts.forEach((a, i) => {
+        const v = validateBankAccount(a, `bankAccounts[${i}]`, ctx);
+        if (v) bankAccounts!.push(v);
+      });
+    }
+  }
   // F40 bank journal: preserve wholesale like bankAccounts. Without this the
   // restore path drops every line item and the source (income/expense/gold)
   // discriminated union — the account balance survives but its "why" is lost,
   // and the Σ tx === balance invariant breaks on the next edit.
-  const bankTransactions = Array.isArray(parsed.bankTransactions)
-    ? (parsed.bankTransactions as unknown as BankTransaction[])
-    : undefined;
+  let bankTransactions: BankTransaction[] | undefined;
+  if (parsed.bankTransactions !== undefined) {
+    if (!Array.isArray(parsed.bankTransactions)) {
+      fail(ctx, 'bankTransactions', 'must be an array');
+    } else {
+      bankTransactions = [];
+      parsed.bankTransactions.forEach((t, i) => {
+        const v = validateBankTransaction(t, `bankTransactions[${i}]`, ctx);
+        if (v) bankTransactions!.push(v);
+      });
+    }
+  }
   const preferences = isObject(parsed.preferences)
     ? (parsed.preferences as unknown as WealthLensData['preferences'])
     : undefined;
+
+  // Referential integrity: every pointer into an account/loan must resolve, or
+  // it becomes an orphan the moment `applyBankDelta` (silent on missing
+  // account) touches it — the exact state deleteBankAccount was hardened
+  // against. Locking the front door there means little if the import back door
+  // still lets it in.
+  //
+  // Known accounts include the acct-krungsri that migrateKeptToBankAccounts
+  // will synthesise from a legacy keptBalances payload — pointers to it must
+  // NOT be rejected just because the migration runs later (at replaceAllData).
+  const knownAccounts = new Set<string>((bankAccounts ?? []).map((a) => a.id));
+  if (
+    isObject(parsed.preferences) &&
+    isObject((parsed.preferences as Record<string, unknown>).keptBalances) &&
+    Object.keys((parsed.preferences as { keptBalances: object }).keptBalances).length > 0
+  ) {
+    knownAccounts.add(KRUNGSRI_ACCOUNT_ID);
+  }
+  const knownLoans = new Set<string>();
+  for (const l of Array.isArray(parsed.loans) ? parsed.loans : []) {
+    if (isObject(l) && isString(l.id)) knownLoans.add(l.id);
+  }
+  const refAccount = (id: unknown, path: string): void => {
+    if (isString(id) && !knownAccounts.has(id)) {
+      fail(ctx, path, `references unknown account '${id}'`);
+    }
+  };
+
+  for (const t of bankTransactions ?? []) {
+    refAccount(t.accountId, `bankTransactions[${t.id}].accountId`);
+  }
+  for (const [yk, yr] of Object.entries(years)) {
+    yr.income.forEach((row, i) => {
+      const base = `years.${yk}.income[${i}]`;
+      for (const f of ['salary', 'bonus', 'commission', 'otherIncome'] as const) {
+        refAccount(row.deposits?.[f], `${base}.deposits.${f}`);
+      }
+      (row.depositSideEffects ?? []).forEach((ref, j) =>
+        refAccount(ref.accountId, `${base}.depositSideEffects[${j}].accountId`),
+      );
+    });
+    yr.expenses.forEach((month, mi) => {
+      month.items.forEach((item, ii) => {
+        const base = `years.${yk}.expenses[${mi}].items[${ii}]`;
+        refAccount(item.paymentAccountId, `${base}.paymentAccountId`);
+        refAccount(item.sideEffects?.accountId, `${base}.sideEffects.accountId`);
+        if (isString(item.loanId) && !knownLoans.has(item.loanId)) {
+          fail(ctx, `${base}.loanId`, `references unknown loan '${item.loanId}'`);
+        }
+      });
+    });
+  }
+  for (const g of Array.isArray(parsed.goldHoldings) ? parsed.goldHoldings : []) {
+    if (isObject(g) && isObject(g.sideEffects)) {
+      refAccount(
+        (g.sideEffects as Record<string, unknown>).accountId,
+        `goldHoldings[${isString(g.id) ? g.id : '?'}].sideEffects.accountId`,
+      );
+    }
+  }
+
+  if (ctx.errors.length > 0) {
+    return { ok: false, errors: ctx.errors };
+  }
 
   return {
     ok: true,

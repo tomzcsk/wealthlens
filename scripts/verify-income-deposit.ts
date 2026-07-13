@@ -154,6 +154,8 @@ const run = async (): Promise<void> => {
     lastUpdated: '2026-07-09T00:00:00.000Z',
     bankAccounts: [
       { id: 'acc-salary', name: 'กสิกร', type: 'salary', balances: { '2026': { '7': 60000 } } },
+      // acc-cash ต้องมีจริง — depositSideEffects/deposits ชี้มา (referential integrity)
+      { id: 'acc-cash', name: 'เงินสด', type: 'cash', balances: { '2026': { '7': 50000 } } },
     ],
     years: {
       '2026': {

@@ -126,6 +126,8 @@ const restored = validateBackup({
   version: '1.3.0',
   lastUpdated: '2026-07-09T00:00:00.000Z',
   years: {},
+  // บัญชี 'a' ต้องมีจริง — bfTx.accountId ชี้มา (referential integrity)
+  bankAccounts: [{ id: 'a', name: 'A', balances: { '2025': { '3': 17250 } } }],
   bankTransactions: [bfTx],
 });
 eq('validateBackup ok', restored.ok, true);

@@ -29,6 +29,10 @@ const eq = (label: string, a: unknown, b: unknown): void => {
 const payload = {
   version: '1',
   lastUpdated: '2026-07-09T00:00:00.000Z',
+  // หนี้ loan-house ต้องมีจริง — expense.loanId ชี้มา (referential integrity)
+  loans: [
+    { id: 'loan-house', name: 'บ้าน', type: 'mortgage', principal: 1000000, startDate: '2026-01-01', schedule: [], extraPayments: [] },
+  ],
   years: {
     '2026': {
       income: [],
