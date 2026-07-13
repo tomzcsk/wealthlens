@@ -2,7 +2,7 @@
   "project": {
     "name": "WealthLens",
     "description": "Personal Finance Dashboard สำหรับติดตามรายรับ-รายจ่ายส่วนตัว",
-    "version": "1.4.0",
+    "version": "1.5.0",
     "created": "2026-05-06",
     "lastUpdated": "2026-07-13",
     "owner": "Tom",
@@ -1462,7 +1462,7 @@
       "id": "phase_5",
       "name": "Phase 5 — Polish",
       "status": "in_progress",
-      "completionPercent": 33,
+      "completionPercent": 67,
       "features": [
         {
           "id": "F46",
@@ -1498,6 +1498,42 @@
             "completed": true,
             "completedAt": "2026-07-13",
             "notes": "Spec: docs/superpowers/specs/2026-07-13-dark-mode-design.md | Plan: docs/superpowers/plans/2026-07-13-dark-mode.md | Commits: e6ef9d3 (theme pure + verify), add5c07 (token layer + darkMode:class), ad2c0a9 (store + ปุ่มสามจังหวะ + inline script), c36f34f (chartTheme), cd64663 (codemod), 4f5f125 (tint), ba27081 (spec แยกบทบาท), 98036cc (accent fill/ink + chip + inverse), e060248/a4d9dd0/e8bc529/fa5f0be/dfac16d/8b60684 (แปลง component เป็น token), cb47f9f (PDF/login/โลโก้ธนาคาร), ae7a635 (grep gate), ee5320c (3 บั๊กจากการขับจริง), b7db197 (ลบของตาย) | Files ใหม่: src/lib/theme.ts, src/lib/chartTheme.ts, src/hooks/useChartTheme.ts, src/stores/themeStore.ts, src/components/layout/ThemeToggle.tsx, scripts/verify-theme.ts, scripts/verify-no-hardcoded-colors.ts, scripts/codemod-theme-classes.mjs | Files แก้: src/index.css (ชั้น token), tailwind.config.js, index.html (anti-FOUC), + component ~55 ไฟล์ (แปลง Tailwind literal ~1,000 จุดเป็น token) | ไม่ทำโดยตั้งใจ: ไม่ปรับดีไซน์/สเปซซิ่ง (งานนี้เปลี่ยนชั้นสีล้วน), ไม่ sync ธีมขึ้น Drive, ไม่ทำ theme หลายสี (โครง token รองรับแล้วถ้าวันหนึ่งอยากได้)"
+          }
+        },
+        {
+          "id": "F47",
+          "name": "Mobile UX (ใช้ด้วยนิ้วโป้งข้างเดียวได้จริง)",
+          "description": "แอปถูกสร้างมาเป็นเดสก์ท็อป (responsive prefix ทั้งโปรเจกต์มีแค่ ~55 ครั้ง) แต่ Tom ใช้มันบนมือถือจริง — แถบเมนูล่าง + ปุ่มลอย + พื้นที่กด 44px + ตรึงคอลัมน์แรกในตารางกว้าง โดยเดสก์ท็อปไม่ขยับ (บังคับด้วยกฎ M6)",
+          "status": "completed",
+          "priority": "P1",
+          "phase": "phase_5",
+          "uxRef": "UXUI.md#12-mobile-f47--shipped-2026-07-13",
+          "acceptanceCriteria": [
+            "src/lib/nav.ts (ใหม่, pure — ไม่ import React): ทะเบียนเมนูแหล่งเดียว 9 รายการ (NAV_ITEMS, mobilePrimaryItems, mobileMoreItems, desktopGroups, isNavActive) ป้อนทั้ง Sidebar (เดสก์ท็อป) และ BottomNav (มือถือ) — เดิม Sidebar hardcode รายการไว้ในตัวเอง เพิ่มแถบล่างโดยไม่แตะ = เมนูสองชุดที่หลุดจากกันเงียบ ๆ",
+            "BottomNav (md:hidden): 4 เมนูหลัก (ภาพรวม · รายเดือน · บัญชีธนาคาร · วิเคราะห์) + ปุ่ม 'อื่นๆ' เปิด sheet อีก 5 หน้า (ความมั่งคั่ง · ทองคำ · หนี้สิน · ภาษี · ตั้งค่า) ผ่าน Modal เดิม (กฎ F42 — ห้าม import framer-motion ตรง); pb-[env(safe-area-inset-bottom)] กันแถบไปนอนใต้แถบ home ของ iPhone; ปุ่ม 'อื่นๆ' ไม่ติด aria-current โดยตั้งใจ (มันไม่ใช่ลิงก์ของหน้า) แค่ย้อมสี",
+            "ลบแฮมเบอร์เกอร์มุมซ้ายบน + drawer framer-motion ทิ้ง — จุดที่นิ้วโป้งเอื้อมยากที่สุดบนจอ 6 นิ้ว และกิน 40px จาก header จนชื่อหน้าเหลือ 'ภา…'",
+            "AddFab (md:hidden) → /monthly?add=expense แล้ว MonthlyPage สั่ง ExpenseList เปิดฟอร์มรายจ่ายทันที + ล้าง query param ทิ้ง (refresh/ย้อนกลับไม่เด้งซ้ำ); เดิมปุ่ม '+ เพิ่มรายการ' เป็น hidden sm:inline-flex — ปุ่มที่กดบ่อยที่สุดหายจากเครื่องที่กดบ่อยที่สุด",
+            "Header บนมือถือ: ลบ spacer 40px ของแฮมเบอร์เกอร์, px-4 md:px-8, ปุ่ม '+ เพิ่มรายการ' เป็น hidden md:inline-flex → ชื่อหน้าแสดงเต็ม",
+            "พื้นที่กด 44px (Apple HIG) เฉพาะมือถือ: ทุก class มี breakpoint กำกับ (min-h-11 md:min-h-0 / min-h-11 min-w-11 md:min-h-0 md:min-w-0) — เดสก์ท็อปไม่อ้วนขึ้น; ข้อยกเว้น data-tap-exempt 4 จุด = กล่องติ๊ก native บนหน้าภาษี (TaxCalculatorPage 3, TaxAllowanceForm 1) ที่ <label> ทั้งแถบเป็นพื้นที่กด 44px จริง — พิสูจน์ด้วยการกดที่ตัวอักษรแล้วมันติ๊ก",
+            "ตารางกว้าง 5 ตัว (MonthlySummaryTable, AllYearsSummary, MultiYearComparison, LoanScheduleTable, PaymentLogTable) ตรึงคอลัมน์แรก (sticky left-0 + พื้นทึบ bg-inherit) — ไม่แตกเป็นการ์ด เพราะ 'ตัวเลขในตารางมีไว้เทียบกัน' (CLAUDE.md) การ์ดทำลายเหตุผลเดียวที่ตารางมีอยู่",
+            "ต้นทุนที่รู้และยอมจ่าย: แถว 'ยอดรวม' ของ LoanScheduleTable เดิม colSpan=3 — ตรึงทั้งก้อนจะเป็นบล็อกอ้วนบังยอดที่เลื่อนผ่านใต้มัน จึงแยกเป็นเซลล์ label (ตรึง) + colSpan=2 ว่าง ผลคือ **คอลัมน์แรกของตารางนี้ตัวเดียวกว้างขึ้นบนเดสก์ท็อป 85 → 106px** (ความกว้างตารางรวม ความสูงแถว และความสูงหน้า เท่าเดิม); ตารางอื่นและหน้าอื่นเหมือนเดิมทุกพิกเซล",
+            "ความหนาแน่น: KPI grid-cols-2 บนมือถือ (md: ขึ้นไปเท่าเดิม) + ตัวเลข text-xl md:text-3xl (ไม่ใช้ truncate — ตัวเลขเงินที่ถูกตัดคือตัวเลขที่โกหก) + กราฟทุกตัวเตี้ยลง 20% เฉพาะมือถือผ่าน src/utils/chartSizing.ts (ความสูงเป็น prop ที่ Tailwind อ่านไม่ได้ จึงส่งเป็น CSS custom property: h-[calc(var(--chart-h)*0.8)] md:h-[var(--chart-h)])",
+            "ผลที่วัดได้จริง (ไม่ใช่ที่แผนเดา): / 3,470 → 2,959px (−14.7%, แผนเดา ~25% แต่เลขของแผนเองรองรับแค่ ~16%) · /analytics 6,746 → 6,584px (−2.4% เท่านั้น — ความยาวของหน้านี้มาจาก anomaly panel + subscriptions + comparison ไม่ใช่กราฟ)",
+            "ประตูถาวร npm run verify:mobile — Playwright เปิด 'แอปที่ build แล้วจริง ๆ' ที่ 390×844 พร้อม seed ข้อมูลของ Tom ใน LocalStorage แล้ววัด DOM ทั้ง 9 route: M1 ไม่มีอะไรล้นขอบจอ · M2 ทุก control ที่มองเห็น ≥ 44px · M3 แถบล่าง 5 ช่อง + aria-current ถูกตัว · M4 ตารางกว้างเกินจอต้องตรึงคอลัมน์แรก · M5 ปุ่มลอยไม่มีอะไรทับ · M6 ที่ 1280px ไม่มีแถบล่าง/ปุ่มลอย/แฮมเบอร์เกอร์ และ sidebar อยู่ครบ",
+            "M0 (กันประตูเน่าเงียบ ๆ): ทุกหน้าต้องเป็น dashboard จริง ไม่ใช่ LoginPage — build โหมด verify ใช้ .env.verify ตั้ง VITE_GOOGLE_CLIENT_ID ว่าง → แอปตกเข้าโหมด local-only (ไม่มีการเจาะ auth ในโค้ดแอป) + assert ว่า seed โหลดจริง (ตาราง 13 แถว) เพราะ store ว่างจะทำให้ M1/M4 ผ่านแบบไม่ได้วัดอะไรเลย",
+            "ผลประตู: 41 ข้อแดง → 0 (ก่อนแก้: M1 /monthly scrollWidth 412 > 390 · M2 ปุ่มเล็กเกิน / 5, /monthly 29, /analytics 19, /accounts 4, /wealth 5, /loans 6, /gold 7, /tax 8, /settings 10 · M3 ไม่มีแถบล่าง 9 หน้า · M4 ตาราง 983px ที่ / และ 1,394/460px ที่ /analytics ไม่ตรึง · M5 ไม่มีปุ่มลอย 9 หน้า · M6 แฮมเบอร์เกอร์ยังอยู่)",
+            "scripts/verify-nav.ts (19 assertions, node ล้วน): mobilePrimary = 4 พอดี (แถบล่าง 5 = 4 + 'อื่นๆ') · ไม่มี path/label ซ้ำ · desktopGroups ครอบทุกเมนู · ทุกเมนูชี้ไป route ที่มีจริงใน App.tsx · isNavActive (/installments ยัง highlight 'หนี้สิน')",
+            "Verified: verify:mobile 0 failures + verify อื่นทั้ง 29 ตัวเขียว (รวม verify-nav) + typecheck + lint + build + วัดเดสก์ท็อป 1280px ก่อน/หลังครบ 9 route (ยกเว้นคอลัมน์แรกของ LoanScheduleTable ข้างต้น ไม่มีค่าไหนขยับ: / สูง 1,925px · /analytics 5,433px · กราฟ 320/320/340 · KPI 232×158)"
+          ],
+          "estimatedHours": 8,
+          "dependencies": [
+            "F42",
+            "F46"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-07-13",
+            "notes": "Spec: docs/superpowers/specs/2026-07-13-mobile-ux-design.md | Plan: docs/superpowers/plans/2026-07-13-mobile-ux.md | Commits: a3b2e8a (ทะเบียนเมนู pure + verify), 343e75d (ประตู verify:mobile — แดง 41 ข้อ = 'ก่อนแก้' ที่วัดได้), 4f7df7f (Sidebar อ่านทะเบียน + ลบ drawer/แฮมเบอร์เกอร์), 9e24377 (แถบล่าง + sheet), 82ec1cf (ปุ่มลอย), f0d94ef (header), 3b6b1be (ซ่อม overflow /monthly), fb46f39 (44px), 65fcf6a (ตรึงคอลัมน์), 42e9d11 (KPI 2 คอลัมน์ + กราฟเตี้ยลง) | Files ใหม่: src/lib/nav.ts, src/components/layout/{BottomNav,AddFab}.tsx, src/utils/chartSizing.ts, scripts/{verify-nav,verify-mobile}.ts, .env.verify | Files แก้: src/components/layout/{Sidebar,Layout,Header}.tsx, src/pages/{MonthlyPage,TaxCalculatorPage}.tsx, src/components/forms/{ExpenseList,SavingsList,TaxAllowanceForm}.tsx, src/components/dashboard/{KpiCardGrid,KpiCard,MonthlySummaryTable}.tsx + 5 ไฟล์ตาราง + กราฟทุกตัว, package.json (devDep playwright + script verify:mobile) | เพิ่ม dependency: playwright (devDep — mobile พิสูจน์ได้จากจอที่ render แล้วเท่านั้น) | ไม่ทำโดยตั้งใจ: ไม่แตกตารางเป็นการ์ด, ไม่แตะ /report/:year (มันคือกระดาษ A4), ไม่ทำ PWA/offline/swipe gesture, ไม่รื้อ layout เดสก์ท็อป"
           }
         }
       ]
@@ -1588,12 +1624,12 @@
     }
   },
   "progressSummary": {
-    "totalFeatures": 54,
-    "completed": 54,
+    "totalFeatures": 55,
+    "completed": 55,
     "inProgress": 0,
     "pending": 0,
     "overallProgress": "100%",
     "currentPhase": "phase_5",
-    "nextMilestone": "Phase 5 ที่เหลือ (ยังไม่เริ่ม): mobile UX polish, additional analytics"
+    "nextMilestone": "Phase 5 ที่เหลือ (ยังไม่เริ่ม): additional analytics — dark mode (F46) ✅ · mobile UX (F47) ✅"
   }
 }

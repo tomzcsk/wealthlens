@@ -59,6 +59,8 @@ src/
 - Number format: `฿1,234,567.89` — ใช้ `numeral` library เสมอ
 - **Animation ทุกตัวมาจาก `src/components/motion/`** — ห้าม import `framer-motion` ตรงใน page/feature component; timing/easing ดึงจาก `src/lib/motion.ts` เท่านั้น (F42)
 - **เลขวิ่ง (count-up) ใช้เฉพาะ KPI/hero** — ตัวเลขในตารางมีไว้เทียบกัน จึงไม่ animate เด็ดขาด
+- **เมนูทุกที่มาจาก `src/lib/nav.ts`** — ห้าม hardcode รายการเมนูใน component; `Sidebar` (เดสก์ท็อป) กับ `BottomNav` (มือถือ) อ่านทะเบียนเดียวกัน เพิ่มหน้าใหม่แล้วลืมอีกที่ = เมนูสองชุดที่หลุดจากกันโดยไม่มี error ให้เห็น (F47)
+- **สไตล์ที่ทำเพื่อมือถือ ต้องมี breakpoint กำกับเสมอ** — `min-h-11 md:min-h-0`, `md:hidden` — เดสก์ท็อปห้ามขยับ (กฎ M6 ใน `npm run verify:mobile` เป็นประตูกัน) (F47)
 - **สีทุกสีมาจาก token ใน `src/index.css`** — ห้ามเขียนสีดิบใน component (`bg-white`, `text-slate-500`); `scripts/verify-no-hardcoded-colors.ts` เป็นประตูกัน (allowlist ว่าง, ยกเว้นแค่ `text-white`). กราฟรับสีผ่าน `useChartTheme()` เพราะ Recharts ยัดสีลง SVG attribute ซึ่งไม่รับ `var()` — เขียน `var()` แล้วเส้นหายเงียบ ๆ ไม่มี error (F46)
 
 ### Dev Commands
@@ -68,6 +70,7 @@ npm run build      # Production build → dist/
 npm run preview    # Preview production build
 npm run typecheck  # TypeScript check
 npm run lint       # ESLint check
+npm run verify:mobile  # build + Playwright วัดจอจริง 390×844 (M1–M6) และ 1280px
 ```
 
 ---
@@ -83,7 +86,7 @@ npm run lint       # ESLint check
 | Phase 2 — Analytics | ✅ Completed | Multi-year, savings, subscriptions, 48-month trends, JSON backup |
 | Phase 3 — Intelligence | ✅ Completed | Anomaly detection, budget forecast, PDF report |
 | Phase 4 — Post-Ship | ✅ Completed | Multi-user login, per-month Kept, Dime/ออมเที่ยว split, reimbursements, ผ่อน 0%, gold ledger, loan tracker (กยศ) |
-| Phase 5 — Polish | 🚧 In progress | Dark mode (F46) ✅ — เหลือ mobile UX polish + additional analytics (ยังไม่เริ่ม) |
+| Phase 5 — Polish | 🚧 In progress | Dark mode (F46) ✅ · Mobile UX (F47) ✅ — เหลือ additional analytics (ยังไม่เริ่ม) |
 
 **เมื่อ complete feature ใด:** อัปเดต `features.json` → เปลี่ยน `status` เป็น `"completed"` และกรอก `completedAt`
 
@@ -101,6 +104,7 @@ npm run lint       # ESLint check
 8. **ยอดบัญชีติดลบได้ ห้าม clamp (F44)** — ลบรายได้ที่เงินถูกใช้ไปแล้ว → คืนยอดจนติดลบ ไม่ใช่ปฏิเสธการลบ. ปฏิเสธ = ล็อกผู้ใช้ไว้กับข้อมูลที่กรอกผิด. ยอดติดลบในข้อมูลจริงของ Tom เป็นยอดจริง ไม่ใช่บั๊ก
 9. **ลบบัญชีที่ยังมีต้นทางผูกอยู่ไม่ได้ (F44)** — รายได้/รายจ่าย/ทอง/ขาโอน บล็อกการลบ (บอกว่าผูกกี่ที่ ให้ผู้ใช้ถอดเอง); บรรทัด manual/adjustment/backfill กวาดพร้อมบัญชี. **ไม่มี cascade delete** — ลบบัญชีแล้วไล่ลบรายได้/รายจ่ายอัตโนมัติ = ทำลายข้อมูลการเงินจริงจากปุ่มเดียว
 10. **สีอยู่ที่ token เท่านั้น (F46)** — ค่าจริงทั้งหมดอยู่ใน `src/index.css` (`:root` / `.dark`, เก็บเป็นเลขช่องสีเพื่อให้ Tailwind ประกอบ alpha ได้) component รู้จักแค่ชื่อ. **สีหนึ่งมีสองบทบาท**: `bg-primary` (พื้นปุ่มที่มี `text-white` ทับ — ต้องเข้มเท่าเดิมในโหมดมืด) กับ `text-primary-ink` (หมึกบนการ์ด — ต้องสว่างขึ้น) เป็นคนละ token ใช้สลับกันไม่ได้ — นี่คือจุดที่คนมาใหม่พลาดแน่. โหมดสว่างถูกตรึงไว้ด้วย R0 ใน `scripts/verify-theme.ts`. **ธีมเป็นของเครื่อง ไม่ sync ขึ้น Drive** (มือถือกลางคืนอยากมืด เดสก์ท็อปกลางวันอยากสว่าง และมันไม่ใช่ข้อมูลการเงิน)
+11. **มือถือ: เมนูอยู่ล่าง ตารางยังเป็นตาราง (F47)** — แถบล่าง 5 ช่อง + ปุ่มลอย "+" แทนแฮมเบอร์เกอร์มุมซ้ายบน (นิ้วโป้งเอื้อมถึงครึ่งล่างของจอ 6 นิ้ว — แฮมเบอร์เกอร์อยู่มุมที่ไกลที่สุดพอดี และกิน 40px จาก header จนชื่อหน้าโดนตัด). **ตารางกว้างตรึงคอลัมน์แรก ไม่แตกเป็นการ์ด** — การ์ดอ่านง่ายทีละแถว แต่เทียบข้ามแถวไม่ได้อีกเลย ซึ่งเป็นเหตุผลเดียวที่ตารางพวกนี้มีอยู่ (กฎเดียวกับ "ตัวเลขในตารางมีไว้เทียบกัน" ที่ห้ามเลขวิ่งในตาราง)
 
 ---
 
