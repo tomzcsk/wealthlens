@@ -40,6 +40,13 @@ export interface ModalProps {
   children: ReactNode;
   /** Panel max-width preset. Defaults to 'md'. */
   size?: ModalSize;
+  /**
+   * ตำแหน่งของแผง (F47).
+   *   'center' — กลางจอ (ค่าเริ่มต้น, ใช้กับฟอร์มทั้งหมด)
+   *   'sheet'  — เด้งขึ้นจากขอบล่าง เต็มความกว้าง. ใช้กับเมนูบนมือถือ:
+   *              นิ้วโป้งอยู่ล่างจอ เมนูจึงควรมาหานิ้ว ไม่ใช่ให้นิ้วเอื้อมไปกลางจอ
+   */
+  placement?: 'center' | 'sheet';
 }
 
 /** Size → Tailwind max-width class. Tuned to the form's natural width. */
@@ -55,8 +62,10 @@ export const Modal = ({
   title,
   children,
   size = 'md',
+  placement = 'center',
 }: ModalProps): ReactNode => {
   const reduced = useReducedMotion() ?? false;
+  const isSheet = placement === 'sheet';
 
   // Lock body scroll while the modal is up so background content doesn't
   // shift around when the user scrolls inside the panel.
@@ -116,7 +125,9 @@ export const Modal = ({
       // no focus on close — so when `open` flips false, focus can live inside
       // this subtree. `aria-hidden` on an ancestor of the focused element is
       // itself an a11y violation, so we omit it. Revisit if a focus trap lands.
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className={`fixed inset-0 z-50 flex justify-center ${
+        isSheet ? 'items-end' : 'items-center p-4'
+      }`}
       style={{ pointerEvents: open ? undefined : 'none' }}
     >
       {/* Backdrop */}
@@ -134,12 +145,32 @@ export const Modal = ({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`relative bg-card rounded-2xl shadow-xl w-full ${SIZE_MAX_WIDTH[size]} max-h-[90vh] overflow-y-auto`}
-        initial={{ opacity: 0, scale: reduced ? 1 : 0.96 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: reduced ? 1 : 0.98 }}
+        className={
+          isSheet
+            ? 'relative bg-card rounded-t-2xl shadow-xl w-full max-h-[85vh] overflow-y-auto pb-[env(safe-area-inset-bottom)]'
+            : `relative bg-card rounded-2xl shadow-xl w-full ${SIZE_MAX_WIDTH[size]} max-h-[90vh] overflow-y-auto`
+        }
+        // sheet เลื่อนขึ้นจากขอบล่าง (มันมาจากล่าง จึงควรดูเหมือนมาจากล่าง)
+        // center ใช้ scale+fade เหมือนเดิมทุกประการ
+        initial={
+          isSheet
+            ? { y: reduced ? 0 : '100%' }
+            : { opacity: 0, scale: reduced ? 1 : 0.96 }
+        }
+        animate={isSheet ? { y: 0 } : { opacity: 1, scale: 1 }}
+        exit={
+          isSheet
+            ? { y: reduced ? 0 : '100%' }
+            : { opacity: 0, scale: reduced ? 1 : 0.98 }
+        }
         transition={panelTransition}
       >
+        {isSheet && (
+          <div
+            aria-hidden="true"
+            className="mx-auto mt-2.5 mb-1 h-1 w-9 rounded-full bg-ink-200"
+          />
+        )}
         {title !== undefined && (
           <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-ink-200">
             <h2 className="text-lg font-semibold text-ink-900">{title}</h2>

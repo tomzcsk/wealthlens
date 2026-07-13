@@ -76,6 +76,7 @@ export const BottomNav = (): ReactNode => {
         onClose={() => setMoreOpen(false)}
         title="เมนูอื่นๆ"
         size="sm"
+        placement="sheet"
       >
         <div className="flex flex-col gap-1 p-2 pb-3">
           {more.map((item) => (

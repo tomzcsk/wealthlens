@@ -89,7 +89,12 @@ export const SyncStatusIndicator = ({
       <span aria-hidden="true" className={iconClassName}>
         {badge.icon}
       </span>
-      <span>{badge.label}</span>
+      {/*
+        มือถือเห็นแค่ไอคอน (F47) — ป้ายข้อความกิน ~62px จาก header ที่แคบอยู่แล้ว
+        จนชื่อหน้าโดนตัดเป็น "รายละเอียดรา…". สถานะยังสื่อได้ครบด้วยไอคอน + สีของ
+        pill และยังมี tooltip/aria-label เต็มอยู่ จึงไม่ได้เสียข้อมูลไป
+      */}
+      <span className="hidden md:inline">{badge.label}</span>
     </>
   );
 

@@ -144,15 +144,25 @@ export const LoanScheduleTable = ({
             })}
             <tr className="bg-surface font-semibold">
               {/*
-                Was one `colSpan={3}` cell. A 3-column-wide pin would park a
-                fat block over the left third of the screen and swallow the
-                totals as they scroll under it — so the label gets its own
-                (pinned) cell and the two columns it used to cover stay empty.
+                แถวรวมมีสองหน้าตา และนั่นตั้งใจ (F47):
+                  มือถือ — ป้ายอยู่ในเซลล์ตรึงคอลัมน์เดียว. ถ้าตรึงเซลล์ colSpan={3}
+                    ไว้ มันจะเป็นบล็อกกว้าง 194px แปะทับซ้ายมือครึ่งจอ แล้วกลืน
+                    ตัวเลขที่เลื่อนผ่านใต้มัน
+                  เดสก์ท็อป — เซลล์เดียวกิน 3 คอลัมน์เหมือนเดิมเป๊ะ
+                เซลล์ที่ `display:none` ไม่นับเป็นความกว้างคอลัมน์ ตารางบนเดสก์ท็อป
+                จึงไม่ขยับแม้แต่พิกเซลเดียว (แยกเป็น 2 เซลล์เฉย ๆ ทำให้คอลัมน์แรก
+                กว้างขึ้น 85→106px เพราะ "ยอดรวม" ไปดันความกว้างของคอลัมน์)
               */}
-              <td className={`px-3 py-2.5 text-ink-700 ${STICKY_COL}`}>
+              <td className={`md:hidden px-3 py-2.5 text-ink-700 ${STICKY_COL}`}>
                 ยอดรวม
               </td>
-              <td colSpan={2} />
+              <td colSpan={2} className="md:hidden" />
+              <td
+                colSpan={3}
+                className="hidden md:table-cell px-3 py-2.5 text-ink-700"
+              >
+                ยอดรวม
+              </td>
               <td className="px-3 py-2.5 text-right financial-number tabular-nums text-ink-900">
                 {formatNumber(totalPrincipal, { decimals: 2 })}
               </td>
