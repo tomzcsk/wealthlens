@@ -2,7 +2,7 @@
   "project": {
     "name": "WealthLens",
     "description": "Personal Finance Dashboard สำหรับติดตามรายรับ-รายจ่ายส่วนตัว",
-    "version": "1.7.0",
+    "version": "1.8.0",
     "created": "2026-05-06",
     "lastUpdated": "2026-07-13",
     "owner": "Tom",
@@ -622,8 +622,8 @@
       "features": [
         {
           "id": "F15",
-          "name": "Expense Anomaly Detection",
-          "description": "แจ้งเตือนเมื่อค่าใช้จ่ายผิดปกติ (เกิน avg + 2σ)",
+          "name": "Expense Anomaly Detection (เหลือแต่ toast — แผงถูกถอดใน F50)",
+          "description": "แจ้งเตือนเมื่อค่าใช้จ่ายผิดปกติ (เกิน avg + 2σ). **F50 (2026-07-13) ถอด 'แผง' บนหน้าวิเคราะห์ออก เหลือแต่ toast** — toast มาจาก useAnomalyAlertEffect ที่ mount ที่ Layout มีชุด 'seen' ของตัวเอง ไม่ได้พึ่งแผงเลย. ที่ยังอยู่: hooks/useAnomalies.ts · hooks/useAnomalyAlertEffect.ts · utils/anomalyDetection.ts. ที่หายไป: components/analytics/AnomalyAlerts.tsx · stores/anomalyStore.ts (การกดปิดถาวร — ไม่มีที่ให้กดปิดอีกแล้ว). LocalStorage key 'wealthlens_anomaly_dismissals' กลายเป็นขยะกำพร้า ไม่มีใครอ่าน (ตั้งใจไม่ลบ)",
           "status": "completed",
           "priority": "P2",
           "phase": "phase_3",
@@ -631,8 +631,8 @@
           "acceptanceCriteria": [
             "คำนวณ baseline จาก 12 เดือนก่อนหน้า",
             "Alert เมื่อ category ใดเกิน threshold",
-            "Toast notification + in-app badge",
-            "Dismiss/Acknowledge alert"
+            "Toast notification (in-app badge/แผง ถูกถอดใน F50)",
+            "Dismiss/Acknowledge alert — ถอดพร้อมแผงใน F50"
           ],
           "estimatedHours": 6,
           "dependencies": [
@@ -641,14 +641,17 @@
           "checkpoint": {
             "completed": true,
             "completedAt": "2026-05-06",
-            "notes": "Implemented during Phase 0–3 build sprint"
+            "notes": "Implemented during Phase 0–3 build sprint | 2026-07-13 (F50): แผงถูกถอด เหลือ toast — ขับจริงยืนยันว่า toast ยังเด้ง"
           }
         },
         {
           "id": "F16",
           "name": "Monthly Budget Forecast",
-          "description": "คาดการณ์ค่าใช้จ่ายเดือนหน้าจาก pattern ที่ผ่านมา",
-          "status": "completed",
+          "description": "คาดการณ์ค่าใช้จ่ายเดือนหน้าจาก pattern ที่ผ่านมา — **ถอดออกทั้งฟีเจอร์ใน F50 (2026-07-13)**",
+          "status": "removed",
+          "removedAt": "2026-07-13",
+          "removedIn": "F50",
+          "removedReason": "เห็นได้ที่หน้าวิเคราะห์ที่เดียว ไม่มีช่องทางอื่น และ Tom ไม่เคยเปิดดูเลย — ฟีเจอร์ที่ไม่มีใครใช้คือโค้ดที่ต้องดูแลตลอดไปโดยไม่ได้อะไรตอบแทน. กินพื้นที่ 756px (11%) ของหน้าที่สูง 6,584px บนมือถือ. ลบแล้ว: components/analytics/BudgetForecast.tsx · hooks/useForecast.ts · utils/forecast.ts (ประตู verify:analytics กันไม่ให้ซากกลับมา). เก็บรายการนี้ไว้ในไฟล์เพื่อบอกว่ามันเคยมีจริงแล้วถูกถอด — ใครมาอ่านทีหลังจะได้ไม่สร้างซ้ำ",
           "priority": "P2",
           "phase": "phase_3",
           "prdRef": "prd.md#4-features--scope#f12",
@@ -665,7 +668,7 @@
           "checkpoint": {
             "completed": true,
             "completedAt": "2026-05-06",
-            "notes": "Implemented during Phase 0–3 build sprint"
+            "notes": "Implemented during Phase 0–3 build sprint | ถอดออกทั้งฟีเจอร์ 2026-07-13 (F50)"
           }
         },
         {
@@ -1577,9 +1580,9 @@
     {
       "id": "phase_6",
       "name": "Phase 6 — Debt & Polish",
-      "description": "เก็บหนี้เทคนิค (F49 ✅) → รื้อหน้าวิเคราะห์ (บนมือถือมันสูง 17 หน้าจอ — ยังไม่เริ่ม) → PWA (ยังไม่เริ่ม)",
+      "description": "เก็บหนี้เทคนิค (F49 ✅) → รื้อหน้าวิเคราะห์ (F50 ✅ — 6,584px/7.8 จอ เหลือ ≤2,000px ต่อแท็บ) → PWA (ยังไม่เริ่ม)",
       "status": "in_progress",
-      "completionPercent": 33,
+      "completionPercent": 67,
       "features": [
         {
           "id": "F49",
@@ -1613,6 +1616,35 @@
             "completed": true,
             "completedAt": "2026-07-13",
             "notes": "Spec: docs/superpowers/specs/2026-07-13-tech-debt-sweep-design.md | Plan: docs/superpowers/plans/2026-07-13-tech-debt-sweep.md | Commits: 0ee9155 (spec), 6c169e9 (plan), 0e29d93 (balancePrune pure + verify), bd45b4a (prune ท้ายทุก mutation ผ่าน withLedger/ledgerPatch), aabcafb (addRawBalance เรียก applyBankDelta), 05aaab3 (สีหมวดแหล่งเดียว), adc1178 (ROUTES derive จาก NAV_ITEMS), a2828c6 (focus trap ใน Modal) | Files ใหม่: src/utils/balancePrune.ts, scripts/verify-tech-debt.ts | Files แก้: src/stores/financeStore.ts (ledgerPatch + prune + addRawBalance), src/components/ui/Modal.tsx (focus trap), src/components/dashboard/ExpensePieChart.tsx, src/components/analytics/TrendAnalysis.tsx, scripts/verify-mobile.ts | ไม่ทำโดยตั้งใจ: ไม่ลบชื่อ addRawBalance (ป้ายบอกเจตนา), ไม่แตะ aria-hidden ของ Modal, ไม่แตะ YEAR_COLORS, ไม่เขียน migration แยกสำหรับคีย์กำพร้า"
+          }
+        },
+        {
+          "id": "F50",
+          "name": "รื้อหน้าวิเคราะห์ (แท็บ + ตัดของที่ไม่มีใครดู)",
+          "description": "/analytics เอาเครื่องมือ 6 อย่างคนละเรื่องมากองซ้อนกันในหน้าเดียว = 6,584px (7.8 จอ) ที่ 390px → ลบสองฟีเจอร์ที่ไม่เคยเปิดดู (F16 ทั้งก้อน · F15 เหลือแต่ toast) แล้วแตกที่เหลือเป็น 3 แท็บที่ React.lazy แยกกันจริง สถานะแท็บอยู่ใน URL (?tab=)",
+          "status": "completed",
+          "priority": "P1",
+          "phase": "phase_6",
+          "acceptanceCriteria": [
+            "ตัดของที่ไม่มีใครดู: ลบ F16 ทั้งฟีเจอร์ (BudgetForecast.tsx · useForecast.ts · utils/forecast.ts) และลบแผงของ F15 (AnomalyAlerts.tsx · anomalyStore.ts) — รวม ~1,000 บรรทัด",
+            "toast แจ้งเตือนต้องรอด — คุณค่าเดียวที่เหลือของ F15. Layout ยังเรียก useAnomalyAlertEffect() และขับจริงยืนยันว่ายังเด้ง (ยัดรายจ่ายผิดปกติเข้าไปแล้วเห็น toast)",
+            "3 แท็บ: รายปี (AllYearsSummary + MultiYearComparison) · แนวโน้ม (TrendAnalysis) · Subscription (SubscriptionManager)",
+            "lazy จริง ไม่ใช่ hidden — เปิดแท็บหนึ่ง แผงของแท็บอื่นต้องไม่อยู่ใน DOM เลย (A2). TAB_PANELS เก็บ 'ตัวคอมโพเนนต์' ไม่ใช่ element ที่สร้างไว้แล้ว → render เฉพาะตัวที่เลือก",
+            "สถานะอยู่ใน URL (useSearchParams + replace: false) ไม่ใช่ useState — ปุ่มย้อนกลับพากลับแท็บก่อนหน้า · บุ๊กมาร์กได้ · ส่งลิงก์ตรงแท็บได้ (useState ทำไม่ได้สักอย่าง)",
+            "?tab= ที่ไม่รู้จัก → ตกกลับ years ไม่ใช่หน้าว่าง (resolveTab ใน lib/analyticsTabs.ts — pure ไม่ import React หลักเดียวกับ lib/nav.ts)",
+            "แถบแท็บ: 3 ปุ่ม ≥44px · aria-current='page' บนแท็บปัจจุบัน · เลื่อนแนวนอนได้บนมือถือ · สีจาก token เท่านั้น",
+            "ความสูงที่ 390px: รายปี 1,991px · แนวโน้ม 1,297px · Subscription 1,502px (จาก 6,584px = ลดลง 70–80% ต่อแท็บ) ทุกแท็บ ≤ 2,200px",
+            "bundle แตกจริง: YearsTab 17.65 kB · TrendsTab 8.76 kB · SubscriptionsTab 5.18 kB (Recharts ยังเป็น vendor chunk ร่วม โหลดเมื่อแท็บที่ใช้กราฟถูก mount)",
+            "Verified: scripts/verify-analytics.ts (A1–A5 + ประตูกันซาก + toast ยังอยู่ — แดง 18 ข้อก่อนเริ่ม เขียวหมดหลังจบ) + verify เดิมทั้ง 31 ตัวไม่ regress + verify:mobile (10 หน้า) + typecheck + lint + build + ขับจริงทั้ง 3 แท็บ สว่าง/มืด ที่ 390px และ 1280px (สลับแท็บ URL เปลี่ยน · ปุ่มย้อนกลับกลับแท็บก่อนหน้า · ไม่ล้นขอบจอ)"
+          ],
+          "estimatedHours": 6,
+          "dependencies": [
+            "F47"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-07-13",
+            "notes": "Spec: docs/superpowers/specs/2026-07-13-analytics-restructure-design.md | Plan: docs/superpowers/plans/2026-07-13-analytics-restructure.md | Files ใหม่: src/lib/analyticsTabs.ts, src/pages/analytics/{YearsTab,TrendsTab,SubscriptionsTab}.tsx, scripts/verify-analytics.ts | Files แก้: src/pages/AnalyticsPage.tsx (แถบแท็บ + lazy + Suspense key={active}), package.json (verify:analytics) | Files ลบ: components/analytics/{BudgetForecast,AnomalyAlerts}.tsx, hooks/useForecast.ts, utils/forecast.ts, stores/anomalyStore.ts | ไม่ทำโดยตั้งใจ: ไม่แยกเป็นหลายหน้าในเมนู (เมนูมี 9 รายการแล้ว) · ไม่ลบ LocalStorage key 'wealthlens_anomaly_dismissals' ที่กลายเป็นขยะกำพร้า · ไม่แตะสูตรคำนวณของแผงที่เหลือ"
           }
         }
       ]
@@ -1703,12 +1735,14 @@
     }
   },
   "progressSummary": {
-    "totalFeatures": 57,
+    "totalFeatures": 58,
     "completed": 57,
+    "removed": 1,
     "inProgress": 0,
     "pending": 0,
     "overallProgress": "100%",
+    "countingNote": "58 = 57 ที่เคยมี + F50 (ตัวที่ 58). F16 (ประมาณการเดือนหน้า) ถูกถอดออกใน F50 จึงนับเป็น removed ไม่ใช่ completed → completed 57 + removed 1 = 58. รายการ F15/F16 ยังอยู่ในไฟล์โดยตั้งใจ: ประวัติต้องบอกว่ามันเคยมีแล้วถอดออก ไม่ใช่แกล้งทำเป็นไม่เคยมี",
     "currentPhase": "phase_6",
-    "nextMilestone": "Phase 6 เหลือ 2 งาน (ยังไม่เริ่มทั้งคู่): รื้อหน้าวิเคราะห์ (บนมือถือสูง 17 หน้าจอ) · PWA"
+    "nextMilestone": "Phase 6 เหลืองานเดียว (ยังไม่เริ่ม): PWA"
   }
 }

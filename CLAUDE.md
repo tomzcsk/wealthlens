@@ -72,6 +72,7 @@ npm run preview    # Preview production build
 npm run typecheck  # TypeScript check
 npm run lint       # ESLint check
 npm run verify:mobile  # build + Playwright วัดจอจริง 390×844 (M1–M6) และ 1280px
+npm run verify:analytics  # build + Playwright: หน้าวิเคราะห์ 3 แท็บ lazy จริง (A1–A5) + กันซากของที่ลบ
 ```
 
 ---
