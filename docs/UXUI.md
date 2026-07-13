@@ -1,7 +1,7 @@
 # UX/UI Design Specification — WealthLens
 
-**Version:** 1.0.0  
-**Last Updated:** 2026-05-06  
+**Version:** 1.1.0  
+**Last Updated:** 2026-07-13  
 **Design Philosophy:** *Data tells a story. Our job is to make that story beautiful, clear, and actionable.*
 
 ---
@@ -341,16 +341,85 @@ States: default | positive | negative | loading | empty
 
 ---
 
-## 11. Dark Mode (Future)
+## 11. Color Tokens & Dark Mode (F46 — shipped 2026-07-13)
 
-เตรียม CSS variables ไว้รองรับ dark mode ตั้งแต่แรก:
-```css
-@media (prefers-color-scheme: dark) {
-  --bg-primary: #0F172A;
-  --bg-secondary: #1E293B;
-  --bg-card: #1E293B;
-  --border: #334155;
-  --text-primary: #F1F5F9;
-  --text-secondary: #94A3B8;
-}
+> บล็อก dark ที่เคยเขียนเผื่อไว้ในหัวข้อนี้ **ไม่เคยทำงานเลย** — selector เป็น `:root.dark` ซ้อนอยู่ใน `@media (prefers-color-scheme: dark)` คือต้องทั้ง OS มืด **และ** มี class `.dark` ที่ไม่เคยมีใครใส่ให้ `<html>` สักครั้ง. F46 รื้อทิ้งแล้วทำของจริง
+
+### 11.1 หลักการ — ค่าจริงอยู่ที่เดียว โค้ดที่เหลืออ้างชื่อ
+
 ```
+src/index.css        ← ค่าสีจริงทั้งหมด (:root = สว่าง, .dark = มืด)
+tailwind.config.js   ← ชื่อ token ชี้ไป rgb(var(--x) / <alpha-value>)
+component            ← อ้างชื่อ token เท่านั้น ไม่รู้จักค่า hex
+```
+
+**เก็บเป็น "เลขช่องสี" ไม่ใช่ hex:** `--bg-card: 255 255 255;` — ถ้าเก็บเป็น `#ffffff` แล้วเขียน `bg-card/60` มันจะ**เงียบและไม่ทำงาน** (Tailwind ประกอบ alpha ไม่ได้)
+
+**กฎเหล็ก:** โหมดสว่างต้องไม่ขยับแม้แต่พิกเซลเดียว — ค่าสว่างของทุก token = ค่า Tailwind ขั้นเดิมเป๊ะ ตรึงด้วย **R0** ใน `scripts/verify-theme.ts` (324 assertions). ห้ามเขียนสีดิบใน component — `scripts/verify-no-hardcoded-colors.ts` เป็นประตูกัน (allowlist ว่าง; ยกเว้นแค่ `text-white` ที่นั่งบนพื้นสีอิ่มตัว)
+
+### 11.2 สีหนึ่งมี "สองบทบาท" — แนวคิดที่รับน้ำหนักทั้งงานนี้
+
+`--color-primary` เดิมถูกใช้สองบทบาทที่ต้องการค่า **ตรงข้ามกัน** ในโหมดมืด:
+
+| บทบาท | ตัวอย่าง | โหมดมืดต้องการ |
+|---|---|---|
+| **พื้น (fill)** — มี `text-white` ทับ | `bg-primary text-white` | **เข้มเท่าเดิม** ไม่งั้นตัวขาวบนปุ่มอ่านไม่ออก |
+| **หมึก (ink)** — บนการ์ด | `text-primary`, `border-primary` | **สว่างขึ้น** ไม่งั้นจมหายไปกับการ์ดมืด |
+
+จึงแยกชื่อตามบทบาท ทำเหมือนกันทั้ง **5 ตระกูล**: `primary`←blue · `income`←emerald · `expense`←red (rose ยุบเข้ามา) · `warning`←amber (savings ใช้ชุดเดียวกัน) · `net`←violet
+
+| token | ใช้กับ | light | dark |
+|---|---|---|---|
+| `<f>` (DEFAULT) | `bg-*` พื้นปุ่ม | สี 600 เดิม | **เท่าเดิม** |
+| `<f>-fill` | แถบ progress (`bg-*-500` เดิม) | สี 500 เดิม | **เท่าเดิม** |
+| `<f>-dark` | `hover:bg-*-700` | สี 700 เดิม | **เท่าเดิม** |
+| `<f>-ink` | `text-*` / `border-*` / `ring-*` บนการ์ด | สี 600 เดิม (**ไม่ขยับ**) | สี 400 (สว่างขึ้น, ≥4.5 บนการ์ด) |
+| `<f>-{50,100,200,300}` | พื้น/ขอบ chip | Tailwind เดิม | กลับด้าน (ผสมสีการ์ดแล้ว ไม่ใช่สีอิ่มตัวดิบ) |
+| `<f>-{700,800,900}` | ตัวหนังสือใน chip | Tailwind เดิม | กลับด้าน |
+| `<f>-on-fill` | ตัวหนังสือที่นั่งบนพื้นสี | สี 300 | **เท่าเดิม** |
+
+> จุดสวย: **สี 600 ของ Tailwind = สีแบรนด์เดิมพอดีทุกตระกูล** (`emerald-600` = `#059669` = income เป๊ะ) → `text-emerald-600` → `text-income-ink` แล้วโหมดสว่างไม่ขยับแม้แต่บิตเดียว
+
+### 11.3 neutral ramp — `ink-100…900` (ใช้ทั้ง text และ border)
+
+ค่าโหมดสว่าง = ค่า `slate-*` เดิมเป๊ะทุกขั้น (ห้ามยุบ 600 กับ 700 เข้าด้วยกัน — ตาเห็นต่าง). ค่าโหมดมืด **ไม่ใช่การกลับด้านตรง ๆ** แต่เลือกแล้ววัด contrast จริงทุกขั้น
+
+| token | light | dark | ใช้แทน |
+|---|---|---|---|
+| `ink-900` | `#0F172A` | `#F8FAFC` | ตัวหนังสือหลัก |
+| `ink-500` | `#64748B` | `#94A3B8` | เนื้อความรอง (จุดที่ใช้เยอะสุด) |
+| `ink-400` | `#94A3B8` | `#64748B` | ป้ายจาง |
+| `ink-300`…`ink-100` | `#CBD5E1`…`#F1F5F9` | `#475569`…`#28354A` | ขอบการ์ด / เส้นคั่นตาราง |
+
+> `ink-100` โหมดมืดเป็น `#28354A` ไม่ใช่ `#1E293B` — เพราะ `#1E293B` **เท่าสีการ์ดโหมดมืดพอดี** เส้นคั่นจะหายสนิท (contrast 1.00)
+
+### 11.4 พื้น (surface)
+
+| token | light | dark | ใช้กับ |
+|---|---|---|---|
+| `bg-card` | `#FFFFFF` | `#1E293B` | การ์ด |
+| `bg-surface` | `#F8FAFC` | `#0F172A` | พื้นหน้า |
+| `bg-hover` | `#F8FAFC` | `#334155` | hover — สว่างเท่า `bg-surface` แต่**ต้องแยก token**: โหมดสว่าง hover แล้วมืดลง โหมดมืด hover ต้องสว่างขึ้น |
+| `bg-raised` / `bg-track` | `#F1F5F9` / `#E2E8F0` | `#334155` / `#475569` | แผงยก / รางของ progress bar |
+| `bg-overlay` | `#0F172A` | `#0F172A` | ฉากหลัง Modal — มืดทั้งสองโหมดโดยตั้งใจ |
+| `bg-inverse` + `text-inverse-muted` | `#0F172A` + `#CBD5E1` | `#020617` + `#CBD5E1` | hero ที่มืดอยู่แล้วในโหมดสว่าง (MonthlyPage, BankAccountsPage) — หมึกคงที่ ไม่พลิกตาม ramp |
+| `bg-logo` | `#FFFFFF` | `#FFFFFF` | กระเบื้องขาวรองโลโก้ธนาคารจริง (PNG หลายอันหมึกเข้ม เช่น CITI/BBL จะจมหายบนพื้นมืด) |
+
+สีหมวด `cat-*` ทั้ง 8 (§2) **คงค่าเดิมทั้งสองโหมด** — สดพอจะอ่านออกทั้งสองพื้น
+
+### 11.5 เลือก token ยังไง
+
+1. เป็นตัวหนังสือ/เส้น ที่ไม่มีความหมายเชิงตัวเลข? → `ink-*` (เข้ม = สำคัญ)
+2. เป็นพื้น? → `bg-card` / `bg-surface` / `bg-raised`
+3. มีความหมาย (รับ/จ่าย/net/เตือน/action)? → เลือกตระกูล แล้วถามต่อว่า **มันเป็นพื้นหรือหมึก** — พื้นปุ่มใช้ `bg-<f>`, ตัวหนังสือ/ขอบบนการ์ดใช้ `<f>-ink`, chip ใช้ `bg-<f>-50` + `text-<f>-800`
+4. อยู่ใน hero มืด? → `text-inverse-muted` / `text-<f>-on-fill`
+5. เป็นกราฟ? → **ห้ามใช้ token** — `useChartTheme()` เท่านั้น (Recharts ยัดสีลง SVG presentation attribute ซึ่งสเปกไม่รับ `var()` เขียนไปเส้นจะหายเงียบ ๆ ไม่มี error)
+
+### 11.6 ตัวคุมโหมด
+
+- ปุ่มใน Header วน **สามจังหวะ**: ☀️ สว่าง → 🌙 มืด → 💻 ตามเครื่อง (`src/lib/theme.ts` เป็น pure: `resolveTheme` / `cycleTheme`)
+- โหมด `system` ฟัง `matchMedia` → OS สลับตอนพระอาทิตย์ตก แอปสลับตาม ไม่ต้อง refresh
+- inline script ใน `index.html` ใส่ class `.dark` ให้ `<html>` **ก่อน bundle โหลด** — ไม่งั้นเห็นแฟลชขาวทุกครั้งที่ refresh
+- `color-scheme: light/dark` ใน `:root`/`.dark` — บอก UA ให้จัดพื้น input/scrollbar/date picker เอง (ไม่ใส่ = พิมพ์ในช่องกรอกแล้วมองไม่เห็นตัวเอง)
+- **ธีมเก็บที่เครื่อง (`wealthlens-theme`) ไม่ sync ขึ้น Drive โดยตั้งใจ** — มือถือกลางคืนอยากมืด เดสก์ท็อปกลางวันอยากสว่าง และมันไม่ใช่ข้อมูลการเงิน
+- `/report/:year` (PDF) **ขาวเสมอ** — ถอด class `dark` ออกจาก `<html>` ตอน mount คืนตอน unmount (พิมพ์ลงกระดาษขาว พื้นดำกินหมึกและอ่านไม่ออก)

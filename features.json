@@ -2,7 +2,7 @@
   "project": {
     "name": "WealthLens",
     "description": "Personal Finance Dashboard สำหรับติดตามรายรับ-รายจ่ายส่วนตัว",
-    "version": "1.3.0",
+    "version": "1.4.0",
     "created": "2026-05-06",
     "lastUpdated": "2026-07-13",
     "owner": "Tom",
@@ -1457,6 +1457,50 @@
           }
         }
       ]
+    },
+    {
+      "id": "phase_5",
+      "name": "Phase 5 — Polish",
+      "status": "in_progress",
+      "completionPercent": 33,
+      "features": [
+        {
+          "id": "F46",
+          "name": "Dark Mode (ชั้นสีของทั้งแอป)",
+          "description": "ชั้น token สีกลางของทั้งแอป — index.css เก็บค่าจริงทั้งหมด, component อ้างชื่อ token เท่านั้น; เปิดโหมดมืดได้ทั้งแอปโดยโหมดสว่างไม่ขยับแม้แต่พิกเซลเดียว (บังคับด้วย R0)",
+          "status": "completed",
+          "priority": "P1",
+          "phase": "phase_5",
+          "uxRef": "UXUI.md#11-color-tokens--dark-mode",
+          "acceptanceCriteria": [
+            "src/index.css: แหล่งความจริงเดียว — ทุกสีเป็น CSS custom property ใน :root / .dark เก็บเป็น 'เลขช่องสี' (--bg-card: 255 255 255) ไม่ใช่ hex เพราะ Tailwind ต้องประกอบ alpha เอง (bg-card/60 จะเงียบและไม่ทำงานถ้าเก็บเป็น hex); tailwind.config.js darkMode:'class' + ทุก token ชี้ rgb(var(--x) / <alpha-value>)",
+            "neutral ramp ink-100…900 ใช้ได้ทั้ง text และ border — ค่าโหมดสว่าง = ค่า slate เดิมเป๊ะทุกขั้น (ห้ามยุบ 600 กับ 700 เข้าด้วยกัน); ค่าโหมดมืดเลือกแล้ววัด contrast จริง ไม่ใช่กลับด้านตรง ๆ (ink-100 มืด = 40 53 74 ไม่ใช่ slate-800 ซึ่งเท่าสีการ์ดพอดี เส้นคั่นจะหายสนิท)",
+            "accent 5 ตระกูล (primary←blue, income←emerald, expense←red+rose, warning←amber, net←violet) แยกบทบาท: <f> (พื้นปุ่ม, เท่าเดิมสองโหมด) vs <f>-ink (หมึกบนการ์ด, สว่างขึ้นในโหมดมืด) + ramp chip (<f>-50…300 พื้น/ขอบ, <f>-700…900 ตัวหนังสือ — กลับด้านกันในโหมดมืด) + <f>-on-fill (ตัวหนังสือบนพื้นสี ค่าเดียวสองโหมด)",
+            "สี 600 ของ Tailwind = สีแบรนด์เดิมพอดีทุกตระกูล → text-emerald-600 → text-income-ink แล้วโหมดสว่างไม่ขยับแม้แต่บิตเดียว",
+            "bg-inverse / text-inverse-* สำหรับ hero ที่มืดอยู่แล้วในโหมดสว่าง (MonthlyPage, BankAccountsPage)",
+            "bg-logo — กระเบื้องขาวคงที่สองโหมด รองโลโก้ธนาคารจริง (public/banks/*.png หลายอันหมึกเข้ม เช่น CITI/BBL จะจมหายบนพื้นมืด)",
+            "color-scheme: light/dark ใน :root/.dark — ไม่ใส่ = input ที่ไม่มี class พื้นจะขาวโพลนแต่ตัวหนังสือขาว (พิมพ์แล้วมองไม่เห็นตัวเอง)",
+            "src/lib/theme.ts (pure): ThemeMode 'light'|'dark'|'system' + resolveTheme/cycleTheme; themeStore (Zustand persist key 'wealthlens-theme') + ปุ่มสามจังหวะใน Header; inline script ใน index.html ใส่ class ก่อน React boot (กันแฟลชขาว)",
+            "ธีมเป็นของเครื่อง ไม่ sync ขึ้น Drive โดยตั้งใจ — มือถือกลางคืนอยากมืด เดสก์ท็อปกลางวันอยากสว่าง และมันไม่ใช่ข้อมูลการเงิน",
+            "src/lib/chartTheme.ts + useChartTheme(): Recharts รับสีเป็น prop แล้วยัดลง SVG presentation attribute ซึ่งสเปกไม่รับ var() — stroke='var(--ink-200)' ได้เส้นหายเงียบ ๆ ไม่มี error; กราฟจึงรับ hex จริงตามโหมด",
+            "/report/:year (PDF) ขาวเสมอ — ถอด class 'dark' ออกจาก <html> ตอน mount คืนตอน unmount (ไม่ใช่แค่เว้นไฟล์ เพราะพื้น <body> มาจาก token)",
+            "scripts/verify-theme.ts: 324 assertions — parse src/index.css เองแล้วบังคับ R0 (ทุก token โหมดสว่าง = ค่า Tailwind เดิมเป๊ะ = หลักฐานเครื่องจักรว่าโหมดสว่างไม่ขยับ), R1 ครบสองโหมด, R2–R4 contrast (เนื้อความ ≥4.5 · จาง ≥2.4 · เส้นต้องเห็น · 'มืด ≥ สว่าง ทุกคู่ที่สว่างต่ำกว่า 7:1'), R5a–R5e แยกพื้น/หมึก, R5f hero, R5g พื้นที่ค่าไม่ขยับข้ามโหมด",
+            "scripts/verify-no-hardcoded-colors.ts: ประตูกันสีดิบกลับเข้ามา — สแกน 82 ไฟล์ .tsx, allowlist ว่างเปล่า, ยกเว้นแค่ text-white (นั่งบนพื้นสีอิ่มตัว)",
+            "3 บั๊กที่ verify จับไม่ได้ เจอตอนขับแอปจริง (มันไม่ใช่เรื่องค่าสี แต่เป็นเรื่อง 'สีนั้นไปโผล่ตรงไหน'): (1) input พื้นขาว+ตัวหนังสือขาว → เพิ่ม color-scheme; (2) bg-inverse โหมดมืดเท่าพื้นหน้าเป๊ะ → hero หายทั้งใบ, แก้เป็น slate-950 และเปลี่ยน assertion R5f ที่เคย 'บังคับให้เท่ากัน' (กฎนั้นผิดเอง) เป็น 'bg-inverse ≠ bg-surface' พิสูจน์แล้วว่าแดงกับค่าเก่า; (3) chip tint โหมดมืดใช้สีอิ่มตัวตรง ๆ (amber-800) พอดีกับ badge เล็ก แต่หัวตารางเต็มความกว้างกลายเป็นแถบส้มขุ่น → ผสมสีการ์ดล่วงหน้า",
+            "เก็บกวาด: ลบ src/App.css (ตายมาตั้งแต่ Vite scaffold, อ้าง var ที่ไม่เคยมีจริง) + ลบ field colorVar ออกจาก expense-categories/savings-categories (ไม่มีใครอ่าน และหลัง F46 มันเป็นกับดัก — var เก็บเป็นเลขช่องสี ใครเอาไปใส่ var(--cat-housing) ตรง ๆ จะได้สีเปล่าโดยไม่มี error)",
+            "Verified: verify ทั้ง 28 ตัวเขียว (theme 324 assertions + no-hardcoded-colors + เดิม 26 ตัวไม่ regress) + typecheck + lint + build + ขับเบราว์เซอร์จริงกับข้อมูลจริงของ Tom ทั้งสองโหมด ทุกหน้า"
+          ],
+          "estimatedHours": 8,
+          "dependencies": [
+            "F42"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-07-13",
+            "notes": "Spec: docs/superpowers/specs/2026-07-13-dark-mode-design.md | Plan: docs/superpowers/plans/2026-07-13-dark-mode.md | Commits: e6ef9d3 (theme pure + verify), add5c07 (token layer + darkMode:class), ad2c0a9 (store + ปุ่มสามจังหวะ + inline script), c36f34f (chartTheme), cd64663 (codemod), 4f5f125 (tint), ba27081 (spec แยกบทบาท), 98036cc (accent fill/ink + chip + inverse), e060248/a4d9dd0/e8bc529/fa5f0be/dfac16d/8b60684 (แปลง component เป็น token), cb47f9f (PDF/login/โลโก้ธนาคาร), ae7a635 (grep gate), ee5320c (3 บั๊กจากการขับจริง), b7db197 (ลบของตาย) | Files ใหม่: src/lib/theme.ts, src/lib/chartTheme.ts, src/hooks/useChartTheme.ts, src/stores/themeStore.ts, src/components/layout/ThemeToggle.tsx, scripts/verify-theme.ts, scripts/verify-no-hardcoded-colors.ts, scripts/codemod-theme-classes.mjs | Files แก้: src/index.css (ชั้น token), tailwind.config.js, index.html (anti-FOUC), + component ~55 ไฟล์ (แปลง Tailwind literal ~1,000 จุดเป็น token) | ไม่ทำโดยตั้งใจ: ไม่ปรับดีไซน์/สเปซซิ่ง (งานนี้เปลี่ยนชั้นสีล้วน), ไม่ sync ธีมขึ้น Drive, ไม่ทำ theme หลายสี (โครง token รองรับแล้วถ้าวันหนึ่งอยากได้)"
+          }
+        }
+      ]
     }
   ],
   "dataInventory": {
@@ -1544,12 +1588,12 @@
     }
   },
   "progressSummary": {
-    "totalFeatures": 53,
-    "completed": 53,
+    "totalFeatures": 54,
+    "completed": 54,
     "inProgress": 0,
     "pending": 0,
     "overallProgress": "100%",
-    "currentPhase": "shipped",
-    "nextMilestone": "Phase 5 (optional): dark mode, mobile UX polish, additional analytics"
+    "currentPhase": "phase_5",
+    "nextMilestone": "Phase 5 ที่เหลือ (ยังไม่เริ่ม): mobile UX polish, additional analytics"
   }
 }
