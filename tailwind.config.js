@@ -1,3 +1,22 @@
+/**
+ * หนึ่งตระกูลสี accent = ชุด token เดียวกันเสมอ
+ * (พื้น: DEFAULT/fill/dark/on-fill · หมึก: ink · chip: 50-300 / 700-900)
+ */
+const accentFamily = (name) => ({
+  DEFAULT: `rgb(var(--c-${name}) / <alpha-value>)`,
+  fill: `rgb(var(--c-${name}-fill) / <alpha-value>)`,
+  dark: `rgb(var(--c-${name}-dark) / <alpha-value>)`,
+  'on-fill': `rgb(var(--c-${name}-on-fill) / <alpha-value>)`,
+  ink: `rgb(var(--c-${name}-ink) / <alpha-value>)`,
+  50: `rgb(var(--c-${name}-50) / <alpha-value>)`,
+  100: `rgb(var(--c-${name}-100) / <alpha-value>)`,
+  200: `rgb(var(--c-${name}-200) / <alpha-value>)`,
+  300: `rgb(var(--c-${name}-300) / <alpha-value>)`,
+  700: `rgb(var(--c-${name}-700) / <alpha-value>)`,
+  800: `rgb(var(--c-${name}-800) / <alpha-value>)`,
+  900: `rgb(var(--c-${name}-900) / <alpha-value>)`,
+});
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
@@ -29,35 +48,33 @@ export default {
         raised: 'rgb(var(--bg-raised) / <alpha-value>)',
         track: 'rgb(var(--bg-track) / <alpha-value>)',
         overlay: 'rgb(var(--bg-overlay) / <alpha-value>)',
-        // accent
-        primary: {
-          DEFAULT: 'rgb(var(--color-primary) / <alpha-value>)',
-          light: 'rgb(var(--color-primary-light) / <alpha-value>)',
-          tint: 'rgb(var(--color-primary-tint) / <alpha-value>)',
-          dark: 'rgb(var(--color-primary-dark) / <alpha-value>)',
+        // hero กลับด้าน (มืดทั้งสองโหมด)
+        inverse: {
+          DEFAULT: 'rgb(var(--bg-inverse) / <alpha-value>)',
+          fg: 'rgb(var(--inverse-fg) / <alpha-value>)',
+          muted: 'rgb(var(--inverse-muted) / <alpha-value>)',
+          dim: 'rgb(var(--inverse-dim) / <alpha-value>)',
         },
-        income: {
-          DEFAULT: 'rgb(var(--color-income) / <alpha-value>)',
-          light: 'rgb(var(--color-income-light) / <alpha-value>)',
-          tint: 'rgb(var(--color-income-tint) / <alpha-value>)',
-          bar: 'rgb(var(--color-income-bar) / <alpha-value>)',
-        },
+        // accent — สองบทบาทต่อหนึ่งแบรนด์สี (ดูคำอธิบายใน src/index.css)
+        //   DEFAULT / fill / dark / on-fill = "พื้น" ค่าไม่ขยับข้ามโหมด
+        //   ink                             = "หมึก" สว่างขึ้นในโหมดมืด
+        //   50–300 / 700–900                = chip (พื้น / ตัวหนังสือ) กลับด้านในโหมดมืด
+        primary: accentFamily('primary'),
+        income: accentFamily('income'),
         expense: {
-          DEFAULT: 'rgb(var(--color-expense) / <alpha-value>)',
-          light: 'rgb(var(--color-expense-light) / <alpha-value>)',
-          tint: 'rgb(var(--color-expense-tint) / <alpha-value>)',
-          bar: 'rgb(var(--color-expense-bar) / <alpha-value>)',
+          ...accentFamily('expense'),
+          'on-fill': {
+            DEFAULT: 'rgb(var(--c-expense-on-fill) / <alpha-value>)',
+            100: 'rgb(var(--c-expense-on-fill-100) / <alpha-value>)',
+          },
         },
-        warning: {
-          DEFAULT: 'rgb(var(--color-warning) / <alpha-value>)',
-          light: 'rgb(var(--color-warning-light) / <alpha-value>)',
-          tint: 'rgb(var(--color-warning-tint) / <alpha-value>)',
+        warning: accentFamily('warning'),
+        net: accentFamily('net'),
+        // savings ใช้ค่าชุดเดียวกับ warning (amber) — คนละชื่อ คนละความหมายในโดเมน
+        savings: {
+          DEFAULT: 'rgb(var(--c-warning) / <alpha-value>)',
+          ink: 'rgb(var(--c-warning-ink) / <alpha-value>)',
         },
-        net: 'rgb(var(--color-net) / <alpha-value>)',
-        savings: 'rgb(var(--color-savings) / <alpha-value>)',
-        success: 'rgb(var(--color-success) / <alpha-value>)',
-        danger: 'rgb(var(--color-danger) / <alpha-value>)',
-        info: 'rgb(var(--color-info) / <alpha-value>)',
         cat: {
           housing: 'rgb(var(--cat-housing) / <alpha-value>)',
           vehicle: 'rgb(var(--cat-vehicle) / <alpha-value>)',

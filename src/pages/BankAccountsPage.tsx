@@ -171,19 +171,20 @@ export const BankAccountsPage = (): ReactNode => {
             const totalAll = sumBankAllTime(accounts);
             const totalYear = sumBankYear(accounts, year);
             return (
-              <section className="rounded-2xl bg-slate-900 text-white shadow-sm p-6 sm:p-8">
-                <div className="text-xs uppercase tracking-[0.15em] text-slate-400">
+              // hero กลับด้าน: พื้นมืดทั้งสองโหมด — ลูกในนี้ใช้ token inverse/on-fill เท่านั้น
+              <section className="rounded-2xl bg-inverse text-white shadow-sm p-6 sm:p-8">
+                <div className="text-xs uppercase tracking-[0.15em] text-inverse-dim">
                   ยอดรวมทุกบัญชี
                 </div>
                 <div
                   className={`mt-2 text-4xl sm:text-5xl font-bold financial-number tabular-nums tracking-tight ${
-                    totalAll < 0 ? 'text-red-300' : 'text-white'
+                    totalAll < 0 ? 'text-expense-on-fill' : 'text-white'
                   }`}
                 >
                   {formatTHB(totalAll, { decimals: 0 })}
                 </div>
-                <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-400">
-                  <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs">
+                <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-inverse-dim">
+                  <span className="rounded-full bg-inverse-fg/10 px-2.5 py-0.5 text-xs">
                     {accounts.length} บัญชี
                   </span>
                   <span>·</span>
@@ -191,7 +192,9 @@ export const BankAccountsPage = (): ReactNode => {
                     ปี {year}{' '}
                     <span
                       className={`financial-number tabular-nums ${
-                        totalYear < 0 ? 'text-red-300' : 'text-slate-200'
+                        totalYear < 0
+                          ? 'text-expense-on-fill'
+                          : 'text-inverse-muted'
                       }`}
                     >
                       {formatTHB(totalYear, { decimals: 0 })}

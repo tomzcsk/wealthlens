@@ -39,30 +39,92 @@
   --bg-track: 226 232 240;
   --bg-overlay: 15 23 42; /* ฉากหลัง Modal — มืดทั้งสองโหมดโดยตั้งใจ */
 
-  /* accent */
-  --color-primary: 37 99 235;
-  --color-primary-light: 239 246 255;
-  --color-primary-dark: 29 78 216;
-  --color-income: 5 150 105;
-  --color-income-light: 236 253 245;
-  --color-income-bar: 52 211 153;
-  --color-expense: 220 38 38;
-  --color-expense-light: 254 242 242;
-  --color-expense-bar: 248 113 113;
-  --color-warning: 217 119 6;
-  --color-warning-light: 255 251 235;
+  /*
+   * พื้นกลับด้าน (hero) — มืดอยู่แล้วในโหมดสว่าง จึงต้อง "เท่ากันเป๊ะ" ทั้งสองโหมด
+   * ถ้าปล่อยให้ ramp กลาง (ink-*) พลิก ตัวหนังสือจะกลายเป็นสีเข้มบนพื้นเข้ม = หายไปเลย
+   */
+  --bg-inverse: 15 23 42; /* slate-900 */
+  --inverse-fg: 255 255 255; /* white — ใช้เป็น veil โปร่ง เช่น bg-inverse-fg/10 */
+  --inverse-muted: 203 213 225; /* slate-300 */
+  --inverse-dim: 148 163 184; /* slate-400 */
 
-  /* tint = ชั้นเข้มกว่า light หนึ่งขั้น (Tailwind -100) — badge ที่ต้องเด่นกว่าพื้นอ่อน */
-  --color-income-tint: 209 250 229; /* emerald-100 */
-  --color-expense-tint: 254 226 226; /* red-100 */
-  --color-warning-tint: 254 243 199; /* amber-100 */
-  --color-primary-tint: 219 234 254; /* blue-100 */
-
-  --color-net: 124 58 237;
-  --color-savings: 217 119 6;
-  --color-success: 5 150 105;
-  --color-danger: 220 38 38;
-  --color-info: 37 99 235;
+  /*
+   * accent — หนึ่งแบรนด์สี "สองบทบาท" (F46)
+   *
+   *   พื้น (fill)  : bg-* + text-white   → ต้องเข้มเท่าเดิมในโหมดมืด
+   *                                        ไม่งั้นตัวหนังสือขาวบนปุ่มอ่านไม่ออก
+   *   หมึก (ink)   : text-* / border-*   → ต้องสว่างขึ้นในโหมดมืด
+   *                                        ไม่งั้นจมหายไปกับการ์ด
+   *
+   * ค่าโหมดสว่างทุกตัว = ค่า Tailwind ขั้นเดิมเป๊ะ (verify-theme R0 บังคับ)
+   * ขั้น 50–300 (พื้น chip) และ 700–900 (ตัวหนังสือ chip) กลับด้านกันในโหมดมืด
+   */
+  /* primary ← blue */
+  --c-primary: 37 99 235;
+  --c-primary-fill: 59 130 246;
+  --c-primary-dark: 29 78 216;
+  --c-primary-on-fill: 147 197 253;
+  --c-primary-ink: 37 99 235;
+  --c-primary-50: 239 246 255;
+  --c-primary-100: 219 234 254;
+  --c-primary-200: 191 219 254;
+  --c-primary-300: 147 197 253;
+  --c-primary-700: 29 78 216;
+  --c-primary-800: 30 64 175;
+  --c-primary-900: 30 58 138;
+  /* income ← emerald */
+  --c-income: 5 150 105;
+  --c-income-fill: 16 185 129;
+  --c-income-dark: 4 120 87;
+  --c-income-on-fill: 110 231 183;
+  --c-income-ink: 5 150 105;
+  --c-income-50: 236 253 245;
+  --c-income-100: 209 250 229;
+  --c-income-200: 167 243 208;
+  --c-income-300: 110 231 183;
+  --c-income-700: 4 120 87;
+  --c-income-800: 6 95 70;
+  --c-income-900: 6 78 59;
+  /* expense ← red (rose ถูกยุบเข้ามาที่นี่) */
+  --c-expense: 220 38 38;
+  --c-expense-fill: 239 68 68;
+  --c-expense-dark: 185 28 28;
+  --c-expense-on-fill: 252 165 165;
+  --c-expense-on-fill-100: 254 226 226; /* ตัวหนังสือรองบนปุ่มแดง — เท่ากันสองโหมด */
+  --c-expense-ink: 220 38 38;
+  --c-expense-50: 254 242 242;
+  --c-expense-100: 254 226 226;
+  --c-expense-200: 254 202 202;
+  --c-expense-300: 252 165 165;
+  --c-expense-700: 185 28 28;
+  --c-expense-800: 153 27 27;
+  --c-expense-900: 127 29 29;
+  /* warning ← amber (savings ใช้ชุดเดียวกัน) */
+  --c-warning: 217 119 6;
+  --c-warning-fill: 245 158 11;
+  --c-warning-dark: 180 83 9;
+  --c-warning-on-fill: 252 211 77;
+  --c-warning-ink: 217 119 6;
+  --c-warning-50: 255 251 235;
+  --c-warning-100: 254 243 199;
+  --c-warning-200: 253 230 138;
+  --c-warning-300: 252 211 77;
+  --c-warning-700: 180 83 9;
+  --c-warning-800: 146 64 14;
+  --c-warning-900: 120 53 15;
+  /* net ← violet */
+  --c-net: 124 58 237;
+  --c-net-fill: 139 92 246;
+  --c-net-dark: 109 40 217;
+  --c-net-on-fill: 196 181 253;
+  --c-net-ink: 124 58 237;
+  --c-net-50: 245 243 255;
+  --c-net-100: 237 233 254;
+  --c-net-200: 221 214 254;
+  --c-net-300: 196 181 253;
+  --c-net-700: 109 40 217;
+  --c-net-800: 91 33 182;
+  --c-net-900: 76 29 149;
 
   /* สีหมวดกราฟ — ค่าเดียวสองโหมด (สดพอจะอ่านออกทั้งสองพื้น) */
   --cat-housing: 99 102 241;
@@ -98,30 +160,84 @@
   --bg-track: 71 85 105;
   --bg-overlay: 15 23 42;
 
-  /* accent สว่างขึ้นให้ contrast ผ่านบนพื้นมืด */
-  --color-primary: 96 165 250;
-  --color-primary-light: 30 58 138;
-  --color-primary-dark: 147 197 253;
-  --color-income: 52 211 153;
-  --color-income-light: 6 78 59;
-  --color-income-bar: 52 211 153;
-  --color-expense: 248 113 113;
-  --color-expense-light: 127 29 29;
-  --color-expense-bar: 248 113 113;
-  --color-warning: 251 191 36;
-  --color-warning-light: 120 53 15;
+  /* hero กลับด้าน — เท่าโหมดสว่างเป๊ะ (พื้นมันมืดอยู่แล้วทั้งสองโหมด) */
+  --bg-inverse: 15 23 42;
+  --inverse-fg: 255 255 255;
+  --inverse-muted: 203 213 225;
+  --inverse-dim: 148 163 184;
 
-  /* tint โหมดมืด: เข้มขึ้นหนึ่งขั้นจาก light (900 → 800) — คงลำดับชั้นเดิมของโหมดสว่าง */
-  --color-income-tint: 6 95 70;
-  --color-expense-tint: 153 27 27;
-  --color-warning-tint: 146 64 14;
-  --color-primary-tint: 30 64 175;
-
-  --color-net: 167 139 250;
-  --color-savings: 251 191 36;
-  --color-success: 52 211 153;
-  --color-danger: 248 113 113;
-  --color-info: 96 165 250;
+  /*
+   * accent โหมดมืด — "พื้นไม่ขยับ หมึกสว่างขึ้น"
+   *   -, -fill, -dark, -on-fill  = ค่าเดียวกับโหมดสว่าง (ปุ่มยังเข้ม ตัวขาวยังอ่านออก)
+   *   -ink                        = Tailwind 400 (สว่างขึ้น อ่านออกบนการ์ดมืด ≥4.5)
+   *   50–300 ↔ 900–600, 700–900 ↔ 200–50 (chip กลับด้าน)
+   */
+  /* primary */
+  --c-primary: 37 99 235;
+  --c-primary-fill: 59 130 246;
+  --c-primary-dark: 29 78 216;
+  --c-primary-on-fill: 147 197 253;
+  --c-primary-ink: 96 165 250;
+  --c-primary-50: 30 58 138;
+  --c-primary-100: 30 64 175;
+  --c-primary-200: 29 78 216;
+  --c-primary-300: 37 99 235;
+  --c-primary-700: 191 219 254;
+  --c-primary-800: 219 234 254;
+  --c-primary-900: 239 246 255;
+  /* income */
+  --c-income: 5 150 105;
+  --c-income-fill: 16 185 129;
+  --c-income-dark: 4 120 87;
+  --c-income-on-fill: 110 231 183;
+  --c-income-ink: 52 211 153;
+  --c-income-50: 6 78 59;
+  --c-income-100: 6 95 70;
+  --c-income-200: 4 120 87;
+  --c-income-300: 5 150 105;
+  --c-income-700: 167 243 208;
+  --c-income-800: 209 250 229;
+  --c-income-900: 236 253 245;
+  /* expense */
+  --c-expense: 220 38 38;
+  --c-expense-fill: 239 68 68;
+  --c-expense-dark: 185 28 28;
+  --c-expense-on-fill: 252 165 165;
+  --c-expense-on-fill-100: 254 226 226;
+  --c-expense-ink: 248 113 113;
+  --c-expense-50: 127 29 29;
+  --c-expense-100: 153 27 27;
+  --c-expense-200: 185 28 28;
+  --c-expense-300: 220 38 38;
+  --c-expense-700: 254 202 202;
+  --c-expense-800: 254 226 226;
+  --c-expense-900: 254 242 242;
+  /* warning */
+  --c-warning: 217 119 6;
+  --c-warning-fill: 245 158 11;
+  --c-warning-dark: 180 83 9;
+  --c-warning-on-fill: 252 211 77;
+  --c-warning-ink: 251 191 36;
+  --c-warning-50: 120 53 15;
+  --c-warning-100: 146 64 14;
+  --c-warning-200: 180 83 9;
+  --c-warning-300: 217 119 6;
+  --c-warning-700: 253 230 138;
+  --c-warning-800: 254 243 199;
+  --c-warning-900: 255 251 235;
+  /* net */
+  --c-net: 124 58 237;
+  --c-net-fill: 139 92 246;
+  --c-net-dark: 109 40 217;
+  --c-net-on-fill: 196 181 253;
+  --c-net-ink: 167 139 250;
+  --c-net-50: 76 29 149;
+  --c-net-100: 91 33 182;
+  --c-net-200: 109 40 217;
+  --c-net-300: 124 58 237;
+  --c-net-700: 221 214 254;
+  --c-net-800: 237 233 254;
+  --c-net-900: 245 243 255;
 }
 
 html,

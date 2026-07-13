@@ -156,7 +156,8 @@ export const MonthlyPage = (): ReactNode => {
 
       <ExpenseList year={year} month={month} />
 
-      <section className="bg-slate-900 text-white rounded-2xl shadow-sm p-6">
+      {/* hero กลับด้าน: พื้นมืดทั้งสองโหมด — ลูกในนี้ใช้ token inverse/on-fill เท่านั้น */}
+      <section className="bg-inverse text-white rounded-2xl shadow-sm p-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <SummaryStat label="Net. All" amount={summary.netAll} tone="net" />
           <SummaryStat
@@ -231,10 +232,11 @@ const Stat = ({
   </div>
 );
 
+// ตัวเลขบน hero มืด — ค่าเดียวสองโหมด (ห้ามใช้ *-ink ที่พลิกสว่างตามการ์ด)
 const SUMMARY_TONE_CLASS: Record<'income' | 'expense' | 'net', string> = {
-  income: 'text-emerald-300',
-  expense: 'text-red-300',
-  net: 'text-violet-300',
+  income: 'text-income-on-fill',
+  expense: 'text-expense-on-fill',
+  net: 'text-net-on-fill',
 };
 
 const SummaryStat = ({
@@ -247,7 +249,7 @@ const SummaryStat = ({
   tone: 'income' | 'expense' | 'net';
 }): ReactNode => (
   <div className="space-y-1 text-center">
-    <div className="text-xs uppercase tracking-wider text-slate-300">
+    <div className="text-xs uppercase tracking-wider text-inverse-muted">
       {label}
     </div>
     <div

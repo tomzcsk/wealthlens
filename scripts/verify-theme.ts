@@ -91,14 +91,77 @@ const LIGHT_MUST_EQUAL: Record<string, string> = {
   'bg-hover': '#f8fafc', // slate-50 (hover บนการ์ดขาว)
   'bg-raised': '#f1f5f9', // slate-100
   'bg-track': '#e2e8f0', // slate-200
-  'color-income-light': '#ecfdf5', // emerald-50
-  'color-expense-light': '#fef2f2', // red-50
-  'color-warning-light': '#fffbeb', // amber-50
-  'color-primary-light': '#eff6ff', // blue-50
-  'color-income-tint': '#d1fae5', // emerald-100
-  'color-expense-tint': '#fee2e2', // red-100
-  'color-warning-tint': '#fef3c7', // amber-100
-  'color-primary-tint': '#dbeafe', // blue-100
+  'bg-inverse': '#0f172a', // slate-900 (พื้น hero)
+  'inverse-fg': '#ffffff', // white
+  'inverse-muted': '#cbd5e1', // slate-300
+  'inverse-dim': '#94a3b8', // slate-400
+
+  // accent — ขั้นของ Tailwind เป๊ะทุกตัว
+  // หัวใจ: ขั้น 600 ของ Tailwind "คือ" สีแบรนด์เดิมอยู่แล้ว
+  //   blue-600 #2563eb = primary · emerald-600 #059669 = income · red-600 #dc2626 = expense
+  //   amber-600 #d97706 = warning/savings · violet-600 #7c3aed = net
+  // ดังนั้น text-emerald-600 → text-income-ink จึงไม่เปลี่ยนสีโหมดสว่างแม้แต่พิกเซลเดียว
+  'c-primary': '#2563eb', // blue-600
+  'c-primary-fill': '#3b82f6', // blue-500
+  'c-primary-dark': '#1d4ed8', // blue-700
+  'c-primary-on-fill': '#93c5fd', // blue-300
+  'c-primary-ink': '#2563eb', // blue-600
+  'c-primary-50': '#eff6ff',
+  'c-primary-100': '#dbeafe',
+  'c-primary-200': '#bfdbfe',
+  'c-primary-300': '#93c5fd',
+  'c-primary-700': '#1d4ed8',
+  'c-primary-800': '#1e40af',
+  'c-primary-900': '#1e3a8a',
+  'c-income': '#059669', // emerald-600
+  'c-income-fill': '#10b981', // emerald-500
+  'c-income-dark': '#047857', // emerald-700
+  'c-income-on-fill': '#6ee7b7', // emerald-300
+  'c-income-ink': '#059669', // emerald-600
+  'c-income-50': '#ecfdf5',
+  'c-income-100': '#d1fae5',
+  'c-income-200': '#a7f3d0',
+  'c-income-300': '#6ee7b7',
+  'c-income-700': '#047857',
+  'c-income-800': '#065f46',
+  'c-income-900': '#064e3b',
+  'c-expense': '#dc2626', // red-600
+  'c-expense-fill': '#ef4444', // red-500
+  'c-expense-dark': '#b91c1c', // red-700
+  'c-expense-on-fill': '#fca5a5', // red-300
+  'c-expense-on-fill-100': '#fee2e2', // red-100 (ตัวหนังสือรองบนปุ่มแดง)
+  'c-expense-ink': '#dc2626', // red-600
+  'c-expense-50': '#fef2f2',
+  'c-expense-100': '#fee2e2',
+  'c-expense-200': '#fecaca',
+  'c-expense-300': '#fca5a5',
+  'c-expense-700': '#b91c1c',
+  'c-expense-800': '#991b1b',
+  'c-expense-900': '#7f1d1d',
+  'c-warning': '#d97706', // amber-600
+  'c-warning-fill': '#f59e0b', // amber-500
+  'c-warning-dark': '#b45309', // amber-700
+  'c-warning-on-fill': '#fcd34d', // amber-300
+  'c-warning-ink': '#d97706', // amber-600
+  'c-warning-50': '#fffbeb',
+  'c-warning-100': '#fef3c7',
+  'c-warning-200': '#fde68a',
+  'c-warning-300': '#fcd34d',
+  'c-warning-700': '#b45309',
+  'c-warning-800': '#92400e',
+  'c-warning-900': '#78350f',
+  'c-net': '#7c3aed', // violet-600
+  'c-net-fill': '#8b5cf6', // violet-500
+  'c-net-dark': '#6d28d9', // violet-700
+  'c-net-on-fill': '#c4b5fd', // violet-300
+  'c-net-ink': '#7c3aed', // violet-600
+  'c-net-50': '#f5f3ff',
+  'c-net-100': '#ede9fe',
+  'c-net-200': '#ddd6fe',
+  'c-net-300': '#c4b5fd',
+  'c-net-700': '#6d28d9',
+  'c-net-800': '#5b21b6',
+  'c-net-900': '#4c1d95',
 };
 
 console.log('\n— R0: โหมดสว่างต้องเท่าค่าเดิมเป๊ะ —');
@@ -118,7 +181,7 @@ for (const token of Object.keys(LIGHT)) {
 const TEXT_TIERS = ['ink-900', 'ink-800', 'ink-700', 'ink-600', 'ink-500'];
 const FAINT_TIER = ['ink-400'];
 const LINE_TIERS = ['ink-300', 'ink-200', 'ink-100'];
-const ACCENTS = ['color-income', 'color-expense', 'color-primary'];
+const ACCENTS = ['c-income-ink', 'c-expense-ink', 'c-primary-ink'];
 const SURFACES = ['bg-card', 'bg-surface'];
 
 const ratio = (map: Record<string, string>, fg: string, bg: string): number =>
@@ -176,7 +239,81 @@ for (const fg of [...TEXT_TIERS, ...FAINT_TIER, ...LINE_TIERS]) {
   }
 }
 
-// ---------- R5: จานสีกราฟ (Recharts รับ hex เท่านั้น ใช้ var() ไม่ได้) ----------
+// ---------- R5: บทบาท "พื้น" กับ "หมึก" ต้องไม่ปนกัน (บั๊กที่งานนี้ปิด) ----------
+// ก่อนหน้านี้ทั้งสองบทบาทใช้ token ตัวเดียวกัน พอ token สว่างขึ้นในโหมดมืด
+// ปุ่มทุกปุ่มในแอปเลยกลายเป็นฟ้าซีดกับตัวหนังสือขาว = อ่านไม่ออก
+const FAMILIES = ['primary', 'income', 'expense', 'warning', 'net'] as const;
+const FILL_ROLES = ['', '-fill', '-dark', '-on-fill'] as const;
+
+console.log('\n— R5a: พื้น (fill) ต้องไม่ขยับข้ามโหมด —');
+for (const f of FAMILIES) {
+  for (const role of FILL_ROLES) {
+    const token = `c-${f}${role}`;
+    assert(
+      `${token}: สว่าง = มืด`,
+      LIGHT[token] === DARK[token],
+      `สว่าง ${LIGHT[token]} · มืด ${DARK[token]}`,
+    );
+  }
+}
+assert(
+  'c-expense-on-fill-100: สว่าง = มืด',
+  LIGHT['c-expense-on-fill-100'] === DARK['c-expense-on-fill-100'],
+);
+
+console.log('\n— R5b: หมึก (ink) โหมดมืดต้องอ่านออกบนการ์ด ≥ 4.5 —');
+for (const f of FAMILIES) {
+  const r = contrast(hexOf(DARK[`c-${f}-ink`]), hexOf(DARK['bg-card']));
+  assert(`มืด: c-${f}-ink บนการ์ด = ${r.toFixed(2)}`, r >= 4.5);
+}
+
+console.log('\n— R5c: ตัวขาวบนปุ่ม — contrast เท่ากันเป๊ะสองโหมด —');
+for (const f of FAMILIES) {
+  const l = contrast('#ffffff', hexOf(LIGHT[`c-${f}`]));
+  const d = contrast('#ffffff', hexOf(DARK[`c-${f}`]));
+  assert(
+    `white บน c-${f}: สว่าง ${l.toFixed(2)} = มืด ${d.toFixed(2)}`,
+    Math.abs(l - d) < 0.0001,
+  );
+}
+
+console.log('\n— R5d: หมึกต้องสว่างขึ้นจริงในโหมดมืด (ไม่ใช่ค่าเดิม) —');
+for (const f of FAMILIES) {
+  const token = `c-${f}-ink`;
+  assert(`${token}: มืด ≠ สว่าง`, LIGHT[token] !== DARK[token]);
+}
+
+console.log('\n— R5e: chip กลับด้าน — ตัวหนังสือ chip อ่านออกบนพื้น chip ≥ 4.5 —');
+for (const f of FAMILIES) {
+  for (const [text, bg] of [
+    ['700', '100'],
+    ['800', '100'],
+    ['900', '50'],
+  ]) {
+    for (const mode of [
+      { name: 'สว่าง', map: LIGHT },
+      { name: 'มืด', map: DARK },
+    ]) {
+      const r = contrast(hexOf(mode.map[`c-${f}-${text}`]), hexOf(mode.map[`c-${f}-${bg}`]));
+      assert(`${mode.name}: c-${f}-${text} บน c-${f}-${bg} = ${r.toFixed(2)}`, r >= 4.5);
+    }
+  }
+}
+
+console.log('\n— R5f: hero กลับด้าน — ค่าเดียวสองโหมด และอ่านออกบนพื้น hero —');
+for (const token of ['bg-inverse', 'inverse-fg', 'inverse-muted', 'inverse-dim']) {
+  assert(`${token}: สว่าง = มืด`, LIGHT[token] === DARK[token]);
+}
+for (const token of ['inverse-fg', 'inverse-muted', 'inverse-dim']) {
+  const r = contrast(hexOf(LIGHT[token]), hexOf(LIGHT['bg-inverse']));
+  assert(`${token} บน bg-inverse = ${r.toFixed(2)}`, r >= 4.5);
+}
+for (const f of FAMILIES) {
+  const r = contrast(hexOf(LIGHT[`c-${f}-on-fill`]), hexOf(LIGHT['bg-inverse']));
+  assert(`c-${f}-on-fill บน bg-inverse = ${r.toFixed(2)}`, r >= 4.5);
+}
+
+// ---------- R6: จานสีกราฟ (Recharts รับ hex เท่านั้น ใช้ var() ไม่ได้) ----------
 console.log('\n— chartPalette: ครบทั้งสองโหมดและไม่ซ้ำกัน —');
 const lightChart = chartPalette('light');
 const darkChart = chartPalette('dark');
