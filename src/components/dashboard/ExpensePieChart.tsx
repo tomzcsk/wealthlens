@@ -29,6 +29,7 @@ import {
 } from 'recharts';
 
 import { chartAnimation } from '@/lib/motion';
+import { CHART_BOX, chartBoxStyle } from '@/utils/chartSizing';
 import { useExpenseByCategory, useSelectedYear } from '@/hooks/useFinanceData';
 import { CATEGORY_ORDER, EXPENSE_CATEGORIES } from '@/types/expense-categories';
 import type { ExpenseCategory } from '@/types';
@@ -173,7 +174,7 @@ export const ExpensePieChart = ({
       {hasData ? (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:items-center">
           {/* Donut + center label */}
-          <div className="relative" style={{ height }}>
+          <div className={`relative ${CHART_BOX}`} style={chartBoxStyle(height)}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Tooltip content={<PieTooltip />} />
@@ -228,8 +229,8 @@ export const ExpensePieChart = ({
         </div>
       ) : (
         <div
-          className="flex items-center justify-center text-sm text-ink-400"
-          style={{ height }}
+          className={`flex items-center justify-center text-sm text-ink-400 ${CHART_BOX}`}
+          style={chartBoxStyle(height)}
           role="status"
         >
           ยังไม่มีรายการค่าใช้จ่าย

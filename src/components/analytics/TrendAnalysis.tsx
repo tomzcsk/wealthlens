@@ -45,6 +45,7 @@ import {
 } from 'recharts';
 
 import { chartAnimation } from '@/lib/motion';
+import { CHART_BOX, chartBoxStyle } from '@/utils/chartSizing';
 import { useChartTheme } from '@/hooks/useChartTheme';
 import { use48MonthTrend, type TrendPoint } from '@/hooks/useFinanceData';
 import { CATEGORY_ORDER, EXPENSE_CATEGORIES } from '@/types/expense-categories';
@@ -285,7 +286,7 @@ const NetIncomeAreaSection = ({
       </header>
 
       {hasAny ? (
-        <div style={{ width: '100%', height }}>
+        <div className={CHART_BOX} style={chartBoxStyle(height)}>
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
               data={data}
@@ -341,8 +342,8 @@ const NetIncomeAreaSection = ({
         </div>
       ) : (
         <div
-          className="flex items-center justify-center text-sm text-ink-400"
-          style={{ height }}
+          className={`flex items-center justify-center text-sm text-ink-400 ${CHART_BOX}`}
+          style={chartBoxStyle(height)}
           role="status"
         >
           ยังไม่มีข้อมูล
@@ -527,7 +528,7 @@ const ExpenseStackedBarSection = ({
       </header>
 
       {hasAnyExpenses ? (
-        <div style={{ width: '100%', height }}>
+        <div className={CHART_BOX} style={chartBoxStyle(height)}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={flatData}
@@ -593,8 +594,8 @@ const ExpenseStackedBarSection = ({
         </div>
       ) : (
         <div
-          className="flex items-center justify-center text-sm text-ink-400"
-          style={{ height }}
+          className={`flex items-center justify-center text-sm text-ink-400 ${CHART_BOX}`}
+          style={chartBoxStyle(height)}
           role="status"
         >
           ยังไม่มีรายการค่าใช้จ่าย

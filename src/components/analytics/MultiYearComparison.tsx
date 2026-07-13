@@ -41,6 +41,7 @@ import {
 } from 'recharts';
 
 import { chartAnimation } from '@/lib/motion';
+import { CHART_BOX, chartBoxStyle } from '@/utils/chartSizing';
 import { useChartTheme } from '@/hooks/useChartTheme';
 
 import {
@@ -431,7 +432,7 @@ export const MultiYearComparison = ({
         </header>
 
         {hasAnyChartData ? (
-          <div style={{ width: '100%', height }}>
+          <div className={CHART_BOX} style={chartBoxStyle(height)}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
                 data={chartData}
@@ -489,8 +490,8 @@ export const MultiYearComparison = ({
           </div>
         ) : (
           <div
-            className="flex items-center justify-center text-sm text-ink-400"
-            style={{ height }}
+            className={`flex items-center justify-center text-sm text-ink-400 ${CHART_BOX}`}
+            style={chartBoxStyle(height)}
             role="status"
           >
             ยังไม่มีข้อมูลสำหรับปีที่เลือก

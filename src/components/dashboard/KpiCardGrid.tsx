@@ -78,7 +78,7 @@ export const KpiCardGrid = (): ReactNode => {
         wraps would leave its siblings short. We do NOT add `items-stretch` to
         Stagger — stretch is already the grid default.
       */}
-      <Stagger className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
+      <Stagger className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-4">
         <FadeInUp className="h-full">
           <KpiCard
             label="รายรับรวม"

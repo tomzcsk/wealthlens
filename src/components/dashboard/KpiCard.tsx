@@ -136,7 +136,7 @@ export const KpiCard = ({
         role="group"
         aria-label={`${label}: กำลังโหลด`}
         aria-busy="true"
-        className="relative h-full overflow-hidden rounded-2xl border border-ink-200 bg-card p-6 shadow-sm"
+        className="relative h-full overflow-hidden rounded-2xl border border-ink-200 bg-card p-4 shadow-sm md:p-6"
       >
         <div className={`absolute inset-x-0 top-0 h-1 ${toneClasses.accentBar} opacity-40`} />
         <div className="flex items-center gap-2">
@@ -180,7 +180,7 @@ export const KpiCard = ({
     <div
       role="group"
       aria-label={`${label}: ${formattedAmount}`}
-      className="group relative h-full overflow-hidden rounded-2xl border border-ink-200 bg-card p-6 shadow-sm transition-shadow duration-150 hover:shadow-md"
+      className="group relative h-full overflow-hidden rounded-2xl border border-ink-200 bg-card p-4 shadow-sm transition-shadow duration-150 hover:shadow-md md:p-6"
     >
       {/* Quiet tone accent — 4px bar across the top */}
       <div className={`absolute inset-x-0 top-0 h-1 ${toneClasses.accentBar}`} />
@@ -209,10 +209,15 @@ export const KpiCard = ({
         `aria-hidden` so the count-up stays purely visual and the group name
         remains the single SR source of truth. `AnimatedNumber` itself is
         untouched; the group aria-label is untouched.
+
+        Type size (F47): two cards per row on a phone leave ~150px of usable
+        width — ฿2,598,100 at text-3xl overflows it. We shrink the type on
+        mobile rather than truncate: a clipped money figure is a lying figure.
+        Desktop (md:) keeps text-3xl exactly as before.
       */}
       <div
         aria-hidden="true"
-        className="mt-4 financial-number text-3xl font-bold tabular-nums text-ink-900"
+        className="mt-4 financial-number text-xl font-bold tabular-nums text-ink-900 md:text-3xl"
       >
         <AnimatedNumber value={amount} format={formatAmount} />
       </div>

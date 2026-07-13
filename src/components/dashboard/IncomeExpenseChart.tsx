@@ -29,6 +29,7 @@ import {
 } from 'recharts';
 
 import { chartAnimation } from '@/lib/motion';
+import { CHART_BOX, chartBoxStyle } from '@/utils/chartSizing';
 import { useChartTheme } from '@/hooks/useChartTheme';
 import { useMonthlySummariesForYear, useSelectedYear } from '@/hooks/useFinanceData';
 import { THAI_MONTHS_SHORT, formatTHB, formatThaiMonthYear } from '@/utils/formatters';
@@ -201,7 +202,7 @@ export const IncomeExpenseChart = ({
       </header>
 
       {hasAnyData ? (
-        <div style={{ width: '100%', height }}>
+        <div className={CHART_BOX} style={chartBoxStyle(height)}>
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart
               data={chartData}
@@ -274,8 +275,8 @@ export const IncomeExpenseChart = ({
         </div>
       ) : (
         <div
-          className="flex items-center justify-center text-sm text-ink-400"
-          style={{ height }}
+          className={`flex items-center justify-center text-sm text-ink-400 ${CHART_BOX}`}
+          style={chartBoxStyle(height)}
           role="status"
           aria-label={`ไม่มีข้อมูลสำหรับ ${formatThaiMonthYear(1, activeYear).split(' ').slice(-1)[0]}`}
         >
