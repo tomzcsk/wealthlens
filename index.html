@@ -4,7 +4,18 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>wealthlens</title>
+    <title>WealthLens</title>
+    <meta name="description" content="บัญชีส่วนตัว — รายรับ รายจ่าย ความมั่งคั่ง" />
+
+    <!-- แถบสถานะบนมือถือกลืนกับแอป — ไม่ใส่ = ขาวโพลนคาดบนหัวแอปโหมดมืด (F51) -->
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
+
+    <!-- iOS ไม่อ่าน manifest ครบ ต้องบอกซ้ำด้วย meta ของมันเอง (F51) -->
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="WealthLens" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <script>
       // F46 — ตั้งโหมดก่อน React ตื่น ไม่งั้นเห็นแฟลชขาวทุกครั้งที่ refresh
       // ในโหมดมืด. ต้องอยู่ใน head และต้องเป็น sync script

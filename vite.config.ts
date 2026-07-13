@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
@@ -37,7 +38,59 @@ export default defineConfig({
     __GIT_COMMIT__: JSON.stringify(gitCommit),
     __BUILD_TIME__: JSON.stringify(buildTime),
   },
-  plugins: [react()],
+  plugins: [
+    react(),
+    VitePWA({
+      // prompt ไม่ใช่ autoUpdate: reload เงียบ ๆ กลางคันตอนกรอกฟอร์ม =
+      // ข้อมูลที่พิมพ์ค้างหาย (F51)
+      registerType: 'prompt',
+      // SW ใน dev = แก้โค้ดแล้วไม่เห็นผลจนกว่าจะ hard-reload แล้วเสียเวลา
+      // ไล่หาบั๊กที่ไม่มีอยู่จริง
+      devOptions: { enabled: false },
+      includeAssets: ['favicon.svg', 'icons/apple-touch-icon.png'],
+      manifest: {
+        name: 'WealthLens',
+        short_name: 'WealthLens',
+        description: 'บัญชีส่วนตัว — รายรับ รายจ่าย ความมั่งคั่ง',
+        start_url: '/',
+        scope: '/',
+        display: 'standalone',
+        orientation: 'portrait',
+        lang: 'th',
+        theme_color: '#ffffff',
+        background_color: '#ffffff',
+        icons: [
+          { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+          {
+            src: '/icons/icon-maskable-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
+          },
+        ],
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        // โลโก้ธนาคาร 23 ไฟล์ + ฟอนต์ → precache ใหญ่กว่า default 2 MB
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+        navigateFallback: '/index.html',
+        runtimeCaching: [
+          {
+            // กฎเหล็กข้อ 1 — ราคาทองสด ห้ามแช่
+            urlPattern: /\/api\/gold-price/,
+            handler: 'NetworkOnly',
+          },
+          {
+            // กฎเหล็กข้อ 2 — Drive/OAuth ห้ามแช่
+            urlPattern:
+              /^https:\/\/(www\.googleapis\.com|accounts\.google\.com|oauth2\.googleapis\.com)\//,
+            handler: 'NetworkOnly',
+          },
+        ],
+      },
+    }),
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
