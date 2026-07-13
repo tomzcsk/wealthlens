@@ -68,6 +68,37 @@ console.log('\n— G4: "ไม่มีข้อมูล" ไม่ใช่ "�
     jan.netAll === 91_850,
     String(jan.netAll),
   );
+
+  /*
+   * ข้อมูลจริงของ Tom โหดกว่านั้น: ปี 2023 **มีแถวรายจ่ายครบ 12 เดือน** แต่ทุกแถว
+   * items ว่างเปล่า. เช็คแค่ "แถวมีไหม" → rate = 100% ทั้งปี → 2023 กลายเป็นปีที่
+   * ออมเก่งที่สุดในกราฟ. เจอตอนขับของจริง (42 แท่งทั้งที่ควรมี ~31)
+   */
+  const withEmptyRows = {
+    years: {
+      '2023': {
+        ...emptyYear(),
+        income: [
+          {
+            month: 1,
+            salary: 80_000,
+            bonus: 0,
+            commission: 20_000,
+            deductions: { tax: 5_000, socialSecurity: 750, providentFund: 2_400, gsl: 0 },
+          },
+        ],
+        expenses: [{ month: 1, items: [] }], // แถวมีอยู่ แต่ว่างเปล่า
+      },
+    },
+  } as unknown as WealthLensData;
+  const emptyRowJan = buildSavingsRateSeries(withEmptyRows).find(
+    (p) => p.ym === '2023-01',
+  )!;
+  assert(
+    'แถวรายจ่ายที่ items ว่าง → rate = null (ไม่ใช่ 1.0 = "ออม 100%")',
+    emptyRowJan.rate === null,
+    `ได้ ${String(emptyRowJan.rate)}`,
+  );
 }
 
 console.log('\n— savings rate: เดือนที่มีข้อมูลครบ —');
@@ -175,8 +206,25 @@ console.log('\n— G5: netWorth ติดลบได้ ห้าม clamp —'
     years: { '2025': { income: [], expenses: [], savings: [] } },
     bankAccounts: [acct('a1', 'กรุงศรี', { '2025': { '1': 10_000 } })],
   } as unknown as WealthLensData;
+  // ผ่อน 10 งวด เริ่ม ก.พ. 2025 → ณ ม.ค. ยังไม่มีงวดไหนถึงกำหนด = ค้างเต็มจำนวน
+  // (payload ต้องมี schedule เสมอ — selectInstallmentPlans สร้างมันทุกครั้ง
+  //  และยอดคงเหลือนับจาก schedule ไม่ใช่ instances ดูเหตุผลใน netWorthHistory.ts)
   const plans = [
-    { planId: 'p1', name: 'รถ', totalAmount: 500_000, instances: [], remainingAmount: 500_000 },
+    {
+      planId: 'p1',
+      name: 'รถ',
+      totalAmount: 500_000,
+      instances: [],
+      schedule: Array.from({ length: 10 }, (_, i) => ({
+        sequence: i + 1,
+        year: 2025,
+        month: i + 2,
+        amount: 50_000,
+        materialized: false,
+        itemId: null,
+      })),
+      remainingAmount: 500_000,
+    },
   ] as never;
   const h = buildNetWorthHistory(data, () => null, [], plans);
   const jan = h.find((p) => p.ym === '2025-01')!;
@@ -267,6 +315,56 @@ console.log('\n— G1: จุดสุดท้ายของ history === compu
   assert(
     `netWorth ตรงกัน (history ${last.netWorth} vs netWorth ${today.netWorth})`,
     last.netWorth === today.netWorth,
+  );
+}
+
+console.log(
+  '\n— G1b: ยอดผ่อนคงเหลือนับจาก schedule ไม่ใช่แถวจริง (รถยนต์ของ Tom) —',
+);
+{
+  // รถยนต์: 60 งวดในตาราง แต่มีแถวรายจ่ายจริงแค่ 31 (F30 ติดป้ายเฉพาะเดือนที่มี
+  // ข้อมูล ไม่แตะปี 2023). นับจาก instances → เห็นงวดที่จ่ายแล้วเป็น "ยังไม่จ่าย"
+  // แล้วหนี้พองขึ้น ฿213,498 เทียบกับหน้า /wealth. เจอตอนขับของจริง — assertion นี้
+  // ตรึงมันไว้
+  const data = {
+    years: { '2025': { income: [], expenses: [], savings: [] } },
+    bankAccounts: [acct('a1', 'กรุงศรี', { '2025': { '1': 0 } })],
+  } as unknown as WealthLensData;
+
+  const schedule = Array.from({ length: 12 }, (_, i) => ({
+    sequence: i + 1,
+    year: 2025,
+    month: i + 1,
+    amount: 10_000,
+    // แถวจริงมีแค่ 3 เดือนแรก — ที่เหลือเป็นงวด "คาดการณ์" ที่ถึงกำหนดแล้ว
+    materialized: i < 3,
+    itemId: i < 3 ? `e${i}` : null,
+  }));
+  const plans = [
+    {
+      planId: 'p1',
+      name: 'รถยนต์',
+      totalAmount: 120_000,
+      schedule,
+      instances: schedule
+        .filter((s) => s.materialized)
+        .map((s) => ({ year: s.year, month: s.month, amount: s.amount })),
+      remainingAmount: 0,
+    },
+  ] as never;
+
+  const h = buildNetWorthHistory(data, () => null, [], plans);
+  const dec = h.find((p) => p.ym === '2025-12')!;
+  assert(
+    'ธ.ค. งวดครบทุกงวดตามตาราง → หนี้ผ่อน = 0 (ไม่ใช่ 90,000 จากการนับแถวจริง)',
+    dec.debts === 0,
+    String(dec.debts),
+  );
+  const jun = h.find((p) => p.ym === '2025-06')!;
+  assert(
+    'มิ.ย. จ่ายไป 6 งวดตามตาราง → เหลือ 60,000',
+    jun.debts === 60_000,
+    String(jun.debts),
   );
 }
 

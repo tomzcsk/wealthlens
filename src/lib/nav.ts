@@ -46,6 +46,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     group: 2,
   },
   { path: '/analytics', label: 'วิเคราะห์', icon: '📈', mobilePrimary: true, group: 3 },
+  { path: '/growth', label: 'เติบโต', icon: '📉', mobilePrimary: false, group: 3 },
   { path: '/tax', label: 'ภาษี', icon: '🧮', mobilePrimary: false, group: 3 },
   { path: '/settings', label: 'ตั้งค่า', icon: '⚙️', mobilePrimary: false, group: 3 },
 ];

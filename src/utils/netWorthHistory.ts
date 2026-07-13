@@ -108,17 +108,24 @@ const goldHeldAsOf = (holdings: readonly GoldHolding[], ym: Ym): GoldHolding[] =
   });
 
 /**
- * ยอดผ่อนคงเหลือ ณ สิ้นเดือน ym = ยอดเต็ม − งวดที่จ่ายไปแล้วถึงเดือนนั้น
- * (สูตรเดียวกับ remainingAmount ใน selectors.ts — แค่เปลี่ยนเส้นตัดเป็นเดือน ym)
+ * ยอดผ่อนคงเหลือ ณ สิ้นเดือน ym = ยอดเต็ม − งวดที่ถึงกำหนดแล้วถึงเดือนนั้น
+ *
+ * นับจาก **schedule** ไม่ใช่ instances — และนี่ไม่ใช่รายละเอียดปลีกย่อย:
+ * `instances` = แถวรายจ่ายจริงที่ถูกติดป้ายผ่อน, `schedule` = ตารางงวดเต็มจาก
+ * metadata (overlay แถวจริงทับ). รถยนต์ของ Tom มี 60 งวดในตาราง แต่มีแถวจริง
+ * แค่ 31 แถว (F30 ติดป้ายเฉพาะเดือนที่มีข้อมูล ไม่แตะปี 2023) — นับจาก instances
+ * จะเห็น "ยังไม่จ่าย" 29 งวดที่จ่ายไปแล้ว แล้วหนี้พองขึ้น ฿213,498 เทียบกับหน้า
+ * /wealth ซึ่งนับจาก schedule (remainingAmount ใน selectors.ts). ตัวเลขสองค่า
+ * ในแอปเดียว = กฎ G1 แตก
  */
 const installmentsRemainingAsOf = (
   plans: readonly InstallmentPlanSummary[],
   ym: Ym,
 ): number =>
   plans.reduce((total, plan) => {
-    const paid = plan.instances
-      .filter((i) => ymLte(toYm(i.year, i.month), ym))
-      .reduce((s, i) => s + i.amount, 0);
+    const paid = plan.schedule
+      .filter((s) => ymLte(toYm(s.year, s.month), ym))
+      .reduce((sum, s) => sum + s.amount, 0);
     return total + Math.max(0, plan.totalAmount - paid);
   }, 0);
 

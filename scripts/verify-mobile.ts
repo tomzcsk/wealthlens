@@ -20,6 +20,7 @@ const ROUTES = [
   '/',
   '/monthly',
   '/analytics',
+  '/growth',
   '/accounts',
   '/wealth',
   '/loans',
