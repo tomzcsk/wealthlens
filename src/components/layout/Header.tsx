@@ -16,6 +16,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useFinanceStore } from '@/stores';
 import GoogleSignInButton from '@/components/auth/GoogleSignInButton';
 import SyncStatusIndicator from '@/components/auth/SyncStatusIndicator';
+import ThemeToggle from './ThemeToggle';
 
 const ROUTE_TITLES: Record<string, string> = {
   '/': 'ภาพรวม',
@@ -83,6 +84,8 @@ export const Header = (): ReactNode => {
             <span aria-hidden="true">+</span>
             <span>เพิ่มรายการ</span>
           </button>
+
+          <ThemeToggle />
 
           <div data-slot="auth" className="flex items-center gap-2">
             <SyncStatusIndicator />

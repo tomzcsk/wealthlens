@@ -5,6 +5,24 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>wealthlens</title>
+    <script>
+      // F46 — ตั้งโหมดก่อน React ตื่น ไม่งั้นเห็นแฟลชขาวทุกครั้งที่ refresh
+      // ในโหมดมืด. ต้องอยู่ใน head และต้องเป็น sync script
+      // 'wealthlens-theme' ซ้ำกับ THEME_STORAGE_KEY ใน src/lib/theme.ts โดย
+      // เลี่ยงไม่ได้ (สคริปต์นี้รันก่อน module ใดๆ จะโหลด) — แก้ที่ไหน แก้ทั้งสองที่
+      // localStorage ถูกปิดได้ (โหมดส่วนตัวบางเบราว์เซอร์) — ธีมพังต้องไม่ทำให้แอปไม่ขึ้น
+      try {
+        var raw = localStorage.getItem('wealthlens-theme');
+        var mode = raw ? JSON.parse(raw).state.mode : 'system';
+        var dark =
+          mode === 'dark' ||
+          (mode === 'system' &&
+            window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (dark) document.documentElement.classList.add('dark');
+      } catch (e) {
+        /* ไม่มีธีมที่จำไว้ → สว่าง */
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
