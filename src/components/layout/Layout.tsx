@@ -21,6 +21,7 @@ import type { ReactNode } from 'react';
 import { SyncCoordinatorProvider } from '@/auth/SyncCoordinatorContext';
 import { useGoogleAuth } from '@/auth/useGoogleAuth';
 import { PageTransition } from '@/components/motion';
+import UpdatePrompt from '@/components/pwa/UpdatePrompt';
 import Toaster from '@/components/ui/Toaster';
 import useAnomalyAlertEffect from '@/hooks/useAnomalyAlertEffect';
 import useDriveSyncCoordinator from '@/hooks/useDriveSyncCoordinator';
@@ -69,6 +70,8 @@ export const Layout = (): ReactNode => {
         </div>
       )}
       <Toaster />
+      {/* F51 — นอก requireSignIn: ต้องอัปเดตได้แม้ยังอยู่หน้า login */}
+      <UpdatePrompt />
     </SyncCoordinatorProvider>
   );
 };

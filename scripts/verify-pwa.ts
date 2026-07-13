@@ -46,6 +46,10 @@ const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
 await ctx.addInitScript(
   ([key, data]) => {
+    // seed "ครั้งแรกเท่านั้น" — init script รันใหม่ทุกครั้งที่โหลดหน้า ถ้าเขียนทับ
+    // เสมอ P4 จะกลายเป็นการทดสอบตัวเอง: ของที่แอปเพิ่งบันทึกจะถูกลบทิ้งตอน reload
+    // แล้วรายงานว่า "ข้อมูลไม่รอด" ทั้งที่แอปทำถูก
+    if (localStorage.getItem(key as string)) return;
     localStorage.setItem(
       key as string,
       JSON.stringify({
@@ -210,9 +214,15 @@ console.log('\n— P4: ออฟไลน์แล้วเขียนข้อ
         .first()
         .click({ timeout: 5000 });
       await page.waitForTimeout(600);
-      await page.getByLabel(/ชื่อรายการ/).fill('ทดสอบออฟไลน์', { timeout: 5000 });
-      await page.getByLabel(/จำนวนเงิน/).fill('123', { timeout: 5000 });
-      await page.getByRole('button', { name: /^บันทึก/ }).click({ timeout: 5000 });
+      // ในฟอร์มเท่านั้น: ปุ่มยืนยันของโหมดเพิ่มชื่อว่า 'เพิ่มรายการ' (ไม่ใช่ 'บันทึก'
+      // ซึ่งเป็นชื่อของโหมดแก้ไข) และหน้ามีปุ่ม '+เพิ่มรายการ' ของ header อยู่ด้วย
+      // จึงต้องขังขอบเขตไว้ใน dialog
+      const dialog = page.getByRole('dialog', { name: /เพิ่มค่าใช้จ่าย/ });
+      await dialog.getByLabel(/ชื่อรายการ/).fill('ทดสอบออฟไลน์', { timeout: 5000 });
+      await dialog.getByLabel(/จำนวนเงิน/).fill('123', { timeout: 5000 });
+      await dialog
+        .getByRole('button', { name: /^(เพิ่มรายการ|บันทึก)$/ })
+        .click({ timeout: 5000 });
       await page.waitForTimeout(900);
       return true;
     } catch (error) {
