@@ -29,6 +29,7 @@ import {
 } from 'recharts';
 
 import { chartAnimation } from '@/lib/motion';
+import { useChartTheme } from '@/hooks/useChartTheme';
 import { useMonthlySummariesForYear, useSelectedYear } from '@/hooks/useFinanceData';
 import { THAI_MONTHS_SHORT, formatTHB, formatThaiMonthYear } from '@/utils/formatters';
 
@@ -156,6 +157,7 @@ export const IncomeExpenseChart = ({
   const selectedYear = useSelectedYear();
   const reduced = useReducedMotion() ?? false;
   const anim = chartAnimation(reduced);
+  const chart = useChartTheme();
   const activeYear = year ?? selectedYear;
   const monthlyRows = useMonthlySummariesForYear(activeYear);
 
@@ -205,25 +207,25 @@ export const IncomeExpenseChart = ({
               data={chartData}
               margin={{ top: 8, right: 16, bottom: 0, left: 8 }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
               <XAxis
                 dataKey="monthLabel"
-                stroke="#94A3B8"
+                stroke={chart.axisTick}
                 tick={{ fontSize: 12 }}
                 tickLine={false}
-                axisLine={{ stroke: '#E2E8F0' }}
+                axisLine={{ stroke: chart.axisLine }}
               />
               <YAxis
-                stroke="#94A3B8"
+                stroke={chart.axisTick}
                 tick={{ fontSize: 12 }}
                 tickFormatter={yTickFormatter}
                 tickLine={false}
-                axisLine={{ stroke: '#E2E8F0' }}
+                axisLine={{ stroke: chart.axisLine }}
                 width={64}
               />
               <Tooltip
                 content={<ChartTooltip />}
-                cursor={{ fill: 'rgba(148, 163, 184, 0.08)' }}
+                cursor={{ fill: chart.cursorFill }}
               />
               <Legend
                 verticalAlign="top"

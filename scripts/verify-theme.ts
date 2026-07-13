@@ -4,6 +4,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { chartPalette } from '../src/lib/chartTheme';
 import { cycleTheme, resolveTheme, type ThemeMode } from '../src/lib/theme';
 
 let failures = 0;
@@ -170,6 +171,18 @@ for (const fg of [...TEXT_TIERS, ...FAINT_TIER, ...LINE_TIERS]) {
     );
   }
 }
+
+// ---------- R5: จานสีกราฟ (Recharts รับ hex เท่านั้น ใช้ var() ไม่ได้) ----------
+console.log('\n— chartPalette: ครบทั้งสองโหมดและไม่ซ้ำกัน —');
+const lightChart = chartPalette('light');
+const darkChart = chartPalette('dark');
+for (const key of ['grid', 'axisLine', 'axisTick', 'cursorFill', 'cursorStroke'] as const) {
+  assert(`${key} มีค่าโหมดสว่าง`, Boolean(lightChart[key]));
+  assert(`${key} มีค่าโหมดมืด`, Boolean(darkChart[key]));
+}
+// เส้นตารางสีอ่อนบนพื้นมืด = เรืองแสง — ต้องต่างกันจริง
+assert('grid ต่างกันสองโหมด', lightChart.grid !== darkChart.grid);
+assert('เส้นตารางสว่างคือ #E2E8F0 เดิม', lightChart.grid === '#E2E8F0');
 
 console.log(failures === 0 ? '\n✅ ผ่านทั้งหมด' : `\n❌ ล้มเหลว ${failures} ข้อ`);
 process.exit(failures === 0 ? 0 : 1);

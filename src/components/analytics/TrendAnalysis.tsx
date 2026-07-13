@@ -45,6 +45,7 @@ import {
 } from 'recharts';
 
 import { chartAnimation } from '@/lib/motion';
+import { useChartTheme } from '@/hooks/useChartTheme';
 import { use48MonthTrend, type TrendPoint } from '@/hooks/useFinanceData';
 import { CATEGORY_ORDER, EXPENSE_CATEGORIES } from '@/types/expense-categories';
 import type { ExpenseCategory } from '@/types';
@@ -265,6 +266,7 @@ const NetIncomeAreaSection = ({
 }: NetIncomeAreaSectionProps): ReactNode => {
   const reduced = useReducedMotion() ?? false;
   const anim = chartAnimation(reduced);
+  const chart = useChartTheme();
   const hasAny = data.some((p) => p.netAll !== 0);
   const subtitle =
     firstYear !== null && lastYear !== null
@@ -303,28 +305,28 @@ const NetIncomeAreaSection = ({
               </defs>
               <CartesianGrid
                 strokeDasharray="3 3"
-                stroke="#E2E8F0"
+                stroke={chart.grid}
                 vertical={false}
               />
               <XAxis
                 dataKey="label"
-                stroke="#94A3B8"
+                stroke={chart.axisTick}
                 tick={{ fontSize: 11 }}
                 tickLine={false}
-                axisLine={{ stroke: '#E2E8F0' }}
+                axisLine={{ stroke: chart.axisLine }}
                 interval={2}
               />
               <YAxis
-                stroke="#94A3B8"
+                stroke={chart.axisTick}
                 tick={{ fontSize: 12 }}
                 tickFormatter={yTickFormatter}
                 tickLine={false}
-                axisLine={{ stroke: '#E2E8F0' }}
+                axisLine={{ stroke: chart.axisLine }}
                 width={64}
               />
               <Tooltip
                 content={<AreaTooltip />}
-                cursor={{ stroke: '#94A3B8', strokeDasharray: '3 3' }}
+                cursor={{ stroke: chart.cursorStroke, strokeDasharray: '3 3' }}
               />
               <Area
                 type="monotone"
@@ -495,6 +497,7 @@ const ExpenseStackedBarSection = ({
 }: ExpenseStackedBarSectionProps): ReactNode => {
   const reduced = useReducedMotion() ?? false;
   const anim = chartAnimation(reduced);
+  const chart = useChartTheme();
   // Track which categories are visually hidden (legend toggle).
   const [hidden, setHidden] = useState<Record<ExpenseCategory, boolean>>(() => {
     const init = {} as Record<ExpenseCategory, boolean>;
@@ -532,28 +535,28 @@ const ExpenseStackedBarSection = ({
             >
               <CartesianGrid
                 strokeDasharray="3 3"
-                stroke="#E2E8F0"
+                stroke={chart.grid}
                 vertical={false}
               />
               <XAxis
                 dataKey="label"
-                stroke="#94A3B8"
+                stroke={chart.axisTick}
                 tick={{ fontSize: 11 }}
                 tickLine={false}
-                axisLine={{ stroke: '#E2E8F0' }}
+                axisLine={{ stroke: chart.axisLine }}
                 interval={2}
               />
               <YAxis
-                stroke="#94A3B8"
+                stroke={chart.axisTick}
                 tick={{ fontSize: 12 }}
                 tickFormatter={yTickFormatter}
                 tickLine={false}
-                axisLine={{ stroke: '#E2E8F0' }}
+                axisLine={{ stroke: chart.axisLine }}
                 width={64}
               />
               <Tooltip
                 content={<BarTooltip />}
-                cursor={{ fill: 'rgba(148, 163, 184, 0.08)' }}
+                cursor={{ fill: chart.cursorFill }}
               />
               <Legend
                 verticalAlign="top"

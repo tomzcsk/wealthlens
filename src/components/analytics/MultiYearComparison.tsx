@@ -41,6 +41,7 @@ import {
 } from 'recharts';
 
 import { chartAnimation } from '@/lib/motion';
+import { useChartTheme } from '@/hooks/useChartTheme';
 
 import {
   useAvailableYears,
@@ -258,6 +259,7 @@ export const MultiYearComparison = ({
 }: MultiYearComparisonProps): ReactNode => {
   const reduced = useReducedMotion() ?? false;
   const anim = chartAnimation(reduced);
+  const chart = useChartTheme();
   const availableYears = useAvailableYears();
   const yearSummaries = usePerYearSummaries(availableYears);
   const yearMonthlyRows = usePerYearMonthlyRows(availableYears);
@@ -422,27 +424,27 @@ export const MultiYearComparison = ({
               >
                 <CartesianGrid
                   strokeDasharray="3 3"
-                  stroke="#E2E8F0"
+                  stroke={chart.grid}
                   vertical={false}
                 />
                 <XAxis
                   dataKey="monthLabel"
-                  stroke="#94A3B8"
+                  stroke={chart.axisTick}
                   tick={{ fontSize: 12 }}
                   tickLine={false}
-                  axisLine={{ stroke: '#E2E8F0' }}
+                  axisLine={{ stroke: chart.axisLine }}
                 />
                 <YAxis
-                  stroke="#94A3B8"
+                  stroke={chart.axisTick}
                   tick={{ fontSize: 12 }}
                   tickFormatter={yTickFormatter}
                   tickLine={false}
-                  axisLine={{ stroke: '#E2E8F0' }}
+                  axisLine={{ stroke: chart.axisLine }}
                   width={64}
                 />
                 <Tooltip
                   content={<ChartTooltip />}
-                  cursor={{ stroke: '#94A3B8', strokeDasharray: '3 3' }}
+                  cursor={{ stroke: chart.cursorStroke, strokeDasharray: '3 3' }}
                 />
                 <Legend
                   verticalAlign="top"
