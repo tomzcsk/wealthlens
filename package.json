@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
     "verify:mobile": "vite build --mode verify && npx tsx --tsconfig tsconfig.app.json scripts/verify-mobile.ts",
+    "verify:analytics": "vite build --mode verify && npx tsx --tsconfig tsconfig.app.json scripts/verify-analytics.ts",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,json}\""
   },
   "dependencies": {
