@@ -61,15 +61,15 @@ const NAV_GROUPS: NavItem[][] = [
 
 const linkBase =
   'flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-colors';
-const linkInactive = 'text-slate-500 hover:bg-slate-100 hover:text-slate-900';
-const linkActive = 'bg-primary-light text-primary font-semibold';
+const linkInactive = 'text-ink-500 hover:bg-raised hover:text-ink-900';
+const linkActive = 'bg-primary-50 text-primary-ink font-semibold';
 
 const Brand = (): ReactNode => (
   <div className="px-4 pt-6 pb-8">
-    <div className="text-2xl font-bold text-primary leading-none">
+    <div className="text-2xl font-bold text-primary-ink leading-none">
       WealthLens
     </div>
-    <div className="mt-1 text-xs text-slate-500">บัญชีส่วนตัว</div>
+    <div className="mt-1 text-xs text-ink-500">บัญชีส่วนตัว</div>
   </div>
 );
 
@@ -82,7 +82,7 @@ const NavList = ({ onNavigate }: { onNavigate?: () => void }): ReactNode => {
           key={group[0].to}
           className={
             groupIndex > 0
-              ? 'mt-2 flex flex-col gap-1 border-t border-slate-200 pt-2'
+              ? 'mt-2 flex flex-col gap-1 border-t border-ink-200 pt-2'
               : 'flex flex-col gap-1'
           }
         >
@@ -126,7 +126,7 @@ export const Sidebar = (): ReactNode => {
         onClick={() => setMobileOpen(true)}
         aria-label="เปิดเมนู"
         aria-expanded={mobileOpen}
-        className="md:hidden fixed top-3 left-3 z-30 inline-flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-slate-200 shadow-sm text-slate-700 hover:bg-slate-50"
+        className="md:hidden fixed top-3 left-3 z-30 inline-flex items-center justify-center w-10 h-10 rounded-lg bg-card border border-ink-200 shadow-sm text-ink-700 hover:bg-hover"
       >
         <span aria-hidden="true" className="text-lg leading-none">
           ☰
@@ -135,7 +135,7 @@ export const Sidebar = (): ReactNode => {
 
       {/* Desktop sidebar — fixed 240px rail */}
       <aside
-        className="hidden md:flex md:flex-col w-[240px] h-screen sticky top-0 bg-white border-r border-slate-200"
+        className="hidden md:flex md:flex-col w-[240px] h-screen sticky top-0 bg-card border-r border-ink-200"
         aria-label="เมนู"
       >
         <Brand />
@@ -161,14 +161,14 @@ export const Sidebar = (): ReactNode => {
               type="button"
               aria-label="ปิดเมนู"
               onClick={close}
-              className="absolute inset-0 bg-slate-900/40"
+              className="absolute inset-0 bg-overlay/40"
               initial={{ opacity: reduced ? 1 : 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: reduced ? 1 : 0 }}
               transition={reduced ? { duration: 0 } : { duration: DURATION.base }}
             />
             <motion.aside
-              className="relative w-[260px] h-full bg-white border-r border-slate-200 shadow-xl flex flex-col"
+              className="relative w-[260px] h-full bg-card border-r border-ink-200 shadow-xl flex flex-col"
               aria-label="เมนูมือถือ"
               initial={{ x: reduced ? 0 : -260 }}
               animate={{ x: 0 }}
@@ -185,7 +185,7 @@ export const Sidebar = (): ReactNode => {
                   type="button"
                   onClick={close}
                   aria-label="ปิดเมนู"
-                  className="m-3 inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-slate-100"
+                  className="m-3 inline-flex items-center justify-center w-9 h-9 rounded-lg text-ink-500 hover:bg-raised"
                 >
                   <span aria-hidden="true">✕</span>
                 </button>

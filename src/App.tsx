@@ -42,8 +42,8 @@ const PrintReportPage = lazy(() => import('@/pages/PrintReportPage'));
 
 const NotFound = (): ReactNode => (
   <div className="space-y-4 text-center py-16">
-    <h1 className="text-3xl font-bold text-slate-900">404</h1>
-    <p className="text-sm text-slate-500">ไม่พบหน้านี้</p>
+    <h1 className="text-3xl font-bold text-ink-900">404</h1>
+    <p className="text-sm text-ink-500">ไม่พบหน้านี้</p>
   </div>
 );
 

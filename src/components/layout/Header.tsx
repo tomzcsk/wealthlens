@@ -48,14 +48,14 @@ export const Header = (): ReactNode => {
 
   return (
     <header
-      className="sticky top-0 z-20 bg-white border-b border-slate-200 shadow-sm"
+      className="sticky top-0 z-20 bg-card border-b border-ink-200 shadow-sm"
       role="banner"
     >
       <div className="flex items-center gap-4 px-6 md:px-8 h-16">
         {/* Spacer so the mobile hamburger doesn't collide with the title */}
         <div className="md:hidden w-10" aria-hidden="true" />
 
-        <h1 className="text-xl font-semibold text-slate-900 truncate">
+        <h1 className="text-xl font-semibold text-ink-900 truncate">
           {titleFor(pathname)}
         </h1>
 
@@ -65,7 +65,7 @@ export const Header = (): ReactNode => {
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="appearance-none bg-white border border-slate-200 rounded-lg px-3 py-2 pr-8 text-sm font-medium text-slate-900 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary cursor-pointer"
+              className="appearance-none bg-card border border-ink-200 rounded-lg px-3 py-2 pr-8 text-sm font-medium text-ink-900 hover:border-ink-300 focus:outline-none focus:ring-2 focus:ring-primary-ink focus:border-primary-ink cursor-pointer"
               aria-label="เลือกปี"
             >
               {yearOptions.map((y) => (

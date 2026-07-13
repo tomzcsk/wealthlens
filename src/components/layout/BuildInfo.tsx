@@ -21,7 +21,7 @@ const formatBuildStamp = (d: Date): string => {
 };
 
 export const BuildInfo = (): ReactNode => (
-  <div className="mt-auto px-4 py-4 border-t border-slate-100 text-[11px] leading-relaxed text-slate-400 select-none">
+  <div className="mt-auto px-4 py-4 border-t border-ink-100 text-[11px] leading-relaxed text-ink-400 select-none">
     <div className="tabular-nums">
       v{__APP_VERSION__} · #{__GIT_COMMIT__}
     </div>

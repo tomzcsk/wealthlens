@@ -34,9 +34,9 @@ const TONE_ICON: Record<ToastTone, string> = {
 };
 
 const TONE_ICON_BG: Record<ToastTone, string> = {
-  success: 'bg-income-light text-income',
-  error: 'bg-expense-light text-expense',
-  info: 'bg-primary-light text-primary',
+  success: 'bg-income-50 text-income-ink',
+  error: 'bg-expense-50 text-expense-ink',
+  info: 'bg-primary-50 text-primary-ink',
 };
 
 interface ToastCardProps {
@@ -53,7 +53,7 @@ const ToastCard = ({ toast, onDismiss }: ToastCardProps): ReactNode => {
   }, []);
 
   const baseClasses =
-    'pointer-events-auto flex items-start gap-3 max-w-[360px] bg-white border border-slate-200 rounded-lg shadow-lg px-4 py-3 transition-all duration-300 ease-out';
+    'pointer-events-auto flex items-start gap-3 max-w-[360px] bg-card border border-ink-200 rounded-lg shadow-lg px-4 py-3 transition-all duration-300 ease-out';
   const motion = entered
     ? 'translate-x-0 opacity-100'
     : 'translate-x-4 opacity-0';
@@ -70,13 +70,13 @@ const ToastCard = ({ toast, onDismiss }: ToastCardProps): ReactNode => {
       >
         {TONE_ICON[toast.tone]}
       </span>
-      <p className="flex-1 text-sm text-slate-800 leading-snug pt-0.5">
+      <p className="flex-1 text-sm text-ink-800 leading-snug pt-0.5">
         {toast.message}
       </p>
       <button
         type="button"
         onClick={() => onDismiss(toast.id)}
-        className="flex-shrink-0 -mr-1 -mt-1 text-slate-400 hover:text-slate-700 text-lg leading-none p-1"
+        className="flex-shrink-0 -mr-1 -mt-1 text-ink-400 hover:text-ink-700 text-lg leading-none p-1"
         aria-label="ปิดการแจ้งเตือน"
       >
         ×

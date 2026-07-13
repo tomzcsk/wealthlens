@@ -106,11 +106,11 @@ export const SessionWatcher = (): ReactNode => {
 
   return (
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-2rem)] max-w-md">
-      <div className="flex items-center gap-3 rounded-xl bg-amber-50 border border-amber-300 shadow-lg px-4 py-3">
+      <div className="flex items-center gap-3 rounded-xl bg-warning-50 border border-warning-300 shadow-lg px-4 py-3">
         <span aria-hidden="true" className="text-lg">
           ⏳
         </span>
-        <div className="flex-1 text-sm text-amber-900">
+        <div className="flex-1 text-sm text-warning-900">
           เซสชันใกล้หมด{' '}
           <span className="font-semibold tabular-nums">(อีก ~{mins} นาที)</span>{' '}
           — เข้าสู่ระบบใหม่เพื่อ sync ต่อ
@@ -118,7 +118,7 @@ export const SessionWatcher = (): ReactNode => {
         <button
           type="button"
           onClick={() => signIn()}
-          className="shrink-0 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600 transition"
+          className="shrink-0 rounded-lg bg-warning-fill px-3 py-1.5 text-xs font-semibold text-white hover:bg-warning transition"
         >
           เข้าสู่ระบบใหม่
         </button>

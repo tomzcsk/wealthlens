@@ -52,7 +52,7 @@ export const Layout = (): ReactNode => {
       {requireSignIn ? (
         <LoginPage />
       ) : (
-        <div className="min-h-screen bg-slate-50 md:grid md:grid-cols-[240px_1fr]">
+        <div className="min-h-screen bg-surface md:grid md:grid-cols-[240px_1fr]">
           <Sidebar />
           <div className="flex flex-col min-w-0">
             <Header />

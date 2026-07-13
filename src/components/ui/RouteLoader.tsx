@@ -14,7 +14,7 @@ import type { ReactNode } from 'react';
 function RouteLoader(): ReactNode {
   return (
     <div
-      className="min-h-[60vh] flex items-center justify-center text-sm text-slate-400"
+      className="min-h-[60vh] flex items-center justify-center text-sm text-ink-400"
       role="status"
       aria-live="polite"
     >
