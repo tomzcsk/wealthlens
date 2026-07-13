@@ -14,14 +14,14 @@
  * to animate out. When closed, `<AnimatePresence>{null}</AnimatePresence>`
  * renders zero DOM into `document.body` — no stray full-screen div.
  *
- * NOTE: Focus trapping is intentionally NOT implemented in v1. The form
- * inside auto-focuses its first input on mount, which covers the common
- * case. If we ever ship multi-step or nested modals, revisit and add a
- * proper focus trap (e.g. `focus-trap-react` or hand-rolled with a
- * sentinel pair).
+ * Focus (F49): Tab/Shift+Tab cycle *within* the panel while it is open, and
+ * closing returns focus to whatever opened it. Hand-rolled — one `keydown`
+ * listener and two refs; a focus-trap package would be more code shipped than
+ * code saved. `aria-hidden` on the wrapper stays deliberately absent: see the
+ * note next to `pointerEvents` below.
  */
 
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 
@@ -66,6 +66,73 @@ export const Modal = ({
 }: ModalProps): ReactNode => {
   const reduced = useReducedMotion() ?? false;
   const isSheet = placement === 'sheet';
+  const panelRef = useRef<HTMLDivElement>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
+
+  // ── จำว่าใครเปิด modal นี้ (F49) ───────────────────────────────────────────
+  // ต้องเป็น useLayoutEffect ไม่ใช่ useEffect: ฟอร์มข้างในโฟกัสช่องแรกของตัวเอง
+  // ตอน mount ด้วย useEffect (เช่น ExpenseForm) และ passive effect ของ "ลูก"
+  // วิ่งก่อนของ "พ่อ" เสมอ — จับใน useEffect จึงได้ <input> ในกรอบมาแทนปุ่มที่เปิด
+  // layout effect วิ่งใน commit ก่อน passive effect ทุกตัว จึงจับปุ่มจริงได้ทัน
+  useLayoutEffect(() => {
+    if (!open) return;
+    const opener = document.activeElement as HTMLElement | null;
+    // เนื้อหาบางตัวอาจใช้ attribute `autoFocus` (React โฟกัสให้ตั้งแต่ mutation
+    // phase ก่อน layout effect) — โฟกัสที่อยู่ "ในกรอบ" ไม่ใช่ผู้เปิด คืนให้ไม่ได้
+    openerRef.current = panelRef.current?.contains(opener) ? null : opener;
+  }, [open]);
+
+  // ── คืนโฟกัสให้ปุ่มที่เปิด ตอนปิด (F49) ──────────────────────────────────────
+  // ไม่คืน = โฟกัสเด้งไปต้น <body> ผู้ใช้คีย์บอร์ดต้อง Tab ใหม่ทั้งหน้า
+  //
+  // ทำไมคืนใน passive cleanup ไม่ใช่ layout cleanup: React DOM จำ activeElement
+  // ไว้ก่อน mutation phase แล้ว **คืนโฟกัสให้มันเอง** ใน resetAfterCommit ซึ่งวิ่ง
+  // *หลัง* layout cleanup — โฟกัสที่เราตั้งใน layout cleanup จึงถูกเขียนทับกลับไป
+  // ที่ปุ่มในกรอบที่กำลังจะหายไป (วัดมาแล้ว: focus() ติดจริงในบรรทัดนั้น แล้วหลุด
+  // เป็น <body> ใน macrotask ถัดมา). passive cleanup วิ่งทีหลัง เราจึงชนะ
+  useEffect(() => {
+    if (!open) return;
+    return () => {
+      // ปุ่มที่เปิดอาจหายไปเองระหว่างนั้น (list re-render) — อย่าไปโฟกัสผี
+      const target = openerRef.current;
+      if (target && document.contains(target)) target.focus();
+    };
+  }, [open]);
+
+  // Tab/Shift+Tab วนอยู่ในกรอบ — ไม่งั้นโฟกัสไหลไปปุ่มที่อยู่ "ข้างหลัง" modal
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key !== 'Tab') return;
+      const panel = panelRef.current;
+      if (!panel) return;
+
+      const focusables = [
+        ...panel.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ].filter((el) => el.offsetParent !== null); // มองไม่เห็น = ข้าม
+
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement;
+
+      if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      } else if (!panel.contains(active)) {
+        // โฟกัสอยู่นอกกรอบ (เพิ่งเปิด ยังไม่มีใคร autofocus / คลิกพื้นหลัง) — ดึงกลับเข้ามา
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [open]);
 
   // Lock body scroll while the modal is up so background content doesn't
   // shift around when the user scrolls inside the panel.
@@ -119,12 +186,12 @@ export const Modal = ({
       // a modal that's already closing. It doesn't touch opacity/transform, so
       // the exit animation still plays out normally.
       //
-      // NOTE: intentionally NOT `aria-hidden={!open}`. ESC-to-close fires while
-      // focus is still on a field *inside* the panel (and in-panel X/save/cancel
-      // buttons focus on click in Chromium), and v1 has no focus trap and moves
-      // no focus on close — so when `open` flips false, focus can live inside
-      // this subtree. `aria-hidden` on an ancestor of the focused element is
-      // itself an a11y violation, so we omit it. Revisit if a focus trap lands.
+      // NOTE: intentionally NOT `aria-hidden={!open}`. The panel stays mounted
+      // through its exit animation, and focus restoration (F49) happens in an
+      // effect *cleanup* — i.e. after React has already committed the closed
+      // render. `aria-hidden` on an ancestor of the still-focused element is
+      // itself an a11y violation, so we keep the attribute off and rely on
+      // `pointerEvents: none` + the restored focus to make the fading panel inert.
       className={`fixed inset-0 z-50 flex justify-center ${
         isSheet ? 'items-end' : 'items-center p-4'
       }`}
@@ -142,6 +209,7 @@ export const Modal = ({
       />
       {/* Panel */}
       <motion.div
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label={title}
