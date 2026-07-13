@@ -11,6 +11,7 @@
     "typecheck": "tsc -b --noEmit",
     "verify:mobile": "vite build --mode verify && npx tsx --tsconfig tsconfig.app.json scripts/verify-mobile.ts",
     "verify:analytics": "vite build --mode verify && npx tsx --tsconfig tsconfig.app.json scripts/verify-analytics.ts",
+    "verify:pwa": "vite build --mode verify && npx tsx --tsconfig tsconfig.app.json scripts/verify-pwa.ts",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,json}\""
   },
   "dependencies": {
