@@ -81,34 +81,34 @@ export const ReimbursementCard = (): ReactNode => {
   if (pending.length === 0 && receivedTotal === 0) return null;
 
   return (
-    <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+    <section className="bg-card rounded-2xl border border-ink-200 shadow-sm p-6 space-y-4">
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span
             aria-hidden="true"
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-base"
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-warning-50 text-base"
           >
             🧾
           </span>
-          <h3 className="text-base font-semibold text-slate-900">
+          <h3 className="text-base font-semibold text-ink-900">
             เบิกบริษัท — {year}
           </h3>
         </div>
-        <span className="text-xs text-slate-500">
+        <span className="text-xs text-ink-500">
           ได้คืนแล้ว <strong className="tabular-nums">{formatTHB(receivedTotal)}</strong>
         </span>
       </header>
 
       <div>
-        <div className="text-xs text-slate-500">รอเบิก</div>
+        <div className="text-xs text-ink-500">รอเบิก</div>
         <div
           className={`financial-number text-2xl font-bold tabular-nums ${
-            pendingTotal > 0 ? 'text-amber-700' : 'text-slate-400'
+            pendingTotal > 0 ? 'text-warning-700' : 'text-ink-400'
           }`}
         >
           {formatTHB(pendingTotal)}
         </div>
-        <div className="text-xs text-slate-400 mt-0.5">
+        <div className="text-xs text-ink-400 mt-0.5">
           {pending.length === 0
             ? 'เคลียร์หมด — ไม่มีรายการรอเบิก'
             : `${pending.length} รายการ`}
@@ -116,33 +116,33 @@ export const ReimbursementCard = (): ReactNode => {
       </div>
 
       {pending.length > 0 && (
-        <ul className="divide-y divide-slate-100 border-t border-slate-100 pt-2">
+        <ul className="divide-y divide-ink-100 border-t border-ink-100 pt-2">
           {pending.slice(0, 5).map((row) => (
             <li
               key={`${row.month}-${row.item.id}`}
               className="flex items-center gap-3 py-2 px-1"
             >
-              <span className="flex-1 min-w-0 text-sm text-slate-900 truncate">
-                <span className="text-xs text-slate-400 mr-2 tabular-nums">
+              <span className="flex-1 min-w-0 text-sm text-ink-900 truncate">
+                <span className="text-xs text-ink-400 mr-2 tabular-nums">
                   {THAI_MONTHS_SHORT[row.month - 1]}
                 </span>
                 {row.item.name}
               </span>
-              <span className="text-sm tabular-nums font-medium text-amber-800">
+              <span className="text-sm tabular-nums font-medium text-warning-800">
                 {formatTHB(row.item.amount)}
               </span>
               <button
                 type="button"
                 onClick={() => handleMarkReceived(row)}
                 title="ทำเครื่องหมายว่าได้คืนเงินแล้ว"
-                className="px-2.5 py-1 text-xs font-medium rounded-md border border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 transition whitespace-nowrap"
+                className="px-2.5 py-1 text-xs font-medium rounded-md border border-income-200 bg-income-50 text-income-800 hover:bg-income-100 transition whitespace-nowrap"
               >
                 🟢 เบิกแล้ว
               </button>
             </li>
           ))}
           {pending.length > 5 && (
-            <li className="pt-2 text-xs text-slate-400 text-center">
+            <li className="pt-2 text-xs text-ink-400 text-center">
               + อีก {pending.length - 5} รายการ
             </li>
           )}

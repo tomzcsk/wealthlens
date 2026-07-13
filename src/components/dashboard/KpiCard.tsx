@@ -61,28 +61,28 @@ interface ToneClasses {
 
 const TONE_CLASSES: Record<KpiTone, ToneClasses> = {
   neutral: {
-    pillBg: 'bg-slate-100',
-    pillText: 'text-slate-600',
-    accentBar: 'bg-slate-300',
+    pillBg: 'bg-raised',
+    pillText: 'text-ink-600',
+    accentBar: 'bg-ink-300',
   },
   income: {
-    pillBg: 'bg-income-light',
-    pillText: 'text-income',
+    pillBg: 'bg-income-50',
+    pillText: 'text-income-ink',
     accentBar: 'bg-income',
   },
   expense: {
-    pillBg: 'bg-expense-light',
-    pillText: 'text-expense',
+    pillBg: 'bg-expense-50',
+    pillText: 'text-expense-ink',
     accentBar: 'bg-expense',
   },
   net: {
-    pillBg: 'bg-violet-50',
-    pillText: 'text-net',
+    pillBg: 'bg-net-50',
+    pillText: 'text-net-ink',
     accentBar: 'bg-net',
   },
   savings: {
-    pillBg: 'bg-amber-50',
-    pillText: 'text-savings',
+    pillBg: 'bg-warning-50',
+    pillText: 'text-savings-ink',
     accentBar: 'bg-savings',
   },
 };
@@ -101,9 +101,9 @@ const formatAmount = (value: number): string => {
 
 /** Map delta sign to text color. */
 const DELTA_TEXT_BY_SIGN = {
-  positive: 'text-income',
-  negative: 'text-expense',
-  zero: 'text-slate-500',
+  positive: 'text-income-ink',
+  negative: 'text-expense-ink',
+  zero: 'text-ink-500',
 } as const;
 
 /** Map delta sign to leading glyph (matches UXUI.md mock arrows). */
@@ -136,15 +136,15 @@ export const KpiCard = ({
         role="group"
         aria-label={`${label}: กำลังโหลด`}
         aria-busy="true"
-        className="relative h-full overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+        className="relative h-full overflow-hidden rounded-2xl border border-ink-200 bg-card p-6 shadow-sm"
       >
         <div className={`absolute inset-x-0 top-0 h-1 ${toneClasses.accentBar} opacity-40`} />
         <div className="flex items-center gap-2">
-          <div className="h-8 w-8 animate-pulse rounded-lg bg-slate-200" />
-          <div className="h-4 w-24 animate-pulse rounded bg-slate-200" />
+          <div className="h-8 w-8 animate-pulse rounded-lg bg-track" />
+          <div className="h-4 w-24 animate-pulse rounded bg-track" />
         </div>
-        <div className="mt-4 h-8 w-40 animate-pulse rounded bg-slate-200" />
-        <div className="mt-3 h-3 w-32 animate-pulse rounded bg-slate-200" />
+        <div className="mt-4 h-8 w-40 animate-pulse rounded bg-track" />
+        <div className="mt-3 h-3 w-32 animate-pulse rounded bg-track" />
       </div>
     );
   }
@@ -155,7 +155,7 @@ export const KpiCard = ({
   let deltaNode: ReactNode;
   if (delta === null || delta === undefined) {
     deltaNode = (
-      <span className="text-slate-400">— ไม่มีข้อมูลปีก่อน</span>
+      <span className="text-ink-400">— ไม่มีข้อมูลปีก่อน</span>
     );
   } else {
     // `selectYoYChange` returns a percent already in *percentage* units
@@ -171,7 +171,7 @@ export const KpiCard = ({
         <span className={`font-semibold ${colorClass}`}>
           <span aria-hidden="true">{glyph}</span> {text}
         </span>
-        <span className="ml-1 text-slate-500">{deltaLabel}</span>
+        <span className="ml-1 text-ink-500">{deltaLabel}</span>
       </>
     );
   }
@@ -180,13 +180,13 @@ export const KpiCard = ({
     <div
       role="group"
       aria-label={`${label}: ${formattedAmount}`}
-      className="group relative h-full overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow duration-150 hover:shadow-md"
+      className="group relative h-full overflow-hidden rounded-2xl border border-ink-200 bg-card p-6 shadow-sm transition-shadow duration-150 hover:shadow-md"
     >
       {/* Quiet tone accent — 4px bar across the top */}
       <div className={`absolute inset-x-0 top-0 h-1 ${toneClasses.accentBar}`} />
 
       {/* Top row: icon pill + label */}
-      <div className="flex items-center gap-2 text-sm text-slate-500">
+      <div className="flex items-center gap-2 text-sm text-ink-500">
         {icon ? (
           <span
             aria-hidden="true"
@@ -212,7 +212,7 @@ export const KpiCard = ({
       */}
       <div
         aria-hidden="true"
-        className="mt-4 financial-number text-3xl font-bold tabular-nums text-slate-900"
+        className="mt-4 financial-number text-3xl font-bold tabular-nums text-ink-900"
       >
         <AnimatedNumber value={amount} format={formatAmount} />
       </div>

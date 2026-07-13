@@ -118,8 +118,8 @@ const ChartTooltip = ({ active, label, payload }: ChartTooltipProps): ReactNode 
   if (!active || !payload || payload.length === 0) return null;
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-md">
-      <div className="mb-1 text-xs font-semibold text-slate-700">{String(label ?? '')}</div>
+    <div className="rounded-lg border border-ink-200 bg-card px-3 py-2 shadow-md">
+      <div className="mb-1 text-xs font-semibold text-ink-700">{String(label ?? '')}</div>
       <ul className="space-y-0.5">
         {payload.map((entry) => {
           const key = String(entry.dataKey ?? '') as SeriesKey;
@@ -128,7 +128,7 @@ const ChartTooltip = ({ active, label, payload }: ChartTooltipProps): ReactNode 
           return (
             <li
               key={key}
-              className="flex items-center justify-between gap-3 text-xs text-slate-700"
+              className="flex items-center justify-between gap-3 text-xs text-ink-700"
             >
               <span className="flex items-center gap-1.5">
                 <span
@@ -190,13 +190,13 @@ export const IncomeExpenseChart = ({
   };
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section className="rounded-2xl border border-ink-200 bg-card p-6 shadow-sm">
       <header className="mb-4 flex items-baseline justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900">
+          <h2 className="text-lg font-semibold text-ink-900">
             รายรับ vs ค่าใช้จ่าย (รายเดือน)
           </h2>
-          <p className="text-xs text-slate-500">ปี {activeYear}</p>
+          <p className="text-xs text-ink-500">ปี {activeYear}</p>
         </div>
       </header>
 
@@ -274,7 +274,7 @@ export const IncomeExpenseChart = ({
         </div>
       ) : (
         <div
-          className="flex items-center justify-center text-sm text-slate-400"
+          className="flex items-center justify-center text-sm text-ink-400"
           style={{ height }}
           role="status"
           aria-label={`ไม่มีข้อมูลสำหรับ ${formatThaiMonthYear(1, activeYear).split(' ').slice(-1)[0]}`}

@@ -26,12 +26,12 @@ interface CategoryDisplay {
  * แต่มี entry ไว้กัน runtime hole ถ้า caller ส่งมา
  */
 const CATEGORY_DISPLAY: Record<SavingsCategory, CategoryDisplay> = {
-  'investment-dime': { icon: '📈', label: 'ลงทุน Dime', iconBg: 'bg-violet-50' },
-  travel: { icon: '🏝️', label: 'ออมเที่ยว', iconBg: 'bg-emerald-50' },
-  emergency: { icon: '🚨', label: 'เงินฉุกเฉิน', iconBg: 'bg-red-50' },
-  retirement: { icon: '🏖️', label: 'เกษียณ', iconBg: 'bg-violet-50' },
-  gold: { icon: '🥇', label: 'ออมทอง', iconBg: 'bg-amber-50' },
-  general: { icon: '💰', label: 'ออมทั่วไป', iconBg: 'bg-emerald-50' },
+  'investment-dime': { icon: '📈', label: 'ลงทุน Dime', iconBg: 'bg-net-50' },
+  travel: { icon: '🏝️', label: 'ออมเที่ยว', iconBg: 'bg-income-50' },
+  emergency: { icon: '🚨', label: 'เงินฉุกเฉิน', iconBg: 'bg-expense-50' },
+  retirement: { icon: '🏖️', label: 'เกษียณ', iconBg: 'bg-net-50' },
+  gold: { icon: '🥇', label: 'ออมทอง', iconBg: 'bg-warning-50' },
+  general: { icon: '💰', label: 'ออมทั่วไป', iconBg: 'bg-income-50' },
 };
 
 interface SavingsCategoryCardProps {
@@ -49,7 +49,7 @@ export const SavingsCategoryCard = ({
 }: SavingsCategoryCardProps): ReactNode => {
   const display = CATEGORY_DISPLAY[category];
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+    <div className="bg-card rounded-2xl border border-ink-200 shadow-sm p-6 space-y-4">
       <div className="flex items-center gap-2">
         <span
           aria-hidden="true"
@@ -57,16 +57,16 @@ export const SavingsCategoryCard = ({
         >
           {display.icon}
         </span>
-        <h3 className="text-base font-semibold text-slate-900">
+        <h3 className="text-base font-semibold text-ink-900">
           {display.label} — {year}
         </h3>
       </div>
       <div>
-        <div className="text-xs text-slate-500">ออมแล้ว (YTD)</div>
-        <div className="financial-number text-xl font-bold tabular-nums text-slate-900">
+        <div className="text-xs text-ink-500">ออมแล้ว (YTD)</div>
+        <div className="financial-number text-xl font-bold tabular-nums text-ink-900">
           {formatTHB(total)}
         </div>
-        <div className="mt-1 text-xs text-slate-500 tabular-nums">
+        <div className="mt-1 text-xs text-ink-500 tabular-nums">
           {itemCount} รายการ
         </div>
       </div>

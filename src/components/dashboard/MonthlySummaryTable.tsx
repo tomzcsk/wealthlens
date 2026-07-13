@@ -83,7 +83,7 @@ const COLUMN_HEADERS = [
 ] as const;
 
 const HEADER_CELL_BASE =
-  'sticky top-0 z-10 bg-white border-b border-slate-200 py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-500';
+  'sticky top-0 z-10 bg-card border-b border-ink-200 py-3 px-3 text-xs font-semibold uppercase tracking-wider text-ink-500';
 
 const BODY_CELL_BASE = 'py-3 px-3 text-sm tabular-nums';
 
@@ -164,20 +164,20 @@ export const MonthlySummaryTable = ({ year }: MonthlySummaryTableProps) => {
   }, [payloads, totals, activeYear]);
 
   return (
-    <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-      <header className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+    <section className="bg-card rounded-2xl border border-ink-200 shadow-sm overflow-hidden">
+      <header className="flex items-center justify-between px-5 py-4 border-b border-ink-100">
         <div>
-          <h2 className="text-base font-semibold text-slate-900">
+          <h2 className="text-base font-semibold text-ink-900">
             สรุปรายเดือน
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-ink-500 mt-0.5">
             สรุปรายเดือนของปี {activeYear} — คลิกแถวเพื่อดูรายละเอียด
           </p>
         </div>
         <button
           type="button"
           onClick={handleExportCsv}
-          className="border border-slate-200 px-3 py-1.5 rounded-lg text-sm hover:bg-slate-50 transition-colors text-slate-700 font-medium"
+          className="border border-ink-200 px-3 py-1.5 rounded-lg text-sm hover:bg-hover transition-colors text-ink-700 font-medium"
         >
           Export CSV
         </button>
@@ -262,25 +262,25 @@ const MonthRow = ({ payload, year, onSelect }: MonthRowProps) => {
   );
 
   // Style helpers — dim the entire row when there's no income data.
-  const cellMuted = isEmpty ? 'text-slate-400' : 'text-slate-900';
+  const cellMuted = isEmpty ? 'text-ink-400' : 'text-ink-900';
   const dimZero = (value: number) =>
-    value === 0 ? 'text-slate-400' : cellMuted;
+    value === 0 ? 'text-ink-400' : cellMuted;
 
   const remainingTone = isEmpty
-    ? 'text-slate-400'
+    ? 'text-ink-400'
     : summary.remaining > 0
-      ? 'text-income'
+      ? 'text-income-ink'
       : summary.remaining < 0
-        ? 'text-expense'
-        : 'text-slate-500';
+        ? 'text-expense-ink'
+        : 'text-ink-500';
 
   const expensesTone = isEmpty
-    ? 'text-slate-400'
+    ? 'text-ink-400'
     : summary.totalExpenses === 0
-      ? 'text-slate-400'
-      : 'text-expense';
+      ? 'text-ink-400'
+      : 'text-expense-ink';
 
-  const deductionsTone = isEmpty ? 'text-slate-400' : 'text-slate-500';
+  const deductionsTone = isEmpty ? 'text-ink-400' : 'text-ink-500';
 
   return (
     <tr
@@ -290,7 +290,7 @@ const MonthRow = ({ payload, year, onSelect }: MonthRowProps) => {
       role="button"
       aria-label={`ดูรายละเอียด ${formatThaiMonth(summary.month, { long: true })} ${year}`}
       title={tooltip}
-      className="border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer focus:outline-none focus:bg-slate-50 focus:ring-2 focus:ring-inset focus:ring-primary/30"
+      className="border-b border-ink-100 hover:bg-hover transition-colors cursor-pointer focus:outline-none focus:bg-hover focus:ring-2 focus:ring-inset focus:ring-primary-ink/30"
     >
       <td className={clsx(BODY_CELL_BASE, 'font-medium text-left', cellMuted)}>
         {formatThaiMonth(summary.month)}
@@ -333,7 +333,7 @@ const MonthRow = ({ payload, year, onSelect }: MonthRowProps) => {
         className={clsx(
           BODY_CELL_BASE,
           'text-right font-semibold',
-          isEmpty ? 'text-slate-400' : 'text-slate-900',
+          isEmpty ? 'text-ink-400' : 'text-ink-900',
         )}
       >
         {formatNumber(summary.netAll)}
@@ -345,7 +345,7 @@ const MonthRow = ({ payload, year, onSelect }: MonthRowProps) => {
         className={clsx(
           BODY_CELL_BASE,
           'text-right',
-          dime === 0 ? 'text-slate-400' : 'text-savings',
+          dime === 0 ? 'text-ink-400' : 'text-savings-ink',
         )}
         title="ลงทุน Dime เดือนนี้"
       >
@@ -355,7 +355,7 @@ const MonthRow = ({ payload, year, onSelect }: MonthRowProps) => {
         className={clsx(
           BODY_CELL_BASE,
           'text-right',
-          travel === 0 ? 'text-slate-400' : 'text-savings',
+          travel === 0 ? 'text-ink-400' : 'text-savings-ink',
         )}
         title="ออมเที่ยว เดือนนี้"
       >
@@ -366,10 +366,10 @@ const MonthRow = ({ payload, year, onSelect }: MonthRowProps) => {
           BODY_CELL_BASE,
           'text-right',
           kept === 0
-            ? 'text-slate-400'
+            ? 'text-ink-400'
             : kept < 0
-              ? 'text-expense'
-              : 'text-savings',
+              ? 'text-expense-ink'
+              : 'text-savings-ink',
         )}
         title="ยอดบัญชีธนาคาร (รวมทุกบัญชี) เดือนนี้ — ติดลบ = ถอนออก"
       >
@@ -393,43 +393,43 @@ interface TotalsRowProps {
 const TotalsRow = ({ totals }: TotalsRowProps) => {
   const remainingTone =
     totals.remaining > 0
-      ? 'text-income'
+      ? 'text-income-ink'
       : totals.remaining < 0
-        ? 'text-expense'
-        : 'text-slate-500';
+        ? 'text-expense-ink'
+        : 'text-ink-500';
 
   return (
-    <tr className="border-t-2 border-slate-300 bg-slate-50/60 font-semibold">
-      <td className={clsx(BODY_CELL_BASE, 'text-left text-slate-900')}>รวม</td>
-      <td className={clsx(BODY_CELL_BASE, 'text-right text-slate-900')}>
+    <tr className="border-t-2 border-ink-300 bg-surface/60 font-semibold">
+      <td className={clsx(BODY_CELL_BASE, 'text-left text-ink-900')}>รวม</td>
+      <td className={clsx(BODY_CELL_BASE, 'text-right text-ink-900')}>
         {formatNumber(totals.salary)}
       </td>
-      <td className={clsx(BODY_CELL_BASE, 'text-right text-slate-900')}>
+      <td className={clsx(BODY_CELL_BASE, 'text-right text-ink-900')}>
         {formatNumber(totals.bonus)}
       </td>
-      <td className={clsx(BODY_CELL_BASE, 'text-right text-slate-900')}>
+      <td className={clsx(BODY_CELL_BASE, 'text-right text-ink-900')}>
         {formatNumber(totals.commission)}
       </td>
-      <td className={clsx(BODY_CELL_BASE, 'text-right text-slate-900')}>
+      <td className={clsx(BODY_CELL_BASE, 'text-right text-ink-900')}>
         {formatNumber(totals.otherIncome)}
       </td>
-      <td className={clsx(BODY_CELL_BASE, 'text-right text-slate-500')}>
+      <td className={clsx(BODY_CELL_BASE, 'text-right text-ink-500')}>
         {formatNumber(totals.totalDeductions)}
       </td>
-      <td className={clsx(BODY_CELL_BASE, 'text-right text-slate-900')}>
+      <td className={clsx(BODY_CELL_BASE, 'text-right text-ink-900')}>
         {formatNumber(totals.netSalary)}
       </td>
-      <td className={clsx(BODY_CELL_BASE, 'text-right text-slate-900 font-bold')}>
+      <td className={clsx(BODY_CELL_BASE, 'text-right text-ink-900 font-bold')}>
         {formatNumber(totals.netAll)}
       </td>
-      <td className={clsx(BODY_CELL_BASE, 'text-right text-expense')}>
+      <td className={clsx(BODY_CELL_BASE, 'text-right text-expense-ink')}>
         {formatNumber(totals.totalExpenses)}
       </td>
       <td
         className={clsx(
           BODY_CELL_BASE,
           'text-right',
-          totals.dime === 0 ? 'text-slate-400' : 'text-savings',
+          totals.dime === 0 ? 'text-ink-400' : 'text-savings-ink',
         )}
       >
         {formatNumber(totals.dime)}
@@ -438,7 +438,7 @@ const TotalsRow = ({ totals }: TotalsRowProps) => {
         className={clsx(
           BODY_CELL_BASE,
           'text-right',
-          totals.travel === 0 ? 'text-slate-400' : 'text-savings',
+          totals.travel === 0 ? 'text-ink-400' : 'text-savings-ink',
         )}
       >
         {formatNumber(totals.travel)}
@@ -448,10 +448,10 @@ const TotalsRow = ({ totals }: TotalsRowProps) => {
           BODY_CELL_BASE,
           'text-right',
           totals.kept === 0
-            ? 'text-slate-400'
+            ? 'text-ink-400'
             : totals.kept < 0
-              ? 'text-expense'
-              : 'text-savings',
+              ? 'text-expense-ink'
+              : 'text-savings-ink',
         )}
       >
         {formatNumber(totals.kept)}

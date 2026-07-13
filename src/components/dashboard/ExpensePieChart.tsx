@@ -104,8 +104,8 @@ const PieTooltip = ({ active, payload }: PieTooltipProps): ReactNode => {
   if (!datum) return null;
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-md">
-      <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+    <div className="rounded-lg border border-ink-200 bg-card px-3 py-2 shadow-md">
+      <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-ink-700">
         <span
           className="inline-block h-2 w-2 rounded-full"
           style={{ backgroundColor: datum.color }}
@@ -113,9 +113,9 @@ const PieTooltip = ({ active, payload }: PieTooltipProps): ReactNode => {
         <span>{datum.icon}</span>
         <span>{datum.label}</span>
       </div>
-      <div className="flex items-baseline justify-between gap-3 text-xs text-slate-700">
+      <div className="flex items-baseline justify-between gap-3 text-xs text-ink-700">
         <span className="font-semibold tabular-nums">{formatTHB(datum.amount)}</span>
-        <span className="text-slate-500 tabular-nums">{formatPercent(datum.share)}</span>
+        <span className="text-ink-500 tabular-nums">{formatPercent(datum.share)}</span>
       </div>
     </div>
   );
@@ -162,11 +162,11 @@ export const ExpensePieChart = ({
   const hasData = slices.length > 0;
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section className="rounded-2xl border border-ink-200 bg-card p-6 shadow-sm">
       <header className="mb-4 flex items-baseline justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900">สัดส่วนค่าใช้จ่าย</h2>
-          <p className="text-xs text-slate-500">ปี {activeYear}</p>
+          <h2 className="text-lg font-semibold text-ink-900">สัดส่วนค่าใช้จ่าย</h2>
+          <p className="text-xs text-ink-500">ปี {activeYear}</p>
         </div>
       </header>
 
@@ -196,8 +196,8 @@ export const ExpensePieChart = ({
 
             {/* HTML overlay for the donut centre — easier styling than SVG <Label>. */}
             <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-xs font-medium text-slate-500">รวมจ่าย</span>
-              <span className="text-xl font-bold tabular-nums text-slate-900">
+              <span className="text-xs font-medium text-ink-500">รวมจ่าย</span>
+              <span className="text-xl font-bold tabular-nums text-ink-900">
                 {formatTHB(total)}
               </span>
             </div>
@@ -216,11 +216,11 @@ export const ExpensePieChart = ({
                     style={{ backgroundColor: s.color }}
                   />
                   <span aria-hidden="true">{s.icon}</span>
-                  <span className="truncate text-slate-700">{s.label}</span>
+                  <span className="truncate text-ink-700">{s.label}</span>
                 </span>
                 <span className="flex shrink-0 items-baseline gap-2 tabular-nums">
-                  <span className="font-semibold text-slate-900">{formatTHB(s.amount)}</span>
-                  <span className="text-xs text-slate-500">{formatPercent(s.share)}</span>
+                  <span className="font-semibold text-ink-900">{formatTHB(s.amount)}</span>
+                  <span className="text-xs text-ink-500">{formatPercent(s.share)}</span>
                 </span>
               </li>
             ))}
@@ -228,7 +228,7 @@ export const ExpensePieChart = ({
         </div>
       ) : (
         <div
-          className="flex items-center justify-center text-sm text-slate-400"
+          className="flex items-center justify-center text-sm text-ink-400"
           style={{ height }}
           role="status"
         >
