@@ -135,7 +135,19 @@ const SpotEntry = ({ purity, value }: SpotEntryProps): ReactNode => {
 };
 
 // ---------------------------------------------------------------------------
-// Holding row — used in both active and sold tables
+// Holding row — used in both active and sold lists
+//
+// สองร่างในคอมโพเนนต์เดียว:
+//   - จอเล็ก (< lg) → การ์ดหนึ่งใบต่อหนึ่งรายการ
+//   - จอใหญ่ (≥ lg) → กริด 12 คอลัมน์ของเดิม ไม่แตะสักพิกเซล
+//
+// ทำไมเป็นการ์ด ไม่ใช่ "เลื่อนแนวนอน + ตรึงคอลัมน์แรก" แบบ F47: แพทเทิร์นนั้น
+// มีไว้สำหรับตารางตัวเลขที่ "มีไว้เทียบกันข้ามแถว" (CLAUDE.md) แต่นี่คือสมุด
+// สินทรัพย์ที่มีปุ่มลงมือทำต่อแถว — เราเทียบ ต้นทุน กับ มูลค่าตลาด "ภายในแถว
+// เดียวกัน" การ์ดจึงเป็นรูปทรงที่ซื่อสัตย์กว่า (และตรงกับหน้า /accounts อยู่แล้ว)
+//
+// จุดตัดเป็น lg ไม่ใช่ md โดยตั้งใจ: sidebar โผล่ที่ md (240px) ทำให้เนื้อที่
+// เหลือ ~464px ที่ 768px — กริด 12 ช่องตรงนั้นแคบยิ่งกว่าบนมือถือเสียอีก
 // ---------------------------------------------------------------------------
 
 interface HoldingRowProps {
@@ -147,7 +159,61 @@ interface HoldingRowProps {
   onUnsell?: (h: GoldHolding) => void;
 }
 
-const HoldingRow = ({
+/** ตัวเลขของทองหนึ่งก้อน — คำนวณครั้งเดียว ใช้ทั้งการ์ดและกริด */
+const holdingFigures = (
+  holding: GoldHolding,
+  marketValue: number | null,
+) => {
+  const isSold = holding.sold != null;
+  return {
+    isSold,
+    pricePerBaht: holding.totalCost / holding.weightBaht,
+    grams: formatNumber(holding.weightBaht * GRAMS_PER_BAHT, { decimals: 2 }),
+    unrealizedPnl:
+      !isSold && marketValue != null ? marketValue - holding.totalCost : null,
+    realizedPnl:
+      isSold && holding.sold
+        ? holding.sold.soldPrice - holding.totalCost
+        : null,
+  };
+};
+
+const pnlClass = (pnl: number): string =>
+  pnl >= 0 ? 'text-income-ink' : 'text-expense-ink';
+
+const signed = (pnl: number): string =>
+  `${pnl >= 0 ? '+' : ''}${formatTHB(pnl)}`;
+
+/** แถวป้าย/ค่า ในการ์ด — ป้ายซ้าย ตัวเลขขวา ไม่มีใครเบียดใคร */
+const Figure = ({
+  label,
+  value,
+  sub,
+  subClass = 'text-ink-400',
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  subClass?: string;
+}): ReactNode => (
+  <div className="flex items-baseline justify-between gap-3">
+    <span className="text-sm text-ink-500 shrink-0">{label}</span>
+    <span className="text-right">
+      <span className="block text-sm financial-number tabular-nums text-ink-900">
+        {value}
+      </span>
+      {sub && (
+        <span
+          className={`block text-xs financial-number tabular-nums ${subClass}`}
+        >
+          {sub}
+        </span>
+      )}
+    </span>
+  </div>
+);
+
+const HoldingCard = ({
   holding,
   marketValue,
   onSell,
@@ -155,16 +221,122 @@ const HoldingRow = ({
   onDelete,
   onUnsell,
 }: HoldingRowProps): ReactNode => {
-  const isSold = holding.sold != null;
-  const pricePerBaht = holding.totalCost / holding.weightBaht;
-  const unrealizedPnl =
-    !isSold && marketValue != null ? marketValue - holding.totalCost : null;
-  const realizedPnl = isSold && holding.sold
-    ? holding.sold.soldPrice - holding.totalCost
-    : null;
+  const { isSold, pricePerBaht, grams, unrealizedPnl, realizedPnl } =
+    holdingFigures(holding, marketValue);
 
   return (
-    <div className="grid grid-cols-12 gap-2 items-center px-3 py-2.5 border-b border-ink-100 last:border-b-0 text-sm hover:bg-hover transition">
+    <div className="lg:hidden border-b border-ink-100 last:border-b-0 p-4 space-y-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="font-medium text-ink-900 truncate" title={holding.brand}>
+            {holding.brand}
+          </div>
+          <div className="text-xs text-ink-500 mt-0.5">
+            {TYPE_LABELS[holding.type]} · {holding.purity}%
+          </div>
+        </div>
+        <div className="shrink-0 text-right">
+          <div className="text-xs text-ink-500">ซื้อ {holding.purchaseDate}</div>
+          {isSold && holding.sold && (
+            <div className="text-xs text-ink-400 mt-0.5">
+              ขาย {holding.sold.soldDate}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-1.5 border-t border-ink-100 pt-3">
+        <Figure
+          label="น้ำหนัก"
+          value={`${holding.weightBaht} บาท`}
+          sub={`= ${grams}g`}
+        />
+        <Figure
+          label="ต้นทุน"
+          value={formatTHB(holding.totalCost)}
+          sub={`${formatTHB(pricePerBaht, { decimals: 0 })}/บาท`}
+        />
+        {isSold && holding.sold && realizedPnl != null ? (
+          <Figure
+            label="ราคาขาย"
+            value={formatTHB(holding.sold.soldPrice)}
+            sub={signed(realizedPnl)}
+            subClass={pnlClass(realizedPnl)}
+          />
+        ) : marketValue != null ? (
+          <Figure
+            label="มูลค่าตลาด"
+            value={formatTHB(marketValue)}
+            sub={unrealizedPnl != null ? signed(unrealizedPnl) : undefined}
+            subClass={
+              unrealizedPnl != null ? pnlClass(unrealizedPnl) : undefined
+            }
+          />
+        ) : (
+          <Figure label="มูลค่าตลาด" value="—" />
+        )}
+      </div>
+
+      <div className="space-y-2">
+        {!isSold && onSell && (
+          <button
+            type="button"
+            onClick={() => onSell(holding)}
+            className="w-full min-h-11 inline-flex items-center justify-center px-3 text-sm font-medium text-warning-700 bg-warning-50 border border-warning-200 rounded-md hover:bg-warning-100 transition"
+          >
+            💰 ขาย
+          </button>
+        )}
+        {isSold && onUnsell && (
+          <button
+            type="button"
+            onClick={() => onUnsell(holding)}
+            className="w-full min-h-11 inline-flex items-center justify-center px-3 text-sm text-ink-600 border border-ink-200 rounded-md hover:bg-hover transition"
+          >
+            ↩️ ยกเลิกขาย
+          </button>
+        )}
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => onEdit(holding)}
+            className="flex-1 min-h-11 inline-flex items-center justify-center px-3 text-sm text-ink-700 border border-ink-200 rounded-md hover:bg-hover transition"
+          >
+            ✏️ แก้ไข
+          </button>
+          <button
+            type="button"
+            onClick={() => onDelete(holding)}
+            className="flex-1 min-h-11 inline-flex items-center justify-center px-3 text-sm text-expense-ink border border-ink-200 rounded-md hover:bg-hover transition"
+          >
+            🗑️ ลบ
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const HoldingRow = (props: HoldingRowProps): ReactNode => (
+  <>
+    <HoldingCard {...props} />
+    <HoldingGridRow {...props} />
+  </>
+);
+
+const HoldingGridRow = ({
+  holding,
+  marketValue,
+  onSell,
+  onEdit,
+  onDelete,
+  onUnsell,
+}: HoldingRowProps): ReactNode => {
+  const { isSold, pricePerBaht, unrealizedPnl, realizedPnl } =
+    holdingFigures(holding, marketValue);
+
+  return (
+    <div className="hidden lg:grid grid-cols-12 gap-2 items-center px-3 py-2.5 border-b border-ink-100 last:border-b-0 text-sm hover:bg-hover transition">
       <div className="col-span-2 text-ink-700">
         <div>{holding.purchaseDate}</div>
         {isSold && holding.sold && (
@@ -495,7 +667,7 @@ export const GoldPage = (): ReactNode => {
           </div>
         ) : (
           <div className="bg-card rounded-lg border border-ink-200 overflow-hidden">
-            <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-surface text-xs font-semibold text-ink-500 uppercase tracking-wider">
+            <div className="hidden lg:grid grid-cols-12 gap-2 px-3 py-2 bg-surface text-xs font-semibold text-ink-500 uppercase tracking-wider">
               <div className="col-span-2">วันที่</div>
               <div className="col-span-2">แบรนด์</div>
               <div className="col-span-1 text-right">บาท</div>
@@ -529,7 +701,7 @@ export const GoldPage = (): ReactNode => {
           </button>
           {showSold && (
             <div className="bg-card rounded-lg border border-ink-200 overflow-hidden">
-              <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-surface text-xs font-semibold text-ink-500 uppercase tracking-wider">
+              <div className="hidden lg:grid grid-cols-12 gap-2 px-3 py-2 bg-surface text-xs font-semibold text-ink-500 uppercase tracking-wider">
                 <div className="col-span-2">วันที่ซื้อ / ขาย</div>
                 <div className="col-span-2">แบรนด์</div>
                 <div className="col-span-1 text-right">บาท</div>
