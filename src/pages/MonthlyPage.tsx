@@ -66,7 +66,9 @@ export const MonthlyPage = (): ReactNode => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* มือถือ 390px: แถวเดียวไม่พอ — ปุ่มกลับถูกบีบเหลือ 25px แต่ข้อความยังยาว
+          ไปถึง x=412 ลากทั้งหน้าเลื่อนแนวนอน (F47/M1) จึงให้ห่อบรรทัดได้ */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -93,7 +95,7 @@ export const MonthlyPage = (): ReactNode => {
         <button
           type="button"
           onClick={() => navigate('/')}
-          className="text-sm text-ink-500 hover:text-ink-900"
+          className="shrink-0 whitespace-nowrap inline-flex items-center min-h-11 md:min-h-0 text-sm text-ink-500 hover:text-ink-900"
         >
           ← กลับภาพรวม
         </button>
