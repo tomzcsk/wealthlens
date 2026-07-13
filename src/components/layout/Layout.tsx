@@ -2,8 +2,8 @@
  * WealthLens — application shell.
  *
  * Two-column grid on desktop (240px sidebar + flexible main).
- * Single-column on mobile; the sidebar collapses into a drawer that
- * the Sidebar component manages internally.
+ * Single-column on mobile: ไม่มี sidebar — เมนูอยู่ที่ <BottomNav /> และ
+ * (F47).
  *
  * The Header sits at the top of the main column and is sticky so it
  * stays anchored while the route content scrolls.
@@ -26,6 +26,7 @@ import useAnomalyAlertEffect from '@/hooks/useAnomalyAlertEffect';
 import useDriveSyncCoordinator from '@/hooks/useDriveSyncCoordinator';
 import LoginPage from '@/pages/LoginPage';
 
+import BottomNav from './BottomNav';
 import Header from './Header';
 import SessionWatcher from './SessionWatcher';
 import Sidebar from './Sidebar';
@@ -56,10 +57,12 @@ export const Layout = (): ReactNode => {
           <Sidebar />
           <div className="flex flex-col min-w-0">
             <Header />
-            <main className="flex-1 p-6 md:p-8">
+            {/* pb-24 เผื่อที่ให้แถบล่าง ไม่งั้นเนื้อหาท้ายหน้าถูกแถบทับ */}
+            <main className="flex-1 p-4 pb-24 md:p-8 md:pb-8">
               <PageTransition />
             </main>
           </div>
+          <BottomNav />
           <SessionWatcher />
         </div>
       )}
