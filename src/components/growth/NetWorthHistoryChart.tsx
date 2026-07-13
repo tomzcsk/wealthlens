@@ -27,7 +27,7 @@
  * var() — F46); สีโครงกราฟมาจาก useChartTheme(); สีอื่นทั้งหมดเป็น token class
  */
 import { useMemo, type ReactNode } from 'react';
-import { useReducedMotion } from 'framer-motion';
+import { useReducedMotion } from '@/components/motion';
 import {
   Area,
   AreaChart,
@@ -61,8 +61,7 @@ const labelOf = (ym: string): string => {
   return `${THAI_MONTHS_SHORT[month - 1]} '${String(year).slice(-2)}`;
 };
 
-const yTickFormatter = (value: number): string =>
-  formatTHB(value, { compact: true });
+const yTickFormatter = (value: number): string => formatTHB(value, { compact: true });
 
 interface Row {
   ym: string;
@@ -94,11 +93,7 @@ interface HistoryTooltipProps {
   totalAccounts: number;
 }
 
-const HistoryTooltip = ({
-  active,
-  payload,
-  totalAccounts,
-}: HistoryTooltipProps): ReactNode => {
+const HistoryTooltip = ({ active, payload, totalAccounts }: HistoryTooltipProps): ReactNode => {
   if (!active || !payload || payload.length === 0) return null;
   const row = payload[0]?.payload;
   if (!row) return null;
@@ -138,9 +133,7 @@ const HistoryTooltip = ({
         </p>
       )}
       {point.goldIsCostBasis && (
-        <p className="mt-1 text-[11px] text-warning-ink">
-          ⚠️ ทองคิดด้วยราคาทุน
-        </p>
+        <p className="mt-1 text-[11px] text-warning-ink">⚠️ ทองคิดด้วยราคาทุน</p>
       )}
     </div>
   );
@@ -167,10 +160,7 @@ export const NetWorthHistoryChart = ({
   const chart = useChartTheme();
 
   const rows = useMemo(() => toRows(points), [points]);
-  const jumps = useMemo(
-    () => points.filter((p) => p.isTrackingJump),
-    [points],
-  );
+  const jumps = useMemo(() => points.filter((p) => p.isTrackingJump), [points]);
   const partialMonths = useMemo(
     () => points.filter((p) => p.accountsCovered < totalAccounts),
     [points, totalAccounts],
@@ -183,9 +173,7 @@ export const NetWorthHistoryChart = ({
   if (rows.length === 0) {
     return (
       <section className="rounded-2xl border border-ink-200 bg-card p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-ink-900">
-          ความมั่งคั่งสุทธิย้อนหลัง
-        </h2>
+        <h2 className="text-lg font-semibold text-ink-900">ความมั่งคั่งสุทธิย้อนหลัง</h2>
         <div
           className={`flex items-center justify-center text-sm text-ink-400 ${CHART_BOX}`}
           style={chartBoxStyle(height)}
@@ -200,9 +188,7 @@ export const NetWorthHistoryChart = ({
   return (
     <section className="rounded-2xl border border-ink-200 bg-card p-4 shadow-sm md:p-6">
       <header className="mb-4">
-        <h2 className="text-lg font-semibold text-ink-900">
-          ความมั่งคั่งสุทธิย้อนหลัง
-        </h2>
+        <h2 className="text-lg font-semibold text-ink-900">ความมั่งคั่งสุทธิย้อนหลัง</h2>
         <p className="text-xs text-ink-500">
           สินทรัพย์ − หนี้ ณ สิ้นเดือน · {rows[0].label} – {rows[rows.length - 1].label}
         </p>
@@ -210,21 +196,14 @@ export const NetWorthHistoryChart = ({
 
       <div className={CHART_BOX} style={chartBoxStyle(height)}>
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart
-            data={rows}
-            margin={{ top: 24, right: 16, bottom: 0, left: 8 }}
-          >
+          <AreaChart data={rows} margin={{ top: 24, right: 16, bottom: 0, left: 8 }}>
             <defs>
               <linearGradient id={FULL_GRADIENT_ID} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={COLOR_NET} stopOpacity={0.35} />
                 <stop offset="100%" stopColor={COLOR_NET} stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke={chart.grid}
-              vertical={false}
-            />
+            <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
             <XAxis
               dataKey="ym"
               tickFormatter={labelOf}
@@ -315,10 +294,9 @@ export const NetWorthHistoryChart = ({
       <div className="mt-3 space-y-1 border-t border-ink-200 pt-3 text-xs text-ink-500">
         {lastPartial && (
           <p>
-            แถบสีจาง = ช่วงที่ยังบันทึกไม่ครบทุกบัญชี ({labelOf(partialMonths[0].ym)}{' '}
-            – {labelOf(lastPartial.ym)}) — เดือนสุดท้ายของช่วงครอบคลุม{' '}
-            {lastPartial.accountsCovered} จาก {totalAccounts} บัญชี. เส้นคือ
-            ตัวเลขจริงจากข้อมูลที่มี ไม่ใช่ค่าประมาณ
+            แถบสีจาง = ช่วงที่ยังบันทึกไม่ครบทุกบัญชี ({labelOf(partialMonths[0].ym)} –{' '}
+            {labelOf(lastPartial.ym)}) — เดือนสุดท้ายของช่วงครอบคลุม {lastPartial.accountsCovered}{' '}
+            จาก {totalAccounts} บัญชี. เส้นคือ ตัวเลขจริงจากข้อมูลที่มี ไม่ใช่ค่าประมาณ
           </p>
         )}
         {jumps.length > 0 && (

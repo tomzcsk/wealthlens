@@ -52,10 +52,7 @@ export const ReimbursementCard = (): ReactNode => {
   const updateExpense = useFinanceStore((s) => s.updateExpense);
   const pushToast = useToastStore((s) => s.push);
 
-  const { pending, receivedTotal } = useMemo(
-    () => collectReimbursements(data, year),
-    [data, year],
-  );
+  const { pending, receivedTotal } = useMemo(() => collectReimbursements(data, year), [data, year]);
 
   const pendingTotal = pending.reduce((acc, row) => acc + row.item.amount, 0);
 
@@ -90,9 +87,7 @@ export const ReimbursementCard = (): ReactNode => {
           >
             🧾
           </span>
-          <h3 className="text-base font-semibold text-ink-900">
-            เบิกบริษัท — {year}
-          </h3>
+          <h3 className="text-base font-semibold text-ink-900">เบิกบริษัท — {year}</h3>
         </div>
         <span className="text-xs text-ink-500">
           ได้คืนแล้ว <strong className="tabular-nums">{formatTHB(receivedTotal)}</strong>
@@ -109,19 +104,14 @@ export const ReimbursementCard = (): ReactNode => {
           {formatTHB(pendingTotal)}
         </div>
         <div className="text-xs text-ink-400 mt-0.5">
-          {pending.length === 0
-            ? 'เคลียร์หมด — ไม่มีรายการรอเบิก'
-            : `${pending.length} รายการ`}
+          {pending.length === 0 ? 'เคลียร์หมด — ไม่มีรายการรอเบิก' : `${pending.length} รายการ`}
         </div>
       </div>
 
       {pending.length > 0 && (
         <ul className="divide-y divide-ink-100 border-t border-ink-100 pt-2">
           {pending.slice(0, 5).map((row) => (
-            <li
-              key={`${row.month}-${row.item.id}`}
-              className="flex items-center gap-3 py-2 px-1"
-            >
+            <li key={`${row.month}-${row.item.id}`} className="flex items-center gap-3 py-2 px-1">
               <span className="flex-1 min-w-0 text-sm text-ink-900 truncate">
                 <span className="text-xs text-ink-400 mr-2 tabular-nums">
                   {THAI_MONTHS_SHORT[row.month - 1]}

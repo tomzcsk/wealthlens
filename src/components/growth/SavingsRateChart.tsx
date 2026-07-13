@@ -15,7 +15,7 @@
  * useChartTheme(); สีอื่นทั้งหมดเป็น token class
  */
 import { useMemo, type ReactNode } from 'react';
-import { useReducedMotion } from 'framer-motion';
+import { useReducedMotion } from '@/components/motion';
 import {
   Bar,
   CartesianGrid,
@@ -34,10 +34,7 @@ import { useChartTheme } from '@/hooks/useChartTheme';
 import { CHART_BOX, chartBoxStyle } from '@/utils/chartSizing';
 import { THAI_MONTHS_SHORT, formatTHB, formatPercent } from '@/utils/formatters';
 import { parseYm } from '@/utils/monthRange';
-import {
-  rollingAverage,
-  type SavingsRatePoint,
-} from '@/utils/savingsRate';
+import { rollingAverage, type SavingsRatePoint } from '@/utils/savingsRate';
 
 /** UXUI.md §2 — เขียวรายรับ / แดงรายจ่าย / ม่วงสุทธิ (ชุดเดียวกับกราฟอื่น) */
 const COLOR_POSITIVE = '#34D399';
@@ -119,10 +116,7 @@ export interface SavingsRateChartProps {
   height?: number;
 }
 
-export const SavingsRateChart = ({
-  points,
-  height = 320,
-}: SavingsRateChartProps): ReactNode => {
+export const SavingsRateChart = ({ points, height = 320 }: SavingsRateChartProps): ReactNode => {
   const reduced = useReducedMotion() ?? false;
   const anim = chartAnimation(reduced);
   const chart = useChartTheme();
@@ -145,18 +139,9 @@ export const SavingsRateChart = ({
    *   • มีรายได้ แต่ไม่มีรายการรายจ่าย → ปี 2023 ทั้งปีของ Tom
    * เขียนรวมเป็น "ไม่มีข้อมูลรายจ่าย" ก้อนเดียวก็จะโกหกเดือนแรก
    */
-  const missing = useMemo(
-    () => points.filter((p) => p.rate === null),
-    [points],
-  );
-  const noExpenseData = useMemo(
-    () => missing.filter((p) => p.netAll !== 0),
-    [missing],
-  );
-  const noIncome = useMemo(
-    () => missing.filter((p) => p.netAll === 0),
-    [missing],
-  );
+  const missing = useMemo(() => points.filter((p) => p.rate === null), [points]);
+  const noExpenseData = useMemo(() => missing.filter((p) => p.netAll !== 0), [missing]);
+  const noIncome = useMemo(() => missing.filter((p) => p.netAll === 0), [missing]);
   const noExpenseYears = useMemo(() => {
     const years = new Set(noExpenseData.map((p) => parseYm(p.ym).year));
     return [...years].sort((a, b) => a - b);
@@ -176,15 +161,8 @@ export const SavingsRateChart = ({
       {hasAny ? (
         <div className={CHART_BOX} style={chartBoxStyle(height)}>
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart
-              data={rows}
-              margin={{ top: 8, right: 16, bottom: 0, left: 8 }}
-            >
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke={chart.grid}
-                vertical={false}
-              />
+            <ComposedChart data={rows} margin={{ top: 8, right: 16, bottom: 0, left: 8 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
               <XAxis
                 dataKey="ym"
                 tickFormatter={labelOf}
@@ -204,18 +182,13 @@ export const SavingsRateChart = ({
                 axisLine={{ stroke: chart.axisLine }}
                 width={56}
               />
-              <Tooltip
-                content={<RateTooltip />}
-                cursor={{ fill: chart.cursorFill }}
-              />
+              <Tooltip content={<RateTooltip />} cursor={{ fill: chart.cursorFill }} />
               <ReferenceLine y={0} stroke={chart.axisLine} />
               <Bar dataKey="ratePct" radius={[3, 3, 0, 0]} {...anim}>
                 {rows.map((row) => (
                   <Cell
                     key={row.ym}
-                    fill={
-                      (row.ratePct ?? 0) < 0 ? COLOR_NEGATIVE : COLOR_POSITIVE
-                    }
+                    fill={(row.ratePct ?? 0) < 0 ? COLOR_NEGATIVE : COLOR_POSITIVE}
                   />
                 ))}
               </Bar>
@@ -245,22 +218,18 @@ export const SavingsRateChart = ({
         <div className="mt-3 space-y-1 border-t border-ink-200 pt-3 text-xs text-ink-500">
           {noExpenseData.length > 0 && (
             <p>
-              {noExpenseData.length} เดือนไม่มีข้อมูลรายจ่าย (ปี{' '}
-              {noExpenseYears.join(', ')}) จึงไม่มีอัตราการออม
+              {noExpenseData.length} เดือนไม่มีข้อมูลรายจ่าย (ปี {noExpenseYears.join(', ')})
+              จึงไม่มีอัตราการออม
             </p>
           )}
           {noIncome.length > 0 && (
             <p>
               {noIncome.length} เดือนยังไม่มีรายได้ ({labelOf(noIncome[0].ym)}
-              {noIncome.length > 1
-                ? ` – ${labelOf(noIncome[noIncome.length - 1].ym)}`
-                : ''}
-              ) จึงยังคิดอัตราไม่ได้
+              {noIncome.length > 1 ? ` – ${labelOf(noIncome[noIncome.length - 1].ym)}` : ''})
+              จึงยังคิดอัตราไม่ได้
             </p>
           )}
-          <p>
-            ช่องว่างในกราฟคือ &ldquo;ไม่รู้&rdquo; ไม่ใช่ &ldquo;ศูนย์&rdquo;
-          </p>
+          <p>ช่องว่างในกราฟคือ &ldquo;ไม่รู้&rdquo; ไม่ใช่ &ldquo;ศูนย์&rdquo;</p>
         </div>
       )}
     </section>

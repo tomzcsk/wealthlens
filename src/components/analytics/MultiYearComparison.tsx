@@ -28,7 +28,7 @@
 
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { useReducedMotion } from 'framer-motion';
+import { useReducedMotion } from '@/components/motion';
 import {
   CartesianGrid,
   Legend,
@@ -51,11 +51,7 @@ import {
 } from '@/hooks/useFinanceData';
 import type { YearSummary } from '@/stores/selectors';
 import { calculatePercentChange } from '@/utils/calculations';
-import {
-  THAI_MONTHS_SHORT,
-  formatPercent,
-  formatTHB,
-} from '@/utils/formatters';
+import { THAI_MONTHS_SHORT, formatPercent, formatTHB } from '@/utils/formatters';
 
 // ---------------------------------------------------------------------------
 // Year color palette
@@ -80,8 +76,7 @@ const fallbackColorForYear = (year: number): string => {
   return palette[Math.abs(year) % palette.length];
 };
 
-const colorForYear = (year: number): string =>
-  YEAR_COLORS[year] ?? fallbackColorForYear(year);
+const colorForYear = (year: number): string => YEAR_COLORS[year] ?? fallbackColorForYear(year);
 
 // ---------------------------------------------------------------------------
 // Metric row definition (table)
@@ -137,9 +132,7 @@ const usePerYearSummaries = (years: number[]): Record<number, YearSummary> => {
 
   /* eslint-disable react-hooks/rules-of-hooks */
   // Each `useYearSummary` is a stable hook call at a fixed index.
-  const summaries = slots.map((slot) =>
-    useYearSummary(years[slot] ?? fallbackYear),
-  );
+  const summaries = slots.map((slot) => useYearSummary(years[slot] ?? fallbackYear));
   /* eslint-enable react-hooks/rules-of-hooks */
 
   return useMemo(() => {
@@ -161,14 +154,11 @@ const usePerYearMonthlyRows = (
   const fallbackYear = years[0] ?? 0;
 
   /* eslint-disable react-hooks/rules-of-hooks */
-  const rows = slots.map((slot) =>
-    useMonthlySummariesForYear(years[slot] ?? fallbackYear),
-  );
+  const rows = slots.map((slot) => useMonthlySummariesForYear(years[slot] ?? fallbackYear));
   /* eslint-enable react-hooks/rules-of-hooks */
 
   return useMemo(() => {
-    const map: Record<number, ReturnType<typeof useMonthlySummariesForYear>> =
-      {};
+    const map: Record<number, ReturnType<typeof useMonthlySummariesForYear>> = {};
     years.forEach((y, i) => {
       const r = rows[i];
       if (r) map[y] = r;
@@ -194,11 +184,7 @@ interface ChartTooltipProps {
   payload?: ReadonlyArray<TooltipEntry>;
 }
 
-const ChartTooltip = ({
-  active,
-  label,
-  payload,
-}: ChartTooltipProps): ReactNode => {
+const ChartTooltip = ({ active, label, payload }: ChartTooltipProps): ReactNode => {
   if (!active || !payload || payload.length === 0) return null;
 
   // Sort entries high → low so the user reads the "best" year first.
@@ -210,21 +196,13 @@ const ChartTooltip = ({
 
   return (
     <div className="rounded-lg border border-ink-200 bg-card px-3 py-2 shadow-md">
-      <div className="mb-1 text-xs font-semibold text-ink-700">
-        {String(label ?? '')}
-      </div>
+      <div className="mb-1 text-xs font-semibold text-ink-700">{String(label ?? '')}</div>
       <ul className="space-y-0.5">
         {sorted.map((entry) => {
           const key = String(entry.dataKey ?? entry.name ?? '');
-          const numeric =
-            typeof entry.value === 'number'
-              ? entry.value
-              : Number(entry.value ?? 0);
+          const numeric = typeof entry.value === 'number' ? entry.value : Number(entry.value ?? 0);
           return (
-            <li
-              key={key}
-              className="flex items-center justify-between gap-3 text-xs text-ink-700"
-            >
+            <li key={key} className="flex items-center justify-between gap-3 text-xs text-ink-700">
               <span className="flex items-center gap-1.5">
                 <span
                   className="inline-block h-2 w-2 rounded-full"
@@ -232,9 +210,7 @@ const ChartTooltip = ({
                 />
                 {key}
               </span>
-              <span className="font-semibold tabular-nums">
-                {formatTHB(numeric)}
-              </span>
+              <span className="font-semibold tabular-nums">{formatTHB(numeric)}</span>
             </li>
           );
         })}
@@ -247,8 +223,7 @@ const ChartTooltip = ({
 // Component
 // ---------------------------------------------------------------------------
 
-const yTickFormatter = (value: number): string =>
-  formatTHB(value, { compact: true });
+const yTickFormatter = (value: number): string => formatTHB(value, { compact: true });
 
 /*
  * F47 — the metric column (รายการ) stays pinned while the year columns scroll
@@ -256,23 +231,18 @@ const yTickFormatter = (value: number): string =>
  * break, which means every row needs an *opaque* background of its own — a
  * translucent one would let the scrolling numbers ghost through the pin.
  */
-const STICKY_COL =
-  'sticky left-0 z-10 bg-inherit shadow-[8px_0_8px_-8px_rgb(2_6_23_/_0.22)]';
-const STICKY_CORNER =
-  'sticky left-0 z-20 bg-card shadow-[8px_0_8px_-8px_rgb(2_6_23_/_0.22)]';
+const STICKY_COL = 'sticky left-0 z-10 bg-inherit shadow-[8px_0_8px_-8px_rgb(2_6_23_/_0.22)]';
+const STICKY_CORNER = 'sticky left-0 z-20 bg-card shadow-[8px_0_8px_-8px_rgb(2_6_23_/_0.22)]';
 
 /** Same composite colour as the old translucent `bg-surface/40`, baked opaque. */
-const ZEBRA_ROW =
-  'bg-[color-mix(in_srgb,rgb(var(--bg-surface))_40%,rgb(var(--bg-card)))]';
+const ZEBRA_ROW = 'bg-[color-mix(in_srgb,rgb(var(--bg-surface))_40%,rgb(var(--bg-card)))]';
 
 export interface MultiYearComparisonProps {
   /** Inner chart height in px. */
   height?: number;
 }
 
-export const MultiYearComparison = ({
-  height = 340,
-}: MultiYearComparisonProps): ReactNode => {
+export const MultiYearComparison = ({ height = 340 }: MultiYearComparisonProps): ReactNode => {
   const reduced = useReducedMotion() ?? false;
   const anim = chartAnimation(reduced);
   const chart = useChartTheme();
@@ -285,9 +255,7 @@ export const MultiYearComparison = ({
   // dataset changes and reset the selection during render (the React-
   // recommended alternative to syncing with `useEffect` + `setState`).
   const availableKey = useMemo(() => availableYears.join(','), [availableYears]);
-  const [selected, setSelected] = useState<Set<number>>(
-    () => new Set(availableYears),
-  );
+  const [selected, setSelected] = useState<Set<number>>(() => new Set(availableYears));
   const [lastKey, setLastKey] = useState<string>(availableKey);
 
   let effectiveSelected = selected;
@@ -339,9 +307,7 @@ export const MultiYearComparison = ({
 
   const hasAnyChartData = useMemo(
     () =>
-      selectedYears.some((year) =>
-        chartData.some((row) => Number(row[String(year)] ?? 0) !== 0),
-      ),
+      selectedYears.some((year) => chartData.some((row) => Number(row[String(year)] ?? 0) !== 0)),
     [selectedYears, chartData],
   );
 
@@ -382,9 +348,7 @@ export const MultiYearComparison = ({
       {/* ---------- Year toggle pills ---------- */}
       <section className="rounded-2xl border border-ink-200 bg-card p-4 shadow-sm">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="mr-2 text-sm font-medium text-ink-700">
-            เปรียบเทียบรายปี:
-          </span>
+          <span className="mr-2 text-sm font-medium text-ink-700">เปรียบเทียบรายปี:</span>
           {availableYears.map((year) => {
             const isOn = effectiveSelected.has(year);
             const isLast = isOn && effectiveSelected.size === 1;
@@ -404,13 +368,7 @@ export const MultiYearComparison = ({
                   isLast ? 'cursor-not-allowed opacity-90' : 'cursor-pointer',
                 ].join(' ')}
                 style={isOn ? { backgroundColor: color } : undefined}
-                title={
-                  isLast
-                    ? 'ต้องเลือกอย่างน้อย 1 ปี'
-                    : isOn
-                      ? `ซ่อน ${year}`
-                      : `แสดง ${year}`
-                }
+                title={isLast ? 'ต้องเลือกอย่างน้อย 1 ปี' : isOn ? `ซ่อน ${year}` : `แสดง ${year}`}
               >
                 <span aria-hidden="true">{isOn ? '✓' : ''}</span>
                 <span className="tabular-nums">{year}</span>
@@ -423,26 +381,15 @@ export const MultiYearComparison = ({
       {/* ---------- Multi-line chart ---------- */}
       <section className="rounded-2xl border border-ink-200 bg-card p-6 shadow-sm">
         <header className="mb-4">
-          <h2 className="text-lg font-semibold text-ink-900">
-            แนวโน้มรายได้สุทธิ
-          </h2>
-          <p className="text-xs text-ink-500">
-            เปรียบเทียบ Net All รายเดือน ข้ามปี
-          </p>
+          <h2 className="text-lg font-semibold text-ink-900">แนวโน้มรายได้สุทธิ</h2>
+          <p className="text-xs text-ink-500">เปรียบเทียบ Net All รายเดือน ข้ามปี</p>
         </header>
 
         {hasAnyChartData ? (
           <div className={CHART_BOX} style={chartBoxStyle(height)}>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart
-                data={chartData}
-                margin={{ top: 8, right: 16, bottom: 0, left: 8 }}
-              >
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke={chart.grid}
-                  vertical={false}
-                />
+              <LineChart data={chartData} margin={{ top: 8, right: 16, bottom: 0, left: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
                 <XAxis
                   dataKey="monthLabel"
                   stroke={chart.axisTick}
@@ -502,14 +449,10 @@ export const MultiYearComparison = ({
       {/* ---------- Summary table ---------- */}
       <section className="rounded-2xl border border-ink-200 bg-card p-6 shadow-sm">
         <header className="mb-4">
-          <h2 className="text-lg font-semibold text-ink-900">
-            สรุปรายปี
-          </h2>
+          <h2 className="text-lg font-semibold text-ink-900">สรุปรายปี</h2>
           <p className="text-xs text-ink-500">
             ตัวเลขรวมแต่ละปี — % คือการเปลี่ยนแปลงเทียบกับปีก่อนหน้า
-            {maxNetAllYear !== null
-              ? ` · ปีที่ Net All สูงสุด: ${maxNetAllYear}`
-              : ''}
+            {maxNetAllYear !== null ? ` · ปีที่ Net All สูงสุด: ${maxNetAllYear}` : ''}
           </p>
           <span className="md:hidden mt-0.5 block text-[10px] font-normal text-ink-400">
             เลื่อนดูคอลัมน์อื่น →
@@ -520,11 +463,7 @@ export const MultiYearComparison = ({
           <table className="min-w-full text-sm">
             <thead>
               <tr className="border-b border-ink-200 text-left">
-                <th
-                  className={`py-2 pr-4 font-semibold text-ink-600 ${STICKY_CORNER}`}
-                >
-                  รายการ
-                </th>
+                <th className={`py-2 pr-4 font-semibold text-ink-600 ${STICKY_CORNER}`}>รายการ</th>
                 {selectedYears.map((year) => {
                   const isMax = year === maxNetAllYear;
                   const yoy = headerYoY[year];
@@ -570,13 +509,8 @@ export const MultiYearComparison = ({
             </thead>
             <tbody>
               {METRIC_ROWS.map((row, rowIdx) => (
-                <tr
-                  key={row.key}
-                  className={rowIdx % 2 === 0 ? 'bg-card' : ZEBRA_ROW}
-                >
-                  <td
-                    className={`py-2 pr-4 font-medium text-ink-700 ${STICKY_COL}`}
-                  >
+                <tr key={row.key} className={rowIdx % 2 === 0 ? 'bg-card' : ZEBRA_ROW}>
+                  <td className={`py-2 pr-4 font-medium text-ink-700 ${STICKY_COL}`}>
                     {row.label}
                   </td>
                   {selectedYears.map((year) => {

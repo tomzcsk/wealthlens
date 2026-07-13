@@ -35,12 +35,11 @@ import { formatPercent, formatTHB } from '@/utils/formatters';
 
 type ActivityFilter = 'all' | 'active' | 'inactive';
 
-const FILTER_OPTIONS: ReadonlyArray<{ value: ActivityFilter; label: string }> =
-  [
-    { value: 'all', label: 'ทั้งหมด' },
-    { value: 'active', label: 'ใช้งาน' },
-    { value: 'inactive', label: 'ไม่ใช้งาน' },
-  ];
+const FILTER_OPTIONS: ReadonlyArray<{ value: ActivityFilter; label: string }> = [
+  { value: 'all', label: 'ทั้งหมด' },
+  { value: 'active', label: 'ใช้งาน' },
+  { value: 'inactive', label: 'ไม่ใช้งาน' },
+];
 
 // ---------------------------------------------------------------------------
 // Component
@@ -61,8 +60,7 @@ export const SubscriptionManager = (): ReactNode => {
       monthly += sub.averageMonthlyAmount;
       annual += sub.totalAmount;
     }
-    const shareOfExpenses =
-      yearSummary.totalExpenses > 0 ? annual / yearSummary.totalExpenses : 0;
+    const shareOfExpenses = yearSummary.totalExpenses > 0 ? annual / yearSummary.totalExpenses : 0;
     return { monthly, annual, shareOfExpenses };
   }, [subscriptions, yearSummary.totalExpenses]);
 
@@ -85,12 +83,8 @@ export const SubscriptionManager = (): ReactNode => {
     >
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-semibold text-ink-900">
-            Subscription รายเดือน
-          </h2>
-          <p className="text-xs text-ink-400">
-            รายการที่ตั้งสถานะ recurring สำหรับปี {year}
-          </p>
+          <h2 className="text-xl font-semibold text-ink-900">Subscription รายเดือน</h2>
+          <p className="text-xs text-ink-400">รายการที่ตั้งสถานะ recurring สำหรับปี {year}</p>
         </div>
         <label className="flex items-center gap-2 text-sm text-ink-500">
           <span className="sr-only">ตัวกรอง</span>
@@ -133,12 +127,7 @@ interface SummaryRowProps {
   isFiltered: boolean;
 }
 
-const SummaryRow = ({
-  monthly,
-  annual,
-  share,
-  isFiltered,
-}: SummaryRowProps): ReactNode => (
+const SummaryRow = ({ monthly, annual, share, isFiltered }: SummaryRowProps): ReactNode => (
   <div className="mt-5 flex flex-wrap items-center gap-x-8 gap-y-3 rounded-xl bg-surface px-4 py-3">
     <Stat label="รวมต่อเดือน" value={formatTHB(monthly)} />
     <Stat label="รวมต่อปี" value={formatTHB(annual)} />
@@ -158,12 +147,8 @@ interface StatProps {
 
 const Stat = ({ label, value }: StatProps): ReactNode => (
   <div className="flex flex-col">
-    <span className="text-xs uppercase tracking-wide text-ink-400">
-      {label}
-    </span>
-    <span className="text-base font-semibold tabular-nums text-ink-900">
-      {value}
-    </span>
+    <span className="text-xs uppercase tracking-wide text-ink-400">{label}</span>
+    <span className="text-base font-semibold tabular-nums text-ink-900">{value}</span>
   </div>
 );
 
@@ -177,10 +162,7 @@ interface SubscriptionListProps {
   totalRows: number;
 }
 
-const SubscriptionList = ({
-  rows,
-  totalRows,
-}: SubscriptionListProps): ReactNode => {
+const SubscriptionList = ({ rows, totalRows }: SubscriptionListProps): ReactNode => {
   if (totalRows === 0) {
     return (
       <EmptyState
@@ -205,17 +187,13 @@ interface SubscriptionRowViewProps {
   row: SubscriptionRow;
 }
 
-const SubscriptionRowView = ({
-  row,
-}: SubscriptionRowViewProps): ReactNode => {
+const SubscriptionRowView = ({ row }: SubscriptionRowViewProps): ReactNode => {
   const meta = EXPENSE_CATEGORIES[row.category];
   return (
     <li className="flex flex-wrap items-center justify-between gap-3 bg-card px-4 py-3 transition-colors hover:bg-hover">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="truncate text-base font-medium text-ink-900">
-            {row.name}
-          </span>
+          <span className="truncate text-base font-medium text-ink-900">{row.name}</span>
           <span className="inline-flex items-center gap-1 text-xs text-ink-500">
             <span aria-hidden="true">{meta.icon}</span>
             <span>{meta.label}</span>
@@ -259,8 +237,6 @@ interface EmptyStateProps {
 const EmptyState = ({ title, body }: EmptyStateProps): ReactNode => (
   <div className="mt-5 rounded-xl border border-dashed border-ink-200 bg-surface px-6 py-10 text-center">
     <p className="text-base font-medium text-ink-900">{title}</p>
-    {body ? (
-      <p className="mt-1 text-xs text-ink-500">{body}</p>
-    ) : null}
+    {body ? <p className="mt-1 text-xs text-ink-500">{body}</p> : null}
   </div>
 );

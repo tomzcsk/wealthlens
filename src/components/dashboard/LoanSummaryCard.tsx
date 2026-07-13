@@ -34,9 +34,7 @@ export const LoanSummaryCard = (): ReactNode => {
           >
             💰
           </span>
-          <h3 className="text-base font-semibold text-ink-900">
-            หนี้ {loan.name}
-          </h3>
+          <h3 className="text-base font-semibold text-ink-900">หนี้ {loan.name}</h3>
         </div>
         <span className="text-xs text-ink-400">→</span>
       </div>

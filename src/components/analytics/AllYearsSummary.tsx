@@ -107,16 +107,13 @@ const sumRows = (rows: ReadonlyArray<YearRow>): YearRow => {
  * totals rows show a wrong-coloured seam down the left edge. Every row below
  * therefore carries an opaque background of its own.
  */
-const STICKY_COL =
-  'sticky left-0 z-10 bg-inherit shadow-[8px_0_8px_-8px_rgb(2_6_23_/_0.22)]';
-const STICKY_CORNER =
-  'sticky left-0 z-20 bg-inherit shadow-[8px_0_8px_-8px_rgb(2_6_23_/_0.22)]';
+const STICKY_COL = 'sticky left-0 z-10 bg-inherit shadow-[8px_0_8px_-8px_rgb(2_6_23_/_0.22)]';
+const STICKY_CORNER = 'sticky left-0 z-20 bg-inherit shadow-[8px_0_8px_-8px_rgb(2_6_23_/_0.22)]';
 
 /** The old zebra was `bg-warning-50/30` — translucent, so a pinned cell that
  *  inherited it let the scrolling numbers ghost through. `color-mix` bakes the
  *  identical composite (30% warning-50 over the card) into an opaque colour. */
-const ZEBRA_ROW =
-  'bg-[color-mix(in_srgb,rgb(var(--c-warning-50))_30%,rgb(var(--bg-card)))]';
+const ZEBRA_ROW = 'bg-[color-mix(in_srgb,rgb(var(--c-warning-50))_30%,rgb(var(--bg-card)))]';
 
 interface MoneyCellProps {
   value: number;
@@ -124,11 +121,7 @@ interface MoneyCellProps {
   muted?: boolean;
 }
 
-const MoneyCell = ({
-  value,
-  bold = false,
-  muted = false,
-}: MoneyCellProps): ReactNode => (
+const MoneyCell = ({ value, bold = false, muted = false }: MoneyCellProps): ReactNode => (
   <td
     className={`px-3 py-2 text-right tabular-nums ${
       bold ? 'font-bold text-ink-900' : 'text-ink-700'
@@ -156,10 +149,7 @@ export const AllYearsSummary = (): ReactNode => {
       .filter((r) => r.totalExpenses > 0)
       .reduce((acc, r) => acc + r.remaining, 0);
     // ธนาคาร rollup = sum across every bank account, across every year.
-    const keptSum = computed.reduce(
-      (acc, r) => acc + sumBankYear(accounts, r.year),
-      0,
-    );
+    const keptSum = computed.reduce((acc, r) => acc + sumBankYear(accounts, r.year), 0);
     return {
       rows: computed,
       totals: sumRows(computed),
@@ -212,10 +202,7 @@ export const AllYearsSummary = (): ReactNode => {
               >
                 ค่าใช้จ่าย (หัก)
               </th>
-              <th
-                colSpan={6}
-                className="px-3 py-2 text-center font-semibold"
-              >
+              <th colSpan={6} className="px-3 py-2 text-center font-semibold">
                 ยอดรวม
               </th>
             </tr>
@@ -278,9 +265,7 @@ export const AllYearsSummary = (): ReactNode => {
                 <MoneyCell value={r.totalExpenses} />
                 <td
                   className={`px-3 py-2 text-right tabular-nums ${
-                    r.totalSavings > 0
-                      ? 'text-savings-ink font-medium'
-                      : 'text-ink-300'
+                    r.totalSavings > 0 ? 'text-savings-ink font-medium' : 'text-ink-300'
                   }`}
                   title="รวมยอดออม + ลงทุน ปีนี้"
                 >
@@ -373,12 +358,12 @@ export const AllYearsSummary = (): ReactNode => {
 
       <footer className="px-6 py-2 text-xs text-ink-500 bg-surface border-t border-ink-200 space-y-1">
         <div>
-          Net. = (เงินเดือน + โบนัส) − รวมหัก · Net. All = Net. + คอม ·
-          เหลือจริง = Net. All − จ่าย · ออม/ลงทุน = สะสมทั้งปี
+          Net. = (เงินเดือน + โบนัส) − รวมหัก · Net. All = Net. + คอม · เหลือจริง = Net. All − จ่าย
+          · ออม/ลงทุน = สะสมทั้งปี
         </div>
         <div>
-          💰 <strong>ธนาคาร</strong> = ผลรวมยอดรายเดือนของทุกบัญชีธนาคาร —
-          คลิกที่ cell เพื่อไปแก้รายเดือนที่หน้า Monthly
+          💰 <strong>ธนาคาร</strong> = ผลรวมยอดรายเดือนของทุกบัญชีธนาคาร — คลิกที่ cell
+          เพื่อไปแก้รายเดือนที่หน้า Monthly
         </div>
       </footer>
     </section>

@@ -19,14 +19,8 @@
 
 import { useMemo } from 'react';
 import type { ReactNode } from 'react';
-import { useReducedMotion } from 'framer-motion';
-import {
-  Cell,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-} from 'recharts';
+import { useReducedMotion } from '@/components/motion';
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 
 import { chartAnimation } from '@/lib/motion';
 import { CHART_BOX, chartBoxStyle } from '@/utils/chartSizing';
@@ -126,11 +120,7 @@ const PieTooltip = ({ active, payload }: PieTooltipProps): ReactNode => {
 // Component
 // ---------------------------------------------------------------------------
 
-export const ExpensePieChart = ({
-  year,
-  month,
-  height = 320,
-}: ExpensePieChartProps): ReactNode => {
+export const ExpensePieChart = ({ year, month, height = 320 }: ExpensePieChartProps): ReactNode => {
   const selectedYear = useSelectedYear();
   const reduced = useReducedMotion() ?? false;
   const anim = chartAnimation(reduced);
@@ -142,20 +132,20 @@ export const ExpensePieChart = ({
   const { slices, total } = useMemo(() => {
     const sum = CATEGORY_ORDER.reduce((acc, cat) => acc + byCategory[cat], 0);
 
-    const computed: SliceDatum[] = CATEGORY_ORDER.filter(
-      (cat) => byCategory[cat] > 0,
-    ).map((cat) => {
-      const meta = EXPENSE_CATEGORIES[cat];
-      const amount = byCategory[cat];
-      return {
-        category: cat,
-        label: meta.label,
-        icon: meta.icon,
-        amount,
-        share: sum > 0 ? amount / sum : 0,
-        color: CATEGORY_HEX_COLORS[cat],
-      };
-    });
+    const computed: SliceDatum[] = CATEGORY_ORDER.filter((cat) => byCategory[cat] > 0).map(
+      (cat) => {
+        const meta = EXPENSE_CATEGORIES[cat];
+        const amount = byCategory[cat];
+        return {
+          category: cat,
+          label: meta.label,
+          icon: meta.icon,
+          amount,
+          share: sum > 0 ? amount / sum : 0,
+          color: CATEGORY_HEX_COLORS[cat],
+        };
+      },
+    );
 
     return { slices: computed, total: sum };
   }, [byCategory]);
@@ -207,10 +197,7 @@ export const ExpensePieChart = ({
           {/* Legend */}
           <ul className="space-y-2">
             {slices.map((s) => (
-              <li
-                key={s.category}
-                className="flex items-center justify-between gap-3 text-sm"
-              >
+              <li key={s.category} className="flex items-center justify-between gap-3 text-sm">
                 <span className="flex min-w-0 items-center gap-2">
                   <span
                     className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"

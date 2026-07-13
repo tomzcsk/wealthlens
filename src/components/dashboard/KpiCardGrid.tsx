@@ -38,8 +38,7 @@ export const KpiCardGrid = (): ReactNode => {
   // Computed here rather than added to YearSummary because the per-year
   // selector intentionally keeps each income source separate — the UI
   // composes them only when it wants the headline "รายรับรวม" number.
-  const grossIncome =
-    summary.salary + summary.bonus + summary.commission + summary.otherIncome;
+  const grossIncome = summary.salary + summary.bonus + summary.commission + summary.otherIncome;
 
   // YoY deltas — `salary`, `bonus`, `commission` aren't a single combined
   // metric in the selector, but each individual line is. We approximate the
@@ -57,9 +56,7 @@ export const KpiCardGrid = (): ReactNode => {
   const keptThisYear = sumBankYear(accounts, year);
   const keptLastYear = sumBankYear(accounts, year - 1);
   const keptDelta =
-    keptLastYear > 0
-      ? ((keptThisYear - keptLastYear) / Math.abs(keptLastYear)) * 100
-      : null;
+    keptLastYear > 0 ? ((keptThisYear - keptLastYear) / Math.abs(keptLastYear)) * 100 : null;
 
   return (
     <section aria-label={`KPI สรุปปี ${year}`}>

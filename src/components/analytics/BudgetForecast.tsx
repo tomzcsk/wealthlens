@@ -124,11 +124,7 @@ const formatBasisRange = (forecast: MonthForecast): string => {
 // Sub-views
 // ---------------------------------------------------------------------------
 
-const PredictView = ({
-  forecast,
-}: {
-  forecast: MonthForecast;
-}): ReactNode => {
+const PredictView = ({ forecast }: { forecast: MonthForecast }): ReactNode => {
   return (
     <>
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
@@ -141,9 +137,7 @@ const PredictView = ({
           </div>
         </div>
         <div className="text-right">
-          <div className="text-xs font-medium uppercase tracking-wide text-ink-500">
-            ช่วง
-          </div>
+          <div className="text-xs font-medium uppercase tracking-wide text-ink-500">ช่วง</div>
           <div className="mt-0.5 text-sm font-semibold tabular-nums text-ink-700">
             {formatTHB(forecast.totalMin)} – {formatTHB(forecast.totalMax)}
           </div>
@@ -195,11 +189,7 @@ interface CompareViewProps {
   actualTotal: number;
 }
 
-const CompareView = ({
-  forecast,
-  actuals,
-  actualTotal,
-}: CompareViewProps): ReactNode => {
+const CompareView = ({ forecast, actuals, actualTotal }: CompareViewProps): ReactNode => {
   const totalVariance = classifyVariance(
     forecast.totalPoint,
     actualTotal,
@@ -211,9 +201,7 @@ const CompareView = ({
     <>
       <div className="grid gap-4 sm:grid-cols-3">
         <div>
-          <div className="text-xs font-medium uppercase tracking-wide text-ink-500">
-            ประมาณการ
-          </div>
+          <div className="text-xs font-medium uppercase tracking-wide text-ink-500">ประมาณการ</div>
           <div className="mt-0.5 text-2xl font-bold tabular-nums text-ink-900">
             {formatTHB(forecast.totalPoint)}
           </div>
@@ -222,9 +210,7 @@ const CompareView = ({
           </div>
         </div>
         <div>
-          <div className="text-xs font-medium uppercase tracking-wide text-ink-500">
-            จริง
-          </div>
+          <div className="text-xs font-medium uppercase tracking-wide text-ink-500">จริง</div>
           <div className="mt-0.5 text-2xl font-bold tabular-nums text-ink-900">
             {formatTHB(actualTotal)}
           </div>
@@ -235,18 +221,14 @@ const CompareView = ({
           </div>
         </div>
         <div>
-          <div className="text-xs font-medium uppercase tracking-wide text-ink-500">
-            ผลต่าง
-          </div>
+          <div className="text-xs font-medium uppercase tracking-wide text-ink-500">ผลต่าง</div>
           <div
             className={`mt-0.5 text-2xl font-bold tabular-nums ${toneTextClass(totalVariance.tone)}`}
           >
             {totalVariance.amountDelta >= 0 ? '+' : '-'}
             {formatTHB(Math.abs(totalVariance.amountDelta))}
           </div>
-          <div
-            className={`mt-0.5 text-xs tabular-nums ${toneTextClass(totalVariance.tone)}`}
-          >
+          <div className={`mt-0.5 text-xs tabular-nums ${toneTextClass(totalVariance.tone)}`}>
             {formatPercent(totalVariance.pctDelta, { signed: true })}
           </div>
         </div>
@@ -269,12 +251,7 @@ const CompareView = ({
             <tbody className="divide-y divide-ink-100">
               {forecast.byCategory.map((row) => {
                 const actual = actuals[row.category] ?? 0;
-                const v = classifyVariance(
-                  row.pointForecast,
-                  actual,
-                  row.rangeMin,
-                  row.rangeMax,
-                );
+                const v = classifyVariance(row.pointForecast, actual, row.rangeMin, row.rangeMax);
                 const meta = EXPENSE_CATEGORIES[row.category];
                 return (
                   <tr key={row.category}>
@@ -319,11 +296,7 @@ export const BudgetForecast = (): ReactNode => {
   // when the underlying dataset or anchor month changes.
   const actuals = useMemo(() => {
     if (!forecast) return null;
-    return selectExpenseByCategory(
-      { data },
-      forecast.forYear,
-      forecast.forMonth,
-    );
+    return selectExpenseByCategory({ data }, forecast.forYear, forecast.forMonth);
   }, [data, forecast]);
 
   const actualTotal = useMemo(() => {
@@ -335,13 +308,9 @@ export const BudgetForecast = (): ReactNode => {
     return (
       <section className="space-y-4 rounded-2xl border border-ink-200 bg-card p-6 shadow-sm">
         <header>
-          <h2 className="text-lg font-semibold text-ink-900">
-            ประมาณการเดือนหน้า
-          </h2>
+          <h2 className="text-lg font-semibold text-ink-900">ประมาณการเดือนหน้า</h2>
         </header>
-        <p className="text-sm text-ink-500">
-          ยังไม่มีข้อมูลค่าใช้จ่ายเพียงพอสำหรับการคาดการณ์
-        </p>
+        <p className="text-sm text-ink-500">ยังไม่มีข้อมูลค่าใช้จ่ายเพียงพอสำหรับการคาดการณ์</p>
       </section>
     );
   }
@@ -373,11 +342,7 @@ export const BudgetForecast = (): ReactNode => {
       </header>
 
       {inCompareMode && actuals ? (
-        <CompareView
-          forecast={forecast}
-          actuals={actuals}
-          actualTotal={actualTotal}
-        />
+        <CompareView forecast={forecast} actuals={actuals} actualTotal={actualTotal} />
       ) : (
         <PredictView forecast={forecast} />
       )}

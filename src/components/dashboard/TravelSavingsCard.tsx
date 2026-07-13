@@ -17,10 +17,7 @@
 import { useState, type ReactNode } from 'react';
 
 import { Modal } from '@/components/ui/Modal';
-import {
-  useSelectedYear,
-  useTravelSavingsTotal,
-} from '@/hooks/useFinanceData';
+import { useSelectedYear, useTravelSavingsTotal } from '@/hooks/useFinanceData';
 import { useGoalsStore } from '@/stores/goalsStore';
 import { formatNumber, formatPercent, formatTHB } from '@/utils/formatters';
 
@@ -41,9 +38,7 @@ const TravelGoalEditModal = ({
   initialAmount,
   onSave,
 }: TravelGoalEditModalProps): ReactNode => {
-  const [text, setText] = useState<string>(
-    initialAmount > 0 ? formatNumber(initialAmount) : '',
-  );
+  const [text, setText] = useState<string>(initialAmount > 0 ? formatNumber(initialAmount) : '');
 
   const handleChange = (raw: string): void => {
     const digits = raw.replace(/[^\d]/g, '');
@@ -64,9 +59,7 @@ const TravelGoalEditModal = ({
     <Modal open={open} onClose={onClose} title="ตั้งเป้าออมเที่ยว" size="sm">
       <div className="px-6 py-5 space-y-4">
         <label className="block">
-          <span className="text-sm text-ink-600">
-            เป้าหมายออมเที่ยว (บาท)
-          </span>
+          <span className="text-sm text-ink-600">เป้าหมายออมเที่ยว (บาท)</span>
           <input
             type="text"
             inputMode="numeric"
@@ -115,9 +108,7 @@ export const TravelSavingsCard = (): ReactNode => {
 
   const hasGoal = goal > 0;
   const hasActivity = saved > 0;
-  const progressFraction = hasGoal
-    ? Math.min(1, Math.max(0, saved / goal))
-    : 0;
+  const progressFraction = hasGoal ? Math.min(1, Math.max(0, saved / goal)) : 0;
   const shortfall = hasGoal ? Math.max(0, goal - saved) : 0;
   const goalReached = hasGoal && saved >= goal;
 
@@ -139,9 +130,7 @@ export const TravelSavingsCard = (): ReactNode => {
           >
             ✈️
           </span>
-          <h3 className="text-base font-semibold text-ink-900">
-            ออมเที่ยว — {year}
-          </h3>
+          <h3 className="text-base font-semibold text-ink-900">ออมเที่ยว — {year}</h3>
         </div>
         <button
           type="button"
@@ -189,9 +178,7 @@ export const TravelSavingsCard = (): ReactNode => {
                 {formatPercent(progressFraction)}
               </span>
               <span className="text-ink-500">
-                {goalReached
-                  ? 'พร้อมออกเดินทาง 🎉'
-                  : `ขาดอีก ${formatTHB(shortfall)}`}
+                {goalReached ? 'พร้อมออกเดินทาง 🎉' : `ขาดอีก ${formatTHB(shortfall)}`}
               </span>
             </div>
           </div>

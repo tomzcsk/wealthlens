@@ -15,7 +15,7 @@
 
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { useReducedMotion } from 'framer-motion';
+import { useReducedMotion } from '@/components/motion';
 import {
   Bar,
   CartesianGrid,
@@ -108,8 +108,7 @@ const SERIES_COLOR: Record<SeriesKey, string> = {
 };
 
 /** Y-axis tick formatter — compact baht (฿120k). */
-const yTickFormatter = (value: number): string =>
-  formatTHB(value, { compact: true });
+const yTickFormatter = (value: number): string => formatTHB(value, { compact: true });
 
 // ---------------------------------------------------------------------------
 // Tooltip
@@ -124,13 +123,9 @@ const ChartTooltip = ({ active, label, payload }: ChartTooltipProps): ReactNode 
       <ul className="space-y-0.5">
         {payload.map((entry) => {
           const key = String(entry.dataKey ?? '') as SeriesKey;
-          const numeric =
-            typeof entry.value === 'number' ? entry.value : Number(entry.value ?? 0);
+          const numeric = typeof entry.value === 'number' ? entry.value : Number(entry.value ?? 0);
           return (
-            <li
-              key={key}
-              className="flex items-center justify-between gap-3 text-xs text-ink-700"
-            >
+            <li key={key} className="flex items-center justify-between gap-3 text-xs text-ink-700">
               <span className="flex items-center gap-1.5">
                 <span
                   className="inline-block h-2 w-2 rounded-full"
@@ -151,10 +146,7 @@ const ChartTooltip = ({ active, label, payload }: ChartTooltipProps): ReactNode 
 // Component
 // ---------------------------------------------------------------------------
 
-export const IncomeExpenseChart = ({
-  year,
-  height = 320,
-}: IncomeExpenseChartProps): ReactNode => {
+export const IncomeExpenseChart = ({ year, height = 320 }: IncomeExpenseChartProps): ReactNode => {
   const selectedYear = useSelectedYear();
   const reduced = useReducedMotion() ?? false;
   const anim = chartAnimation(reduced);
@@ -194,9 +186,7 @@ export const IncomeExpenseChart = ({
     <section className="rounded-2xl border border-ink-200 bg-card p-6 shadow-sm">
       <header className="mb-4 flex items-baseline justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-ink-900">
-            รายรับ vs ค่าใช้จ่าย (รายเดือน)
-          </h2>
+          <h2 className="text-lg font-semibold text-ink-900">รายรับ vs ค่าใช้จ่าย (รายเดือน)</h2>
           <p className="text-xs text-ink-500">ปี {activeYear}</p>
         </div>
       </header>
@@ -204,10 +194,7 @@ export const IncomeExpenseChart = ({
       {hasAnyData ? (
         <div className={CHART_BOX} style={chartBoxStyle(height)}>
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart
-              data={chartData}
-              margin={{ top: 8, right: 16, bottom: 0, left: 8 }}
-            >
+            <ComposedChart data={chartData} margin={{ top: 8, right: 16, bottom: 0, left: 8 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
               <XAxis
                 dataKey="monthLabel"
@@ -224,10 +211,7 @@ export const IncomeExpenseChart = ({
                 axisLine={{ stroke: chart.axisLine }}
                 width={64}
               />
-              <Tooltip
-                content={<ChartTooltip />}
-                cursor={{ fill: chart.cursorFill }}
-              />
+              <Tooltip content={<ChartTooltip />} cursor={{ fill: chart.cursorFill }} />
               <Legend
                 verticalAlign="top"
                 align="right"

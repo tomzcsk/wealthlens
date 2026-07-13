@@ -95,12 +95,10 @@ const BODY_CELL_BASE = 'py-3 px-3 text-sm tabular-nums';
  *      or hovered / totals rows get a wrong-coloured seam down the left edge.
  * Every `<tr>` therefore carries an opaque background of its own.
  */
-const STICKY_COL =
-  'sticky left-0 z-10 bg-inherit shadow-[8px_0_8px_-8px_rgb(2_6_23_/_0.22)]';
+const STICKY_COL = 'sticky left-0 z-10 bg-inherit shadow-[8px_0_8px_-8px_rgb(2_6_23_/_0.22)]';
 
 /** Header corner cell — above both the sticky header row and the sticky column. */
-const STICKY_CORNER =
-  'sticky left-0 z-20 bg-card shadow-[8px_0_8px_-8px_rgb(2_6_23_/_0.22)]';
+const STICKY_CORNER = 'sticky left-0 z-20 bg-card shadow-[8px_0_8px_-8px_rgb(2_6_23_/_0.22)]';
 
 /** Excel-friendly UTF-8 BOM so Thai characters render correctly. */
 const UTF8_BOM = '﻿';
@@ -172,19 +170,14 @@ export const MonthlySummaryTable = ({ year }: MonthlySummaryTableProps) => {
 
   const handleExportCsv = useCallback(() => {
     const csv = buildCsv(payloads, totals, activeYear);
-    downloadCsv(
-      `wealthlens_${activeYear}_monthly_summary.csv`,
-      UTF8_BOM + csv,
-    );
+    downloadCsv(`wealthlens_${activeYear}_monthly_summary.csv`, UTF8_BOM + csv);
   }, [payloads, totals, activeYear]);
 
   return (
     <section className="bg-card rounded-2xl border border-ink-200 shadow-sm overflow-hidden">
       <header className="flex items-center justify-between px-5 py-4 border-b border-ink-100">
         <div>
-          <h2 className="text-base font-semibold text-ink-900">
-            สรุปรายเดือน
-          </h2>
+          <h2 className="text-base font-semibold text-ink-900">สรุปรายเดือน</h2>
           <p className="text-xs text-ink-500 mt-0.5">
             สรุปรายเดือนของปี {activeYear} — คลิกแถวเพื่อดูรายละเอียด
           </p>
@@ -211,9 +204,7 @@ export const MonthlySummaryTable = ({ year }: MonthlySummaryTableProps) => {
                   scope="col"
                   className={clsx(
                     HEADER_CELL_BASE,
-                    idx === 0
-                      ? ['text-left', STICKY_CORNER]
-                      : ['text-right', 'z-10'],
+                    idx === 0 ? ['text-left', STICKY_CORNER] : ['text-right', 'z-10'],
                   )}
                 >
                   {label}
@@ -266,10 +257,7 @@ const MonthRow = ({ payload, year, onSelect }: MonthRowProps) => {
     ].join('\n');
   }, [isEmpty, summary, year]);
 
-  const handleClick = useCallback(
-    () => onSelect(summary.month),
-    [onSelect, summary.month],
-  );
+  const handleClick = useCallback(() => onSelect(summary.month), [onSelect, summary.month]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTableRowElement>) => {
@@ -283,8 +271,7 @@ const MonthRow = ({ payload, year, onSelect }: MonthRowProps) => {
 
   // Style helpers — dim the entire row when there's no income data.
   const cellMuted = isEmpty ? 'text-ink-400' : 'text-ink-900';
-  const dimZero = (value: number) =>
-    value === 0 ? 'text-ink-400' : cellMuted;
+  const dimZero = (value: number) => (value === 0 ? 'text-ink-400' : cellMuted);
 
   const remainingTone = isEmpty
     ? 'text-ink-400'
@@ -312,42 +299,19 @@ const MonthRow = ({ payload, year, onSelect }: MonthRowProps) => {
       title={tooltip}
       className="border-b border-ink-100 bg-card hover:bg-hover transition-colors cursor-pointer focus:outline-none focus:bg-hover focus:ring-2 focus:ring-inset focus:ring-primary-ink/30"
     >
-      <td
-        className={clsx(
-          BODY_CELL_BASE,
-          'font-medium text-left',
-          cellMuted,
-          STICKY_COL,
-        )}
-      >
+      <td className={clsx(BODY_CELL_BASE, 'font-medium text-left', cellMuted, STICKY_COL)}>
         {formatThaiMonth(summary.month)}
       </td>
-      <td
-        className={clsx(BODY_CELL_BASE, 'text-right', dimZero(income?.salary ?? 0))}
-      >
+      <td className={clsx(BODY_CELL_BASE, 'text-right', dimZero(income?.salary ?? 0))}>
         {formatNumber(income?.salary ?? 0)}
       </td>
-      <td
-        className={clsx(BODY_CELL_BASE, 'text-right', dimZero(income?.bonus ?? 0))}
-      >
+      <td className={clsx(BODY_CELL_BASE, 'text-right', dimZero(income?.bonus ?? 0))}>
         {formatNumber(income?.bonus ?? 0)}
       </td>
-      <td
-        className={clsx(
-          BODY_CELL_BASE,
-          'text-right',
-          dimZero(income?.commission ?? 0),
-        )}
-      >
+      <td className={clsx(BODY_CELL_BASE, 'text-right', dimZero(income?.commission ?? 0))}>
         {formatNumber(income?.commission ?? 0)}
       </td>
-      <td
-        className={clsx(
-          BODY_CELL_BASE,
-          'text-right',
-          dimZero(income?.otherIncome ?? 0),
-        )}
-      >
+      <td className={clsx(BODY_CELL_BASE, 'text-right', dimZero(income?.otherIncome ?? 0))}>
         {formatNumber(income?.otherIncome ?? 0)}
       </td>
       <td className={clsx(BODY_CELL_BASE, 'text-right', deductionsTone)}>
@@ -392,11 +356,7 @@ const MonthRow = ({ payload, year, onSelect }: MonthRowProps) => {
         className={clsx(
           BODY_CELL_BASE,
           'text-right',
-          kept === 0
-            ? 'text-ink-400'
-            : kept < 0
-              ? 'text-expense-ink'
-              : 'text-savings-ink',
+          kept === 0 ? 'text-ink-400' : kept < 0 ? 'text-expense-ink' : 'text-savings-ink',
         )}
         title="ยอดบัญชีธนาคาร (รวมทุกบัญชี) เดือนนี้ — ติดลบ = ถอนออก"
       >
@@ -434,9 +394,7 @@ const TotalsRow = ({ totals }: TotalsRowProps) => {
      * pinned cell is solid.
      */
     <tr className="border-t-2 border-ink-300 bg-[color-mix(in_srgb,rgb(var(--bg-surface))_60%,rgb(var(--bg-card)))] font-semibold">
-      <td className={clsx(BODY_CELL_BASE, 'text-left text-ink-900', STICKY_COL)}>
-        รวม
-      </td>
+      <td className={clsx(BODY_CELL_BASE, 'text-left text-ink-900', STICKY_COL)}>รวม</td>
       <td className={clsx(BODY_CELL_BASE, 'text-right text-ink-900')}>
         {formatNumber(totals.salary)}
       </td>
@@ -565,11 +523,7 @@ const csvCell = (value: string | number): string => {
   return str;
 };
 
-const buildCsv = (
-  payloads: MonthPayload[],
-  totals: RowTotals,
-  year: number,
-): string => {
+const buildCsv = (payloads: MonthPayload[], totals: RowTotals, year: number): string => {
   const headerLine = COLUMN_HEADERS.map(csvCell).join(',');
 
   const dataLines = payloads.map(({ summary, income, dime, travel, kept }) =>

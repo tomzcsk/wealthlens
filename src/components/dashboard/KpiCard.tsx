@@ -154,9 +154,7 @@ export const KpiCard = ({
   // Delta block: three states — null (no comparison), zero, signed.
   let deltaNode: ReactNode;
   if (delta === null || delta === undefined) {
-    deltaNode = (
-      <span className="text-ink-400">— ไม่มีข้อมูลปีก่อน</span>
-    );
+    deltaNode = <span className="text-ink-400">— ไม่มีข้อมูลปีก่อน</span>;
   } else {
     // `selectYoYChange` returns a percent already in *percentage* units
     // (e.g. 12.3 means +12.3%). `formatDelta` expects a fractional value

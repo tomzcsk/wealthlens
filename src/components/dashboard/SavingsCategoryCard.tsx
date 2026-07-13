@@ -66,9 +66,7 @@ export const SavingsCategoryCard = ({
         <div className="financial-number text-xl font-bold tabular-nums text-ink-900">
           {formatTHB(total)}
         </div>
-        <div className="mt-1 text-xs text-ink-500 tabular-nums">
-          {itemCount} รายการ
-        </div>
+        <div className="mt-1 text-xs text-ink-500 tabular-nums">{itemCount} รายการ</div>
       </div>
     </div>
   );

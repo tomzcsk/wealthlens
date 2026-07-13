@@ -16,10 +16,7 @@ import type { ChangeEvent, ReactNode } from 'react';
 import { useAnomalies } from '@/hooks/useAnomalies';
 import { useAnomalyStore } from '@/stores/anomalyStore';
 import { EXPENSE_CATEGORIES } from '@/types/expense-categories';
-import {
-  anomalyFingerprint,
-  type Anomaly,
-} from '@/utils/anomalyDetection';
+import { anomalyFingerprint, type Anomaly } from '@/utils/anomalyDetection';
 import { THAI_MONTHS_LONG, formatTHB } from '@/utils/formatters';
 
 // ---------------------------------------------------------------------------
@@ -106,8 +103,7 @@ export const AnomalyAlerts = (): ReactNode => {
       </header>
 
       <p className="mt-3 text-xs text-ink-500">
-        เกณฑ์: ค่าใช้จ่าย &gt; ค่าเฉลี่ย + 2σ (rolling 12 เดือน) และ &gt;
-        1.5× ค่าเฉลี่ย
+        เกณฑ์: ค่าใช้จ่าย &gt; ค่าเฉลี่ย + 2σ (rolling 12 เดือน) และ &gt; 1.5× ค่าเฉลี่ย
       </p>
 
       <AnomalyList
@@ -134,11 +130,7 @@ export const AnomalyAlerts = (): ReactNode => {
           {showDismissed ? (
             <ul className="mt-3 space-y-2">
               {visibleDismissed.map((a) => (
-                <DismissedRow
-                  key={anomalyFingerprint(a)}
-                  anomaly={a}
-                  onUndismiss={undismiss}
-                />
+                <DismissedRow key={anomalyFingerprint(a)} anomaly={a} onUndismiss={undismiss} />
               ))}
             </ul>
           ) : null}
@@ -168,13 +160,9 @@ const CountBadge = ({ count, severity }: CountBadgeProps): ReactNode => {
     );
   }
   const tone =
-    severity === 'high'
-      ? 'bg-expense-50 text-expense-ink'
-      : 'bg-warning/10 text-warning-ink';
+    severity === 'high' ? 'bg-expense-50 text-expense-ink' : 'bg-warning/10 text-warning-ink';
   return (
-    <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${tone}`}>
-      พบ {count}
-    </span>
+    <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${tone}`}>พบ {count}</span>
   );
 };
 
@@ -188,11 +176,7 @@ interface AnomalyListProps {
   onDismiss: (fingerprint: string) => void;
 }
 
-const AnomalyList = ({
-  rows,
-  emptyMessage,
-  onDismiss,
-}: AnomalyListProps): ReactNode => {
+const AnomalyList = ({ rows, emptyMessage, onDismiss }: AnomalyListProps): ReactNode => {
   if (rows.length === 0) {
     return (
       <div className="mt-5 rounded-xl border border-dashed border-ink-200 bg-surface px-6 py-10 text-center">
@@ -203,11 +187,7 @@ const AnomalyList = ({
   return (
     <ul className="mt-5 divide-y divide-ink-200 overflow-hidden rounded-xl border border-ink-200">
       {rows.map((row) => (
-        <AnomalyRow
-          key={anomalyFingerprint(row)}
-          anomaly={row}
-          onDismiss={onDismiss}
-        />
+        <AnomalyRow key={anomalyFingerprint(row)} anomaly={row} onDismiss={onDismiss} />
       ))}
     </ul>
   );
@@ -222,26 +202,25 @@ interface AnomalyRowProps {
   onDismiss: (fingerprint: string) => void;
 }
 
-const SEVERITY_TAG: Record<Anomaly['severity'], { label: string; className: string; dot: string }> = {
-  high: {
-    label: 'รุนแรง',
-    className: 'bg-expense-50 text-expense-ink',
-    dot: '🔴',
-  },
-  medium: {
-    label: 'ปานกลาง',
-    className: 'bg-warning/10 text-warning-ink',
-    dot: '🟡',
-  },
-};
+const SEVERITY_TAG: Record<Anomaly['severity'], { label: string; className: string; dot: string }> =
+  {
+    high: {
+      label: 'รุนแรง',
+      className: 'bg-expense-50 text-expense-ink',
+      dot: '🔴',
+    },
+    medium: {
+      label: 'ปานกลาง',
+      className: 'bg-warning/10 text-warning-ink',
+      dot: '🟡',
+    },
+  };
 
 const AnomalyRow = ({ anomaly, onDismiss }: AnomalyRowProps): ReactNode => {
   const cat = EXPENSE_CATEGORIES[anomaly.category];
   const tag = SEVERITY_TAG[anomaly.severity];
   const monthLabel = THAI_MONTHS_LONG[anomaly.month - 1] ?? '';
-  const sigmaLabel = Number.isFinite(anomaly.zScore)
-    ? `+${anomaly.zScore.toFixed(1)}σ`
-    : '∞σ';
+  const sigmaLabel = Number.isFinite(anomaly.zScore) ? `+${anomaly.zScore.toFixed(1)}σ` : '∞σ';
   const fingerprint = anomalyFingerprint(anomaly);
 
   return (
@@ -263,9 +242,7 @@ const AnomalyRow = ({ anomaly, onDismiss }: AnomalyRowProps): ReactNode => {
           </span>
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-600 tabular-nums">
-          <span className="text-base font-semibold text-ink-900">
-            {formatTHB(anomaly.amount)}
-          </span>
+          <span className="text-base font-semibold text-ink-900">{formatTHB(anomaly.amount)}</span>
           <span aria-hidden="true">•</span>
           <span>
             ค่าเฉลี่ย {formatTHB(anomaly.baseline)} ± {formatTHB(anomaly.stddev)}
@@ -273,9 +250,7 @@ const AnomalyRow = ({ anomaly, onDismiss }: AnomalyRowProps): ReactNode => {
           <span aria-hidden="true">•</span>
           <span className="font-semibold text-ink-700">{sigmaLabel}</span>
         </div>
-        <p className="mt-1 text-[11px] text-ink-400">
-          {anomaly.monthsOfHistory} เดือนของประวัติ
-        </p>
+        <p className="mt-1 text-[11px] text-ink-400">{anomaly.monthsOfHistory} เดือนของประวัติ</p>
       </div>
       <button
         type="button"
@@ -297,10 +272,7 @@ interface DismissedRowProps {
   onUndismiss: (fingerprint: string) => void;
 }
 
-const DismissedRow = ({
-  anomaly,
-  onUndismiss,
-}: DismissedRowProps): ReactNode => {
+const DismissedRow = ({ anomaly, onUndismiss }: DismissedRowProps): ReactNode => {
   const cat = EXPENSE_CATEGORIES[anomaly.category];
   const monthLabel = THAI_MONTHS_LONG[anomaly.month - 1] ?? '';
   const fingerprint = anomalyFingerprint(anomaly);
@@ -310,7 +282,9 @@ const DismissedRow = ({
         <span aria-hidden="true">{cat.icon}</span>
         <span>{cat.label}</span>
         <span>—</span>
-        <span>{monthLabel} {anomaly.year}</span>
+        <span>
+          {monthLabel} {anomaly.year}
+        </span>
         <span aria-hidden="true">•</span>
         <span className="tabular-nums">{formatTHB(anomaly.amount)}</span>
       </span>

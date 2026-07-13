@@ -30,7 +30,7 @@
 
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { useReducedMotion } from 'framer-motion';
+import { useReducedMotion } from '@/components/motion';
 import {
   Area,
   AreaChart,
@@ -50,11 +50,7 @@ import { useChartTheme } from '@/hooks/useChartTheme';
 import { use48MonthTrend, type TrendPoint } from '@/hooks/useFinanceData';
 import { CATEGORY_ORDER, EXPENSE_CATEGORIES } from '@/types/expense-categories';
 import type { ExpenseCategory } from '@/types';
-import {
-  THAI_MONTHS_SHORT,
-  formatTHB,
-  formatThaiMonthYear,
-} from '@/utils/formatters';
+import { THAI_MONTHS_SHORT, formatTHB, formatThaiMonthYear } from '@/utils/formatters';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -87,8 +83,7 @@ const NET_GRADIENT_ID = 'wl-net-area-gradient';
 // Helpers
 // ---------------------------------------------------------------------------
 
-const yTickFormatter = (value: number): string =>
-  formatTHB(value, { compact: true });
+const yTickFormatter = (value: number): string => formatTHB(value, { compact: true });
 
 interface BestWorstMonth {
   /** The trend point that won/lost. `null` when no valid month exists. */
@@ -164,9 +159,7 @@ const AreaTooltip = ({ active, payload }: AreaTooltipProps): ReactNode => {
           style={{ backgroundColor: COLOR_NET }}
         />
         <span>รายได้สุทธิ</span>
-        <span className="ml-auto font-semibold tabular-nums">
-          {formatTHB(numeric)}
-        </span>
+        <span className="ml-auto font-semibold tabular-nums">{formatTHB(numeric)}</span>
       </div>
     </div>
   );
@@ -197,8 +190,7 @@ const BarTooltip = ({ active, payload }: BarTooltipProps): ReactNode => {
   const rows = payload
     .map((entry) => {
       const cat = String(entry.dataKey ?? '') as ExpenseCategory;
-      const numeric =
-        typeof entry.value === 'number' ? entry.value : Number(entry.value ?? 0);
+      const numeric = typeof entry.value === 'number' ? entry.value : Number(entry.value ?? 0);
       return { cat, numeric, color: entry.color ?? CATEGORY_HEX_COLORS[cat] };
     })
     .filter((r) => r.numeric > 0)
@@ -230,17 +222,13 @@ const BarTooltip = ({ active, payload }: BarTooltipProps): ReactNode => {
                   <span aria-hidden="true">{meta?.icon ?? ''}</span>
                   <span>{meta?.label ?? r.cat}</span>
                 </span>
-                <span className="font-semibold tabular-nums">
-                  {formatTHB(r.numeric)}
-                </span>
+                <span className="font-semibold tabular-nums">{formatTHB(r.numeric)}</span>
               </li>
             );
           })}
           <li className="mt-1 flex items-center justify-between border-t border-ink-200 pt-1 text-xs">
             <span className="font-semibold text-ink-600">รวม</span>
-            <span className="font-semibold tabular-nums text-ink-900">
-              {formatTHB(total)}
-            </span>
+            <span className="font-semibold tabular-nums text-ink-900">{formatTHB(total)}</span>
           </li>
         </ul>
       )}
@@ -279,36 +267,21 @@ const NetIncomeAreaSection = ({
   return (
     <section className="rounded-2xl border border-ink-200 bg-card p-6 shadow-sm">
       <header className="mb-4">
-        <h2 className="text-lg font-semibold text-ink-900">
-          แนวโน้มรายได้สุทธิ (48 เดือน)
-        </h2>
+        <h2 className="text-lg font-semibold text-ink-900">แนวโน้มรายได้สุทธิ (48 เดือน)</h2>
         <p className="text-xs text-ink-500">{subtitle}</p>
       </header>
 
       {hasAny ? (
         <div className={CHART_BOX} style={chartBoxStyle(height)}>
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart
-              data={data}
-              margin={{ top: 8, right: 16, bottom: 0, left: 8 }}
-            >
+            <AreaChart data={data} margin={{ top: 8, right: 16, bottom: 0, left: 8 }}>
               <defs>
-                <linearGradient
-                  id={NET_GRADIENT_ID}
-                  x1="0"
-                  y1="0"
-                  x2="0"
-                  y2="1"
-                >
+                <linearGradient id={NET_GRADIENT_ID} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor={COLOR_NET} stopOpacity={0.45} />
                   <stop offset="100%" stopColor={COLOR_NET} stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke={chart.grid}
-                vertical={false}
-              />
+              <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
               <XAxis
                 dataKey="label"
                 stroke={chart.axisTick}
@@ -367,13 +340,7 @@ interface StatCardProps {
   icon?: string;
 }
 
-const StatCard = ({
-  label,
-  value,
-  detail,
-  tone = 'default',
-  icon,
-}: StatCardProps): ReactNode => {
+const StatCard = ({ label, value, detail, tone = 'default', icon }: StatCardProps): ReactNode => {
   const valueClass =
     tone === 'positive'
       ? 'text-income-ink'
@@ -386,14 +353,8 @@ const StatCard = ({
         {icon ? <span aria-hidden="true">{icon}</span> : null}
         <span>{label}</span>
       </div>
-      <div className={`mt-1 text-xl font-bold tabular-nums ${valueClass}`}>
-        {value}
-      </div>
-      {detail ? (
-        <div className="mt-0.5 text-xs tabular-nums text-ink-500">
-          {detail}
-        </div>
-      ) : null}
+      <div className={`mt-1 text-xl font-bold tabular-nums ${valueClass}`}>{value}</div>
+      {detail ? <div className="mt-0.5 text-xs tabular-nums text-ink-500">{detail}</div> : null}
     </div>
   );
 };
@@ -434,20 +395,14 @@ const StatsSummaryRow = ({ data }: StatsSummaryRowProps): ReactNode => {
         icon="🏆"
         label="เดือนที่เก่งที่สุด"
         value={formatMonthLabel(stats.best.point)}
-        detail={
-          stats.best.point ? `เหลือ ${formatTHB(stats.best.value)}` : undefined
-        }
+        detail={stats.best.point ? `เหลือ ${formatTHB(stats.best.value)}` : undefined}
         tone="positive"
       />
       <StatCard
         icon="⚠️"
         label="เดือนที่ฝืดสุด"
         value={formatMonthLabel(stats.worst.point)}
-        detail={
-          stats.worst.point
-            ? `เหลือ ${formatTHB(stats.worst.value)}`
-            : undefined
-        }
+        detail={stats.worst.point ? `เหลือ ${formatTHB(stats.worst.value)}` : undefined}
         tone="negative"
       />
     </div>
@@ -492,10 +447,7 @@ const flattenForBar = (points: TrendPoint[]): FlatBarRow[] =>
     other: p.byCategory.other,
   }));
 
-const ExpenseStackedBarSection = ({
-  data,
-  height,
-}: ExpenseStackedBarSectionProps): ReactNode => {
+const ExpenseStackedBarSection = ({ data, height }: ExpenseStackedBarSectionProps): ReactNode => {
   const reduced = useReducedMotion() ?? false;
   const anim = chartAnimation(reduced);
   const chart = useChartTheme();
@@ -519,26 +471,15 @@ const ExpenseStackedBarSection = ({
   return (
     <section className="rounded-2xl border border-ink-200 bg-card p-6 shadow-sm">
       <header className="mb-4">
-        <h2 className="text-lg font-semibold text-ink-900">
-          สัดส่วนค่าใช้จ่ายตลอดเวลา
-        </h2>
-        <p className="text-xs text-ink-500">
-          ยอดรวมรายเดือนแยกตามหมวด
-        </p>
+        <h2 className="text-lg font-semibold text-ink-900">สัดส่วนค่าใช้จ่ายตลอดเวลา</h2>
+        <p className="text-xs text-ink-500">ยอดรวมรายเดือนแยกตามหมวด</p>
       </header>
 
       {hasAnyExpenses ? (
         <div className={CHART_BOX} style={chartBoxStyle(height)}>
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={flatData}
-              margin={{ top: 8, right: 16, bottom: 0, left: 8 }}
-            >
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke={chart.grid}
-                vertical={false}
-              />
+            <BarChart data={flatData} margin={{ top: 8, right: 16, bottom: 0, left: 8 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
               <XAxis
                 dataKey="label"
                 stroke={chart.axisTick}
@@ -555,10 +496,7 @@ const ExpenseStackedBarSection = ({
                 axisLine={{ stroke: chart.axisLine }}
                 width={64}
               />
-              <Tooltip
-                content={<BarTooltip />}
-                cursor={{ fill: chart.cursorFill }}
-              />
+              <Tooltip content={<BarTooltip />} cursor={{ fill: chart.cursorFill }} />
               <Legend
                 verticalAlign="top"
                 align="right"
@@ -614,9 +552,7 @@ export interface TrendAnalysisProps {
   chartHeight?: number;
 }
 
-export const TrendAnalysis = ({
-  chartHeight = 320,
-}: TrendAnalysisProps): ReactNode => {
+export const TrendAnalysis = ({ chartHeight = 320 }: TrendAnalysisProps): ReactNode => {
   const trend = use48MonthTrend();
 
   const { firstYear, lastYear } = useMemo(() => {
