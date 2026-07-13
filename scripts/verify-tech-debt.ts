@@ -2,6 +2,8 @@
  * Verification for F49 — หนี้เทคนิค.
  *   npx tsx --tsconfig tsconfig.app.json scripts/verify-tech-debt.ts
  */
+import { readFileSync } from 'node:fs';
+
 import type { BankAccount, BankTransaction } from '../src/types';
 import { pruneEmptyBalanceKeys } from '../src/utils/balancePrune';
 
@@ -64,6 +66,27 @@ console.log('\n— ไม่มีอะไรให้เก็บกวาด 
   const accounts = [acct('a1', { '2026': { '7': 100 } })];
   const out = pruneEmptyBalanceKeys(accounts, []);
   assert('คืน reference เดิม ไม่สร้าง object ใหม่ทิ้ง ๆ ขว้าง ๆ', out === accounts);
+}
+
+console.log('\n— T4: สูตรบวกยอดอยู่ที่เดียว —');
+{
+  // ไม่ได้เทียบ "ชื่อฟังก์ชัน" แต่เทียบ "สูตร" — addRawBalance ยังต้องมีอยู่ (มันคือ
+  // ป้ายบอกว่าทางนี้จงใจไม่จดรายการ) แค่ต้องไม่เขียนเลขคณิตซ้ำเอง
+  const store = readFileSync('src/stores/financeStore.ts', 'utf8');
+  const formula = /balances\[\w+\]\?\.\[\w+\]\s*\?\?\s*0\)\s*\+\s*delta/g;
+  const hits = [...store.matchAll(formula)].length;
+  assert(
+    `financeStore ไม่เขียนสูตรบวกยอดเอง (เจอ ${hits} ที่)`,
+    hits === 0,
+    'ต้องเรียก applyBankDelta แทน',
+  );
+  assert(
+    'ชื่อ addRawBalance ยังอยู่ (ป้ายบอกเจตนา "ทางนี้ไม่จดรายการ")',
+    store.includes('const addRawBalance'),
+  );
+
+  const utils = readFileSync('src/utils/bankAccounts.ts', 'utf8');
+  assert('สูตรอยู่ใน bankAccounts.ts', new RegExp(formula.source).test(utils));
 }
 
 console.log(failures === 0 ? '\n✅ ผ่านทั้งหมด' : `\n❌ ล้มเหลว ${failures} ข้อ`);

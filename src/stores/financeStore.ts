@@ -22,6 +22,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { gslLoan as seedGslLoan } from '@/data/seedData';
 import {
   KRUNGSRI_ACCOUNT_ID,
+  applyBankDelta,
   migrateKeptToBankAccounts,
 } from '@/utils/bankAccounts';
 import { pruneEmptyBalanceKeys } from '@/utils/balancePrune';
@@ -376,24 +377,10 @@ const addRawBalance = (
   year: number,
   month: number,
   delta: number,
-): BankAccount[] => {
-  const yKey = String(year);
-  const mKey = String(month);
-  return accounts.map((a) =>
-    a.id === id
-      ? {
-          ...a,
-          balances: {
-            ...a.balances,
-            [yKey]: {
-              ...(a.balances[yKey] ?? {}),
-              [mKey]: (a.balances[yKey]?.[mKey] ?? 0) + delta,
-            },
-          },
-        }
-      : a,
-  );
-};
+): BankAccount[] =>
+  // เลขคณิตเดียวกับทุกที่ในแอป — อยู่ที่ utils/bankAccounts.ts ที่เดียว (F49).
+  // ต่างกันที่ "ใครเรียก": ทางนี้จงใจไม่จดรายการลงสมุด (ดูคอมเมนต์ด้านบน)
+  applyBankDelta(accounts, id, year, month, delta);
 
 /**
  * อ่าน ledger (บัญชี + รายการ) ออกจาก state, ให้ mutator ทำงานผ่านประตูเดียว
