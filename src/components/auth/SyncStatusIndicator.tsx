@@ -31,23 +31,23 @@ const BADGES: Record<Exclude<SyncStatus, 'idle'>, BadgeConfig> = {
   synced: {
     icon: '✓',
     label: 'ซิงค์แล้ว',
-    className: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    className: 'bg-income-50 text-income-700 border-income-200',
   },
   syncing: {
     icon: '↻',
     label: 'กำลังซิงค์...',
-    className: 'bg-blue-50 text-blue-700 border-blue-200',
+    className: 'bg-primary-50 text-primary-700 border-primary-200',
   },
   offline: {
     icon: '○',
     label: 'ออฟไลน์',
-    className: 'bg-slate-100 text-slate-600 border-slate-200',
+    className: 'bg-raised text-ink-600 border-ink-200',
   },
   error: {
     icon: '!',
     label: 'ซิงค์ผิดพลาด',
     className:
-      'bg-red-50 text-red-700 border-red-200 hover:bg-red-100 cursor-pointer',
+      'bg-expense-50 text-expense-700 border-expense-200 hover:bg-expense-100 cursor-pointer',
   },
 };
 

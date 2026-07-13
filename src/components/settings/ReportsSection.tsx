@@ -43,16 +43,16 @@ export const ReportsSection = (): ReactNode => {
   return (
     <section
       aria-labelledby="settings-reports"
-      className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4"
+      className="bg-card rounded-2xl border border-ink-200 shadow-sm p-6 space-y-4"
     >
       <header>
         <h2
           id="settings-reports"
-          className="text-lg font-semibold text-slate-900"
+          className="text-lg font-semibold text-ink-900"
         >
           รายงาน
         </h2>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-ink-500">
           สร้างรายงานสรุปการเงินรายปี (PDF) —
           ใช้กล่อง Print ของเบราว์เซอร์ → Save as PDF
         </p>
@@ -61,7 +61,7 @@ export const ReportsSection = (): ReactNode => {
       <div className="flex flex-wrap items-center gap-3">
         <label
           htmlFor="report-year"
-          className="text-sm font-medium text-slate-700"
+          className="text-sm font-medium text-ink-700"
         >
           ปี
         </label>
@@ -70,7 +70,7 @@ export const ReportsSection = (): ReactNode => {
           value={year}
           onChange={(e) => setYear(Number(e.target.value))}
           disabled={!hasYears}
-          className="text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
+          className="text-sm font-medium text-ink-700 bg-card border border-ink-300 rounded-lg px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-ink disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {hasYears ? (
             availableYears.map((y) => (
@@ -87,7 +87,7 @@ export const ReportsSection = (): ReactNode => {
           type="button"
           onClick={() => openReport(year, false)}
           disabled={!hasYears}
-          className="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 border border-slate-300 disabled:opacity-50 disabled:cursor-not-allowed text-slate-700 text-sm font-semibold px-4 py-2 rounded-lg shadow-sm transition-colors"
+          className="inline-flex items-center gap-1.5 bg-card hover:bg-hover border border-ink-300 disabled:opacity-50 disabled:cursor-not-allowed text-ink-700 text-sm font-semibold px-4 py-2 rounded-lg shadow-sm transition-colors"
         >
           <span aria-hidden="true">👁</span>
           พรีวิว
@@ -104,7 +104,7 @@ export const ReportsSection = (): ReactNode => {
         </button>
       </div>
 
-      <p className="text-xs text-slate-500 leading-relaxed">
+      <p className="text-xs text-ink-500 leading-relaxed">
         <span aria-hidden="true">💡 </span>
         เคล็ดลับ: ใช้กล่อง Print ของเบราว์เซอร์ → Save as PDF เลือก{' '}
         <span className="font-medium">"Save as PDF"</span> เป็น destination

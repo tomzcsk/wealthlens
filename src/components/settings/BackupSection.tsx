@@ -151,20 +151,20 @@ export const BackupSection = (): ReactNode => {
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
-      className={`bg-white rounded-2xl border shadow-sm p-6 space-y-4 transition-colors ${
+      className={`bg-card rounded-2xl border shadow-sm p-6 space-y-4 transition-colors ${
         isDragOver
-          ? 'border-primary bg-primary-light'
-          : 'border-slate-200'
+          ? 'border-primary-ink bg-primary-50'
+          : 'border-ink-200'
       }`}
     >
       <header>
         <h2
           id="settings-backup"
-          className="text-lg font-semibold text-slate-900"
+          className="text-lg font-semibold text-ink-900"
         >
           Backup / คืนค่า
         </h2>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-ink-500">
           ส่งออกข้อมูลทั้งหมดเป็นไฟล์ JSON หรือ restore กลับจากไฟล์ backup —
           ทำงานในเครื่อง ไม่ผ่าน server
         </p>
@@ -172,7 +172,7 @@ export const BackupSection = (): ReactNode => {
 
       {/* Export */}
       <div className="space-y-2">
-        <h3 className="text-sm font-semibold text-slate-700">
+        <h3 className="text-sm font-semibold text-ink-700">
           Export — ดาวน์โหลดข้อมูลทั้งหมดเป็น JSON
         </h3>
         <button
@@ -183,19 +183,19 @@ export const BackupSection = (): ReactNode => {
           <span aria-hidden="true">📥</span>
           Export Backup
         </button>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-ink-500">
           ดาวน์โหลดเป็น{' '}
-          <code className="px-1 py-0.5 bg-slate-50 border border-slate-200 rounded">
+          <code className="px-1 py-0.5 bg-surface border border-ink-200 rounded">
             wealthlens_backup_YYYY-MM-DD.json
           </code>
         </p>
       </div>
 
-      <hr className="border-slate-200" />
+      <hr className="border-ink-200" />
 
       {/* Import */}
       <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-slate-700">
+        <h3 className="text-sm font-semibold text-ink-700">
           Import — คืนค่าจากไฟล์ JSON
         </h3>
 
@@ -203,13 +203,13 @@ export const BackupSection = (): ReactNode => {
           <button
             type="button"
             onClick={onClickImport}
-            className="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-sm font-semibold px-4 py-2 rounded-lg shadow-sm transition-colors"
+            className="inline-flex items-center gap-1.5 bg-card hover:bg-hover border border-ink-300 text-ink-700 text-sm font-semibold px-4 py-2 rounded-lg shadow-sm transition-colors"
           >
             <span aria-hidden="true">📤</span>
             Import Backup
           </button>
-          <span className="text-xs text-slate-500">
-            หรือลากไฟล์ <code className="px-1 py-0.5 bg-slate-50 border border-slate-200 rounded">.json</code> มาวางที่นี่
+          <span className="text-xs text-ink-500">
+            หรือลากไฟล์ <code className="px-1 py-0.5 bg-surface border border-ink-200 rounded">.json</code> มาวางที่นี่
           </span>
           <input
             ref={fileInputRef}
@@ -221,11 +221,11 @@ export const BackupSection = (): ReactNode => {
         </div>
 
         <fieldset className="space-y-2">
-          <legend className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <legend className="text-xs font-semibold uppercase tracking-wide text-ink-500">
             โหมด
           </legend>
           <div className="flex flex-col gap-1.5 sm:flex-row sm:gap-6">
-            <label className="inline-flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+            <label className="inline-flex items-center gap-2 text-sm text-ink-700 cursor-pointer">
               <input
                 type="radio"
                 name="import-mode"
@@ -236,7 +236,7 @@ export const BackupSection = (): ReactNode => {
               />
               แทนที่ข้อมูลทั้งหมด
             </label>
-            <label className="inline-flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+            <label className="inline-flex items-center gap-2 text-sm text-ink-700 cursor-pointer">
               <input
                 type="radio"
                 name="import-mode"
@@ -251,12 +251,12 @@ export const BackupSection = (): ReactNode => {
         </fieldset>
 
         {mode === 'replace' ? (
-          <p className="text-sm font-medium text-expense bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+          <p className="text-sm font-medium text-expense-ink bg-expense-50 border border-expense-200 rounded-lg px-3 py-2">
             <span aria-hidden="true">⚠️ </span>
             Replace all จะเขียนทับข้อมูลทั้งหมดและแทนที่ด้วยไฟล์ที่ import
           </p>
         ) : (
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-ink-500">
             รวม: ปีที่อยู่ในไฟล์ import จะถูกแทนที่ทั้งปี ส่วนปีอื่นๆ ในเครื่องยังอยู่ครบ
           </p>
         )}
@@ -269,8 +269,8 @@ export const BackupSection = (): ReactNode => {
             role="status"
             className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${
               status.kind === 'success'
-                ? 'bg-emerald-50 text-income border border-emerald-200'
-                : 'bg-red-50 text-expense border border-red-200'
+                ? 'bg-income-50 text-income-ink border border-income-200'
+                : 'bg-expense-50 text-expense-ink border border-expense-200'
             }`}
           >
             <span aria-hidden="true">
@@ -279,8 +279,8 @@ export const BackupSection = (): ReactNode => {
             {status.message}
           </div>
           {status.kind === 'error' && status.errors && status.errors.length > 0 ? (
-            <details className="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
-              <summary className="cursor-pointer font-medium text-slate-700">
+            <details className="text-xs text-ink-600 bg-surface border border-ink-200 rounded-lg px-3 py-2">
+              <summary className="cursor-pointer font-medium text-ink-700">
                 ดูรายละเอียด ({status.errors.length} ข้อผิดพลาด)
               </summary>
               <ul className="mt-2 space-y-1 font-mono text-[11px] leading-relaxed list-disc list-inside">
@@ -290,7 +290,7 @@ export const BackupSection = (): ReactNode => {
                   </li>
                 ))}
                 {status.errors.length > 50 ? (
-                  <li className="italic text-slate-500">
+                  <li className="italic text-ink-500">
                     …และอีก {status.errors.length - 50} ข้อผิดพลาด
                   </li>
                 ) : null}

@@ -75,14 +75,14 @@ export const IncomeDefaultsSection = (): ReactNode => {
   return (
     <section
       aria-label="Income defaults"
-      className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4"
+      className="bg-card rounded-2xl border border-ink-200 shadow-sm p-6 space-y-4"
     >
       <header className="flex items-start justify-between gap-2">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900">
+          <h2 className="text-lg font-semibold text-ink-900">
             ค่าเริ่มต้นรายได้ / หัก
           </h2>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-sm text-ink-500 mt-1">
             ตั้งค่าฐานเงินเดือน + หักรายเดือน — กดปุ่ม "เติมจากค่าเริ่มต้น" ใน
             Income form ของเดือนใหม่จะ pre-fill ให้ทันที
           </p>
@@ -92,7 +92,7 @@ export const IncomeDefaultsSection = (): ReactNode => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {FIELDS.map((f) => (
           <label key={f.key} className="block">
-            <span className="text-sm font-medium text-slate-700">{f.label}</span>
+            <span className="text-sm font-medium text-ink-700">{f.label}</span>
             <input
               type="text"
               inputMode="numeric"
@@ -105,10 +105,10 @@ export const IncomeDefaultsSection = (): ReactNode => {
                 }));
               }}
               placeholder="0"
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-base tabular-nums text-right focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="mt-1 w-full rounded-lg border border-ink-300 px-3 py-2 text-base tabular-nums text-right focus:border-primary-ink focus:outline-none focus:ring-2 focus:ring-primary-ink/30"
             />
             {f.hint && (
-              <span className="text-xs text-slate-400 mt-1 block">
+              <span className="text-xs text-ink-400 mt-1 block">
                 {f.hint}
               </span>
             )}
@@ -116,10 +116,10 @@ export const IncomeDefaultsSection = (): ReactNode => {
         ))}
       </div>
 
-      <div className="flex items-center justify-between border-t border-slate-100 pt-3">
-        <span className="text-sm text-slate-600">
+      <div className="flex items-center justify-between border-t border-ink-100 pt-3">
+        <span className="text-sm text-ink-600">
           รวมหักโดย default:{' '}
-          <span className="font-semibold tabular-nums text-slate-900">
+          <span className="font-semibold tabular-nums text-ink-900">
             {formatTHB(total - parseDefault(draft.salary))}
           </span>
         </span>
@@ -128,7 +128,7 @@ export const IncomeDefaultsSection = (): ReactNode => {
             <button
               type="button"
               onClick={handleClear}
-              className="px-3 py-1.5 rounded-lg border border-slate-200 text-sm text-slate-600 hover:bg-slate-50"
+              className="px-3 py-1.5 rounded-lg border border-ink-200 text-sm text-ink-600 hover:bg-hover"
             >
               ลบค่า
             </button>

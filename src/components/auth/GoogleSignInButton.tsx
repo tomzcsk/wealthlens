@@ -47,7 +47,7 @@ export const GoogleSignInButton = (): ReactNode => {
     return (
       <span
         title={DISABLED_TOOLTIP}
-        className="text-xs text-slate-400 italic cursor-help select-none"
+        className="text-xs text-ink-400 italic cursor-help select-none"
       >
         {DISABLED_LABEL}
       </span>
@@ -59,7 +59,7 @@ export const GoogleSignInButton = (): ReactNode => {
       <button
         type="button"
         onClick={signIn}
-        className="inline-flex items-center gap-2 bg-primary hover:bg-primary-dark text-white text-sm font-semibold px-3 py-2 rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1"
+        className="inline-flex items-center gap-2 bg-primary hover:bg-primary-dark text-white text-sm font-semibold px-3 py-2 rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary-ink focus:ring-offset-1"
       >
         <GoogleGlyph />
         <span>เข้าสู่ระบบด้วย Google</span>
@@ -72,7 +72,7 @@ export const GoogleSignInButton = (): ReactNode => {
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="flex items-center gap-2 rounded-full p-0.5 hover:ring-2 hover:ring-primary/30 focus:outline-none focus:ring-2 focus:ring-primary"
+        className="flex items-center gap-2 rounded-full p-0.5 hover:ring-2 hover:ring-primary-ink/30 focus:outline-none focus:ring-2 focus:ring-primary-ink"
         aria-haspopup="menu"
         aria-expanded={open}
       >
@@ -80,20 +80,20 @@ export const GoogleSignInButton = (): ReactNode => {
           src={user.picture}
           alt={user.name}
           referrerPolicy="no-referrer"
-          className="w-8 h-8 rounded-full bg-slate-100 object-cover"
+          className="w-8 h-8 rounded-full bg-raised object-cover"
         />
       </button>
 
       {open ? (
         <div
           role="menu"
-          className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden z-30"
+          className="absolute right-0 mt-2 w-64 bg-card border border-ink-200 rounded-lg shadow-lg overflow-hidden z-30"
         >
-          <div className="px-4 py-3 border-b border-slate-100">
-            <div className="text-sm font-semibold text-slate-900 truncate">
+          <div className="px-4 py-3 border-b border-ink-100">
+            <div className="text-sm font-semibold text-ink-900 truncate">
               {user.name}
             </div>
-            <div className="text-xs text-slate-500 truncate">{user.email}</div>
+            <div className="text-xs text-ink-500 truncate">{user.email}</div>
           </div>
           <button
             type="button"
@@ -101,7 +101,7 @@ export const GoogleSignInButton = (): ReactNode => {
               setOpen(false);
               signOut();
             }}
-            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 focus:bg-slate-50 focus:outline-none"
+            className="w-full text-left px-4 py-2.5 text-sm text-ink-700 hover:bg-hover focus:bg-hover focus:outline-none"
             role="menuitem"
           >
             ออกจากระบบ

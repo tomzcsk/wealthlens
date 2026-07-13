@@ -153,11 +153,11 @@ const AreaTooltip = ({ active, payload }: AreaTooltipProps): ReactNode => {
       ? (payload[0].value as number)
       : Number(payload[0]?.value ?? 0);
   return (
-    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-md">
-      <div className="mb-1 text-xs font-semibold text-slate-700">
+    <div className="rounded-lg border border-ink-200 bg-card px-3 py-2 shadow-md">
+      <div className="mb-1 text-xs font-semibold text-ink-700">
         {formatThaiMonthYear(point.month, point.year)}
       </div>
-      <div className="flex items-baseline gap-1.5 text-xs text-slate-700">
+      <div className="flex items-baseline gap-1.5 text-xs text-ink-700">
         <span
           className="inline-block h-2 w-2 rounded-full"
           style={{ backgroundColor: COLOR_NET }}
@@ -206,12 +206,12 @@ const BarTooltip = ({ active, payload }: BarTooltipProps): ReactNode => {
   const total = rows.reduce((acc, r) => acc + r.numeric, 0);
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-md">
-      <div className="mb-1 text-xs font-semibold text-slate-700">
+    <div className="rounded-lg border border-ink-200 bg-card px-3 py-2 shadow-md">
+      <div className="mb-1 text-xs font-semibold text-ink-700">
         {formatThaiMonthYear(point.month, point.year)}
       </div>
       {rows.length === 0 ? (
-        <div className="text-xs text-slate-400">ไม่มีค่าใช้จ่าย</div>
+        <div className="text-xs text-ink-400">ไม่มีค่าใช้จ่าย</div>
       ) : (
         <ul className="space-y-0.5">
           {rows.map((r) => {
@@ -219,7 +219,7 @@ const BarTooltip = ({ active, payload }: BarTooltipProps): ReactNode => {
             return (
               <li
                 key={r.cat}
-                className="flex items-center justify-between gap-3 text-xs text-slate-700"
+                className="flex items-center justify-between gap-3 text-xs text-ink-700"
               >
                 <span className="flex items-center gap-1.5">
                   <span
@@ -235,9 +235,9 @@ const BarTooltip = ({ active, payload }: BarTooltipProps): ReactNode => {
               </li>
             );
           })}
-          <li className="mt-1 flex items-center justify-between border-t border-slate-200 pt-1 text-xs">
-            <span className="font-semibold text-slate-600">รวม</span>
-            <span className="font-semibold tabular-nums text-slate-900">
+          <li className="mt-1 flex items-center justify-between border-t border-ink-200 pt-1 text-xs">
+            <span className="font-semibold text-ink-600">รวม</span>
+            <span className="font-semibold tabular-nums text-ink-900">
               {formatTHB(total)}
             </span>
           </li>
@@ -276,12 +276,12 @@ const NetIncomeAreaSection = ({
       : '';
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section className="rounded-2xl border border-ink-200 bg-card p-6 shadow-sm">
       <header className="mb-4">
-        <h2 className="text-lg font-semibold text-slate-900">
+        <h2 className="text-lg font-semibold text-ink-900">
           แนวโน้มรายได้สุทธิ (48 เดือน)
         </h2>
-        <p className="text-xs text-slate-500">{subtitle}</p>
+        <p className="text-xs text-ink-500">{subtitle}</p>
       </header>
 
       {hasAny ? (
@@ -341,7 +341,7 @@ const NetIncomeAreaSection = ({
         </div>
       ) : (
         <div
-          className="flex items-center justify-center text-sm text-slate-400"
+          className="flex items-center justify-center text-sm text-ink-400"
           style={{ height }}
           role="status"
         >
@@ -375,13 +375,13 @@ const StatCard = ({
 }: StatCardProps): ReactNode => {
   const valueClass =
     tone === 'positive'
-      ? 'text-emerald-600'
+      ? 'text-income-ink'
       : tone === 'negative'
-        ? 'text-rose-600'
-        : 'text-slate-900';
+        ? 'text-expense-ink'
+        : 'text-ink-900';
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4">
-      <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
+    <div className="rounded-xl border border-ink-200 bg-card p-4">
+      <div className="flex items-center gap-1.5 text-xs font-medium text-ink-500">
         {icon ? <span aria-hidden="true">{icon}</span> : null}
         <span>{label}</span>
       </div>
@@ -389,7 +389,7 @@ const StatCard = ({
         {value}
       </div>
       {detail ? (
-        <div className="mt-0.5 text-xs tabular-nums text-slate-500">
+        <div className="mt-0.5 text-xs tabular-nums text-ink-500">
           {detail}
         </div>
       ) : null}
@@ -516,12 +516,12 @@ const ExpenseStackedBarSection = ({
   };
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section className="rounded-2xl border border-ink-200 bg-card p-6 shadow-sm">
       <header className="mb-4">
-        <h2 className="text-lg font-semibold text-slate-900">
+        <h2 className="text-lg font-semibold text-ink-900">
           สัดส่วนค่าใช้จ่ายตลอดเวลา
         </h2>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-ink-500">
           ยอดรวมรายเดือนแยกตามหมวด
         </p>
       </header>
@@ -593,7 +593,7 @@ const ExpenseStackedBarSection = ({
         </div>
       ) : (
         <div
-          className="flex items-center justify-center text-sm text-slate-400"
+          className="flex items-center justify-center text-sm text-ink-400"
           style={{ height }}
           role="status"
         >

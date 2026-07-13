@@ -114,8 +114,8 @@ const MoneyCell = ({
 }: MoneyCellProps): ReactNode => (
   <td
     className={`px-3 py-2 text-right tabular-nums ${
-      bold ? 'font-bold text-slate-900' : 'text-slate-700'
-    } ${muted && value === 0 ? 'text-slate-300' : ''}`}
+      bold ? 'font-bold text-ink-900' : 'text-ink-700'
+    } ${muted && value === 0 ? 'text-ink-300' : ''}`}
   >
     {value === 0 ? '—' : formatTHB(value)}
   </td>
@@ -163,9 +163,9 @@ export const AllYearsSummary = (): ReactNode => {
   };
 
   return (
-    <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-      <header className="bg-amber-100 px-6 py-3 border-b border-amber-200">
-        <h2 className="text-lg font-bold text-amber-900 text-center">
+    <section className="bg-card rounded-2xl border border-ink-200 shadow-sm overflow-hidden">
+      <header className="bg-warning-100 px-6 py-3 border-b border-warning-200">
+        <h2 className="text-lg font-bold text-warning-900 text-center">
           รายรับ – รายจ่าย (ภาพรวมทุกปี)
         </h2>
       </header>
@@ -173,22 +173,22 @@ export const AllYearsSummary = (): ReactNode => {
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-amber-50 text-amber-900 border-b border-amber-200">
+            <tr className="bg-warning-50 text-warning-900 border-b border-warning-200">
               <th
                 rowSpan={2}
-                className="px-3 py-2 text-left font-semibold align-middle border-r border-amber-200"
+                className="px-3 py-2 text-left font-semibold align-middle border-r border-warning-200"
               >
                 ปี
               </th>
               <th
                 colSpan={4}
-                className="px-3 py-2 text-center font-semibold border-r border-amber-200"
+                className="px-3 py-2 text-center font-semibold border-r border-warning-200"
               >
                 เงินได้
               </th>
               <th
                 colSpan={5}
-                className="px-3 py-2 text-center font-semibold border-r border-amber-200"
+                className="px-3 py-2 text-center font-semibold border-r border-warning-200"
               >
                 ค่าใช้จ่าย (หัก)
               </th>
@@ -199,18 +199,18 @@ export const AllYearsSummary = (): ReactNode => {
                 ยอดรวม
               </th>
             </tr>
-            <tr className="bg-amber-50 text-amber-900 border-b border-amber-200 text-xs">
+            <tr className="bg-warning-50 text-warning-900 border-b border-warning-200 text-xs">
               <th className="px-3 py-2 text-right font-semibold">เงินเดือน</th>
               <th className="px-3 py-2 text-right font-semibold">โบนัส</th>
               <th className="px-3 py-2 text-right font-semibold">คอม</th>
-              <th className="px-3 py-2 text-right font-semibold border-r border-amber-200">
+              <th className="px-3 py-2 text-right font-semibold border-r border-warning-200">
                 รายได้อื่น
               </th>
               <th className="px-3 py-2 text-right font-semibold">ภาษี</th>
               <th className="px-3 py-2 text-right font-semibold">ประกันสังคม</th>
               <th className="px-3 py-2 text-right font-semibold">กองทุน</th>
               <th className="px-3 py-2 text-right font-semibold">อื่นๆ</th>
-              <th className="px-3 py-2 text-right font-semibold border-r border-amber-200">
+              <th className="px-3 py-2 text-right font-semibold border-r border-warning-200">
                 รวมหัก
               </th>
               <th className="px-3 py-2 text-right font-semibold">Net.</th>
@@ -235,11 +235,11 @@ export const AllYearsSummary = (): ReactNode => {
             {rows.map((r, idx) => (
               <tr
                 key={r.year}
-                className={`border-b border-slate-100 hover:bg-slate-50 ${
-                  idx % 2 === 1 ? 'bg-amber-50/30' : ''
+                className={`border-b border-ink-100 hover:bg-hover ${
+                  idx % 2 === 1 ? 'bg-warning-50/30' : ''
                 }`}
               >
-                <td className="px-3 py-2 font-semibold text-slate-900 border-r border-slate-100">
+                <td className="px-3 py-2 font-semibold text-ink-900 border-r border-ink-100">
                   {r.year}
                 </td>
                 <MoneyCell value={r.salary} />
@@ -257,8 +257,8 @@ export const AllYearsSummary = (): ReactNode => {
                 <td
                   className={`px-3 py-2 text-right tabular-nums ${
                     r.totalSavings > 0
-                      ? 'text-savings font-medium'
-                      : 'text-slate-300'
+                      ? 'text-savings-ink font-medium'
+                      : 'text-ink-300'
                   }`}
                   title="รวมยอดออม + ลงทุน ปีนี้"
                 >
@@ -267,12 +267,12 @@ export const AllYearsSummary = (): ReactNode => {
                 <td
                   className={`px-3 py-2 text-right tabular-nums ${
                     r.totalExpenses === 0
-                      ? 'text-slate-300 italic'
+                      ? 'text-ink-300 italic'
                       : r.remaining > 0
-                        ? 'text-income'
+                        ? 'text-income-ink'
                         : r.remaining < 0
-                          ? 'text-expense'
-                          : 'text-slate-300'
+                          ? 'text-expense-ink'
+                          : 'text-ink-300'
                   }`}
                   title={
                     r.totalExpenses === 0
@@ -287,12 +287,12 @@ export const AllYearsSummary = (): ReactNode => {
                   const hasValue = annual !== 0;
                   return (
                     <td
-                      className={`px-3 py-2 text-right tabular-nums font-semibold cursor-pointer hover:bg-amber-100/40 transition ${
+                      className={`px-3 py-2 text-right tabular-nums font-semibold cursor-pointer hover:bg-warning-100/40 transition ${
                         hasValue
                           ? annual > 0
-                            ? 'text-savings'
-                            : 'text-expense'
-                          : 'text-slate-300'
+                            ? 'text-savings-ink'
+                            : 'text-expense-ink'
+                          : 'text-ink-300'
                       }`}
                       onClick={() => handleEditKept(r.year)}
                       title="คลิกเพื่อแก้ไขรายเดือนใน Monthly page"
@@ -304,8 +304,8 @@ export const AllYearsSummary = (): ReactNode => {
               </tr>
             ))}
 
-            <tr className="bg-amber-100 border-t-2 border-amber-300 font-bold">
-              <td className="px-3 py-3 text-amber-900 border-r border-amber-200">
+            <tr className="bg-warning-100 border-t-2 border-warning-300 font-bold">
+              <td className="px-3 py-3 text-warning-900 border-r border-warning-200">
                 รวม
               </td>
               <MoneyCell value={totals.salary} bold />
@@ -322,7 +322,7 @@ export const AllYearsSummary = (): ReactNode => {
               <MoneyCell value={totals.totalExpenses} bold />
               <td
                 className={`px-3 py-3 text-right tabular-nums font-bold ${
-                  totals.totalSavings > 0 ? 'text-savings' : 'text-slate-300'
+                  totals.totalSavings > 0 ? 'text-savings-ink' : 'text-ink-300'
                 }`}
                 title="ผลรวมออม/ลงทุนทุกปี"
               >
@@ -330,14 +330,14 @@ export const AllYearsSummary = (): ReactNode => {
               </td>
               <td
                 className={`px-3 py-3 text-right tabular-nums font-bold ${
-                  remainingTotal > 0 ? 'text-income' : 'text-expense'
+                  remainingTotal > 0 ? 'text-income-ink' : 'text-expense-ink'
                 }`}
                 title="ผลรวมเหลือจริง เฉพาะปีที่มีข้อมูลค่าใช้จ่าย"
               >
                 {remainingTotal === 0 ? '—' : formatTHB(remainingTotal)}
               </td>
               <td
-                className="px-3 py-3 text-right tabular-nums font-bold text-savings"
+                className="px-3 py-3 text-right tabular-nums font-bold text-savings-ink"
                 title="ผลรวมยอดธนาคารที่กรอกไว้"
               >
                 {keptTotal === 0 ? '—' : formatTHB(keptTotal)}
@@ -347,7 +347,7 @@ export const AllYearsSummary = (): ReactNode => {
         </table>
       </div>
 
-      <footer className="px-6 py-2 text-xs text-slate-500 bg-slate-50 border-t border-slate-200 space-y-1">
+      <footer className="px-6 py-2 text-xs text-ink-500 bg-surface border-t border-ink-200 space-y-1">
         <div>
           Net. = (เงินเดือน + โบนัส) − รวมหัก · Net. All = Net. + คอม ·
           เหลือจริง = Net. All − จ่าย · ออม/ลงทุน = สะสมทั้งปี

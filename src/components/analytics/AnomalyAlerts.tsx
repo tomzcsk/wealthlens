@@ -82,19 +82,19 @@ export const AnomalyAlerts = (): ReactNode => {
   return (
     <section
       aria-label="แจ้งเตือนผิดปกติ"
-      className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+      className="rounded-2xl border border-ink-200 bg-card p-6 shadow-sm"
     >
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <h2 className="text-xl font-semibold text-slate-900">แจ้งเตือนผิดปกติ</h2>
+          <h2 className="text-xl font-semibold text-ink-900">แจ้งเตือนผิดปกติ</h2>
           <CountBadge count={undismissedCount} severity={maxSeverity} />
         </div>
-        <label className="flex items-center gap-2 text-sm text-slate-500">
+        <label className="flex items-center gap-2 text-sm text-ink-500">
           <span className="sr-only">ตัวกรอง</span>
           <select
             value={filter}
             onChange={handleFilterChange}
-            className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
+            className="rounded-md border border-ink-200 bg-card px-3 py-1.5 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-primary-ink"
           >
             {FILTER_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -105,7 +105,7 @@ export const AnomalyAlerts = (): ReactNode => {
         </label>
       </header>
 
-      <p className="mt-3 text-xs text-slate-500">
+      <p className="mt-3 text-xs text-ink-500">
         เกณฑ์: ค่าใช้จ่าย &gt; ค่าเฉลี่ย + 2σ (rolling 12 เดือน) และ &gt;
         1.5× ค่าเฉลี่ย
       </p>
@@ -121,11 +121,11 @@ export const AnomalyAlerts = (): ReactNode => {
       />
 
       {dismissedCount > 0 ? (
-        <div className="mt-4 border-t border-slate-100 pt-4">
+        <div className="mt-4 border-t border-ink-100 pt-4">
           <button
             type="button"
             onClick={() => setShowDismissed((v) => !v)}
-            className="text-xs font-medium text-slate-500 hover:text-slate-700"
+            className="text-xs font-medium text-ink-500 hover:text-ink-700"
           >
             {showDismissed
               ? `ซ่อนที่ปิดแล้ว (${dismissedCount})`
@@ -162,15 +162,15 @@ interface CountBadgeProps {
 const CountBadge = ({ count, severity }: CountBadgeProps): ReactNode => {
   if (count === 0) {
     return (
-      <span className="rounded-full bg-income-light px-2.5 py-0.5 text-xs font-medium text-income">
+      <span className="rounded-full bg-income-50 px-2.5 py-0.5 text-xs font-medium text-income-ink">
         พบ 0
       </span>
     );
   }
   const tone =
     severity === 'high'
-      ? 'bg-expense-light text-expense'
-      : 'bg-warning/10 text-warning';
+      ? 'bg-expense-50 text-expense-ink'
+      : 'bg-warning/10 text-warning-ink';
   return (
     <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${tone}`}>
       พบ {count}
@@ -195,13 +195,13 @@ const AnomalyList = ({
 }: AnomalyListProps): ReactNode => {
   if (rows.length === 0) {
     return (
-      <div className="mt-5 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center">
-        <p className="text-base font-medium text-slate-900">{emptyMessage}</p>
+      <div className="mt-5 rounded-xl border border-dashed border-ink-200 bg-surface px-6 py-10 text-center">
+        <p className="text-base font-medium text-ink-900">{emptyMessage}</p>
       </div>
     );
   }
   return (
-    <ul className="mt-5 divide-y divide-slate-200 overflow-hidden rounded-xl border border-slate-200">
+    <ul className="mt-5 divide-y divide-ink-200 overflow-hidden rounded-xl border border-ink-200">
       {rows.map((row) => (
         <AnomalyRow
           key={anomalyFingerprint(row)}
@@ -225,12 +225,12 @@ interface AnomalyRowProps {
 const SEVERITY_TAG: Record<Anomaly['severity'], { label: string; className: string; dot: string }> = {
   high: {
     label: 'รุนแรง',
-    className: 'bg-expense-light text-expense',
+    className: 'bg-expense-50 text-expense-ink',
     dot: '🔴',
   },
   medium: {
     label: 'ปานกลาง',
-    className: 'bg-warning/10 text-warning',
+    className: 'bg-warning/10 text-warning-ink',
     dot: '🟡',
   },
 };
@@ -245,7 +245,7 @@ const AnomalyRow = ({ anomaly, onDismiss }: AnomalyRowProps): ReactNode => {
   const fingerprint = anomalyFingerprint(anomaly);
 
   return (
-    <li className="flex flex-wrap items-start justify-between gap-3 bg-white px-4 py-3">
+    <li className="flex flex-wrap items-start justify-between gap-3 bg-card px-4 py-3">
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <span aria-hidden="true">{tag.dot}</span>
@@ -254,16 +254,16 @@ const AnomalyRow = ({ anomaly, onDismiss }: AnomalyRowProps): ReactNode => {
           >
             {tag.label}
           </span>
-          <span className="inline-flex items-center gap-1 text-sm font-medium text-slate-900">
+          <span className="inline-flex items-center gap-1 text-sm font-medium text-ink-900">
             <span aria-hidden="true">{cat.icon}</span>
             <span>{cat.label}</span>
           </span>
-          <span className="text-sm text-slate-500">
+          <span className="text-sm text-ink-500">
             — {monthLabel} {anomaly.year}
           </span>
         </div>
-        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600 tabular-nums">
-          <span className="text-base font-semibold text-slate-900">
+        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-600 tabular-nums">
+          <span className="text-base font-semibold text-ink-900">
             {formatTHB(anomaly.amount)}
           </span>
           <span aria-hidden="true">•</span>
@@ -271,16 +271,16 @@ const AnomalyRow = ({ anomaly, onDismiss }: AnomalyRowProps): ReactNode => {
             ค่าเฉลี่ย {formatTHB(anomaly.baseline)} ± {formatTHB(anomaly.stddev)}
           </span>
           <span aria-hidden="true">•</span>
-          <span className="font-semibold text-slate-700">{sigmaLabel}</span>
+          <span className="font-semibold text-ink-700">{sigmaLabel}</span>
         </div>
-        <p className="mt-1 text-[11px] text-slate-400">
+        <p className="mt-1 text-[11px] text-ink-400">
           {anomaly.monthsOfHistory} เดือนของประวัติ
         </p>
       </div>
       <button
         type="button"
         onClick={() => onDismiss(fingerprint)}
-        className="rounded-md border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+        className="rounded-md border border-ink-200 px-3 py-1 text-xs font-medium text-ink-600 hover:border-ink-300 hover:bg-hover"
       >
         ปิด
       </button>
@@ -305,7 +305,7 @@ const DismissedRow = ({
   const monthLabel = THAI_MONTHS_LONG[anomaly.month - 1] ?? '';
   const fingerprint = anomalyFingerprint(anomaly);
   return (
-    <li className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">
+    <li className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-surface px-3 py-2 text-xs text-ink-500">
       <span className="flex items-center gap-1">
         <span aria-hidden="true">{cat.icon}</span>
         <span>{cat.label}</span>
@@ -317,7 +317,7 @@ const DismissedRow = ({
       <button
         type="button"
         onClick={() => onUndismiss(fingerprint)}
-        className="text-[11px] font-medium text-primary hover:underline"
+        className="text-[11px] font-medium text-primary-ink hover:underline"
       >
         คืนค่า
       </button>

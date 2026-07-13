@@ -40,20 +40,20 @@ export const DangerZone = (): ReactNode => {
   return (
     <section
       aria-label="โซนอันตราย"
-      className="bg-white rounded-2xl border border-red-200 shadow-sm p-6 space-y-4"
+      className="bg-card rounded-2xl border border-expense-200 shadow-sm p-6 space-y-4"
     >
       <header className="flex items-center gap-2">
         <span className="text-2xl">⚠️</span>
-        <h2 className="text-lg font-semibold text-red-700">โซนอันตราย</h2>
+        <h2 className="text-lg font-semibold text-expense-700">โซนอันตราย</h2>
       </header>
 
       <div className="space-y-2">
-        <h3 className="text-sm font-semibold text-slate-900">
+        <h3 className="text-sm font-semibold text-ink-900">
           นำเข้าประวัติราคาทอง (paste จาก ทองคำราคา.com)
         </h3>
-        <p className="text-sm text-slate-600 leading-relaxed">
+        <p className="text-sm text-ink-600 leading-relaxed">
           วางตารางจากหน้า "ราคาทองย้อนหลัง" — ระบบจะดึง{' '}
-          <code className="bg-slate-100 px-1.5 py-0.5 rounded text-xs">
+          <code className="bg-raised px-1.5 py-0.5 rounded text-xs">
             ทองคำแท่งรับซื้อ
           </code>{' '}
           ออกมาเป็น snapshots เพื่อ unlock MA 30 วันให้ผู้ช่วยทอง
@@ -64,10 +64,10 @@ export const DangerZone = (): ReactNode => {
           onChange={(e) => setPasteText(e.target.value)}
           rows={6}
           placeholder="19/05/2569 15:37    20    70,050.00    70,250.00    68,644.48    71,050.00 ..."
-          className="w-full font-mono text-xs bg-slate-50 border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+          className="w-full font-mono text-xs bg-surface border border-ink-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-ink"
         />
         {preview && (
-          <div className="text-xs text-slate-600">
+          <div className="text-xs text-ink-600">
             พบ <strong>{preview.rowsAccepted}</strong> snapshots
             {preview.earliest && preview.latest && (
               <>
@@ -88,7 +88,7 @@ export const DangerZone = (): ReactNode => {
             type="button"
             onClick={() => handleImportGoldHistory('merge')}
             disabled={busy !== null || !preview || preview.rowsAccepted === 0}
-            className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-2 rounded-lg bg-income text-white text-sm font-semibold hover:bg-income-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {busy === 'gold' ? 'กำลังนำเข้า...' : '✅ นำเข้า (merge)'}
           </button>
@@ -96,12 +96,12 @@ export const DangerZone = (): ReactNode => {
             type="button"
             onClick={() => handleImportGoldHistory('replace')}
             disabled={busy !== null || !preview || preview.rowsAccepted === 0}
-            className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-2 rounded-lg bg-expense text-white text-sm font-semibold hover:bg-expense-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             🔄 แทนที่ทั้งหมด
           </button>
         </div>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-ink-500">
           Merge = รวมกับของเดิม, dedup ตาม timestamp · Replace = ลบของเดิมทิ้ง
         </p>
       </div>

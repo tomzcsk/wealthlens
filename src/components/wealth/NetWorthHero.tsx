@@ -24,14 +24,14 @@ export const NetWorthHero = ({
   const assetPct = span > 0 ? (Math.max(totalAssets, 0) / span) * 100 : 0;
 
   return (
-    <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+    <section className="bg-card rounded-2xl border border-ink-200 shadow-sm p-6 space-y-4">
       <div>
-        <div className="text-xs text-slate-500 uppercase tracking-wider">
+        <div className="text-xs text-ink-500 uppercase tracking-wider">
           ความมั่งคั่งสุทธิ
         </div>
         <div
           className={`mt-1 text-4xl font-bold financial-number tabular-nums ${
-            netWorth >= 0 ? 'text-slate-900' : 'text-expense'
+            netWorth >= 0 ? 'text-ink-900' : 'text-expense-ink'
           }`}
         >
           <AnimatedNumber
@@ -39,24 +39,24 @@ export const NetWorthHero = ({
             format={(v) => formatTHB(v, { decimals: 0 })}
           />
         </div>
-        <div className="mt-1 text-sm text-slate-500">
+        <div className="mt-1 text-sm text-ink-500">
           ไม่รวมมูลค่าบ้านและรถ — นับเฉพาะเงินในบัญชี ทองคำ และเงินออม
         </div>
       </div>
 
       <div className="space-y-2">
-        <div className="flex h-2 w-full overflow-hidden rounded-full bg-slate-200">
-          <div className="h-full bg-emerald-500" style={{ width: `${assetPct}%` }} />
+        <div className="flex h-2 w-full overflow-hidden rounded-full bg-track">
+          <div className="h-full bg-income-fill" style={{ width: `${assetPct}%` }} />
           <div className="h-full bg-expense" style={{ width: `${100 - assetPct}%` }} />
         </div>
         <div className="flex items-center justify-between text-xs">
-          <span className="text-emerald-700">
+          <span className="text-income-700">
             สินทรัพย์{' '}
             <span className="financial-number tabular-nums font-semibold">
               {formatTHB(totalAssets, { decimals: 0 })}
             </span>
           </span>
-          <span className="text-expense">
+          <span className="text-expense-ink">
             หนี้{' '}
             <span className="financial-number tabular-nums font-semibold">
               {formatTHB(totalLiabilities, { decimals: 0 })}

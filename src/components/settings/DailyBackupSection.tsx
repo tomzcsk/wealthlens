@@ -96,68 +96,68 @@ export const DailyBackupSection = (): ReactNode => {
   return (
     <section
       aria-labelledby="settings-daily-backup"
-      className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4"
+      className="bg-card rounded-2xl border border-ink-200 shadow-sm p-6 space-y-4"
     >
       <header>
         <h2
           id="settings-daily-backup"
-          className="text-lg font-semibold text-slate-900"
+          className="text-lg font-semibold text-ink-900"
         >
           🗓️ Backup รายวัน (Drive)
         </h2>
-        <p className="text-sm text-slate-500 mt-1">
+        <p className="text-sm text-ink-500 mt-1">
           ระบบถ่ายสำเนาข้อมูลขึ้น Drive วันละไฟล์อัตโนมัติ เก็บย้อนหลัง{' '}
           {BACKUP_RETENTION_DAYS} วัน — กู้กลับเป็นข้อมูลของวันไหนก็ได้
         </p>
       </header>
 
       {!isSignedIn ? (
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-ink-500">
           ต้อง sign in Google ก่อน จึงจะดูและกู้ backup รายวันได้
         </p>
       ) : loadState === 'idle' ? (
         <button
           type="button"
           onClick={() => void loadList()}
-          className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          className="rounded-lg border border-ink-300 px-4 py-2 text-sm font-medium text-ink-700 hover:bg-hover"
         >
           โหลดรายการ backup
         </button>
       ) : loadState === 'loading' ? (
-        <p className="text-sm text-slate-500">กำลังโหลดรายการ…</p>
+        <p className="text-sm text-ink-500">กำลังโหลดรายการ…</p>
       ) : loadState === 'error' ? (
         <div className="flex items-center gap-3">
-          <p className="text-sm text-expense">โหลดรายการไม่สำเร็จ</p>
+          <p className="text-sm text-expense-ink">โหลดรายการไม่สำเร็จ</p>
           <button
             type="button"
             onClick={() => void loadList()}
-            className="text-sm text-primary hover:underline"
+            className="text-sm text-primary-ink hover:underline"
           >
             ลองใหม่
           </button>
         </div>
       ) : backups.length === 0 ? (
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-ink-500">
           ยังไม่มีไฟล์ backup — ไฟล์แรกจะถูกสร้างหลัง sync สำเร็จครั้งแรกของวัน
         </p>
       ) : (
-        <ul className="divide-y divide-slate-100">
+        <ul className="divide-y divide-ink-100">
           {backups.map((b) => (
             <li
               key={b.fileId}
               className="flex items-center justify-between py-2 gap-3"
             >
               <div className="flex items-baseline gap-3">
-                <span className="text-sm font-medium text-slate-700 tabular-nums">
+                <span className="text-sm font-medium text-ink-700 tabular-nums">
                   {b.date}
                 </span>
-                <span className="text-xs text-slate-400 tabular-nums">
+                <span className="text-xs text-ink-400 tabular-nums">
                   {formatSize(b.sizeBytes)}
                 </span>
               </div>
               {confirmingId === b.fileId ? (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-600">
+                  <span className="text-xs text-ink-600">
                     แทนที่ข้อมูลปัจจุบันด้วยข้อมูลของ {b.date}?
                   </span>
                   <button
@@ -172,7 +172,7 @@ export const DailyBackupSection = (): ReactNode => {
                     type="button"
                     disabled={restoringId !== null}
                     onClick={() => setConfirmingId(null)}
-                    className="text-xs text-slate-500 hover:underline"
+                    className="text-xs text-ink-500 hover:underline"
                   >
                     ยกเลิก
                   </button>
@@ -182,7 +182,7 @@ export const DailyBackupSection = (): ReactNode => {
                   type="button"
                   disabled={restoringId !== null}
                   onClick={() => setConfirmingId(b.fileId)}
-                  className="rounded-lg border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  className="rounded-lg border border-ink-300 px-3 py-1 text-xs font-medium text-ink-700 hover:bg-hover disabled:opacity-50"
                 >
                   กู้คืน
                 </button>

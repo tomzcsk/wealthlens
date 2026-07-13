@@ -31,12 +31,12 @@ export const NetWorthColumn = ({
   total,
 }: NetWorthColumnProps): ReactNode => {
   const [openKey, setOpenKey] = useState<string | null>(null);
-  const amountCls = tone === 'asset' ? 'text-emerald-700' : 'text-expense';
+  const amountCls = tone === 'asset' ? 'text-income-700' : 'text-expense-ink';
 
   return (
-    <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-      <h2 className="text-sm font-semibold text-slate-700">{title}</h2>
-      <div className="mt-3 divide-y divide-slate-100">
+    <section className="bg-card rounded-2xl border border-ink-200 shadow-sm p-6">
+      <h2 className="text-sm font-semibold text-ink-700">{title}</h2>
+      <div className="mt-3 divide-y divide-ink-100">
         {rows.map((r) => {
           const expandable = (r.details?.length ?? 0) > 0;
           const open = openKey === r.key;
@@ -49,15 +49,15 @@ export const NetWorthColumn = ({
                       type="button"
                       onClick={() => setOpenKey(open ? null : r.key)}
                       aria-expanded={open}
-                      className="text-sm text-slate-700 hover:text-primary transition"
+                      className="text-sm text-ink-700 hover:text-primary-ink transition"
                     >
                       {open ? '▾' : '▸'} {r.label}
                     </button>
                   ) : (
-                    <span className="text-sm text-slate-700">{r.label}</span>
+                    <span className="text-sm text-ink-700">{r.label}</span>
                   )}
                   {r.note && (
-                    <div className="text-xs text-slate-400">{r.note}</div>
+                    <div className="text-xs text-ink-400">{r.note}</div>
                   )}
                 </div>
                 <span
@@ -71,8 +71,8 @@ export const NetWorthColumn = ({
                 <div className="mt-1.5 space-y-1 pl-4">
                   {r.details?.map((d) => (
                     <div key={d.key} className="flex justify-between text-xs">
-                      <span className="text-slate-500">{d.label}</span>
-                      <span className="financial-number tabular-nums text-slate-600">
+                      <span className="text-ink-500">{d.label}</span>
+                      <span className="financial-number tabular-nums text-ink-600">
                         {formatTHB(d.amount, { decimals: 0 })}
                       </span>
                     </div>
@@ -84,8 +84,8 @@ export const NetWorthColumn = ({
         })}
       </div>
 
-      <div className="mt-3 flex items-center justify-between border-t border-slate-200 pt-3">
-        <span className="text-sm font-semibold text-slate-700">รวม</span>
+      <div className="mt-3 flex items-center justify-between border-t border-ink-200 pt-3">
+        <span className="text-sm font-semibold text-ink-700">รวม</span>
         <span
           className={`text-base font-bold financial-number tabular-nums ${amountCls}`}
         >

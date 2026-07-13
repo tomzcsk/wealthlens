@@ -22,7 +22,7 @@
  *   - overshoot > 15%                         → red (danger)
  *
  * Card chrome matches sibling analytics components (TrendAnalysis,
- * SubscriptionManager) — same `rounded-2xl border border-slate-200 bg-white
+ * SubscriptionManager) — same `rounded-2xl border border-ink-200 bg-card
  * shadow-sm` shell, identical inner padding rhythm.
  */
 
@@ -85,22 +85,22 @@ const classifyVariance = (
 const toneTextClass = (tone: VarianceTone): string => {
   switch (tone) {
     case 'good':
-      return 'text-emerald-600';
+      return 'text-income-ink';
     case 'warn':
-      return 'text-amber-600';
+      return 'text-warning-ink';
     case 'bad':
-      return 'text-rose-600';
+      return 'text-expense-ink';
   }
 };
 
 const toneBadgeClass = (tone: VarianceTone): string => {
   switch (tone) {
     case 'good':
-      return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+      return 'bg-income-50 text-income-700 border-income-200';
     case 'warn':
-      return 'bg-amber-50 text-amber-700 border-amber-200';
+      return 'bg-warning-50 text-warning-700 border-warning-200';
     case 'bad':
-      return 'bg-rose-50 text-rose-700 border-rose-200';
+      return 'bg-expense-50 text-expense-700 border-expense-200';
   }
 };
 
@@ -133,33 +133,33 @@ const PredictView = ({
     <>
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
+          <div className="text-xs font-medium uppercase tracking-wide text-ink-500">
             คาดการณ์รวม
           </div>
-          <div className="mt-0.5 text-3xl font-bold tabular-nums text-slate-900">
+          <div className="mt-0.5 text-3xl font-bold tabular-nums text-ink-900">
             {formatTHB(forecast.totalPoint)}
           </div>
         </div>
         <div className="text-right">
-          <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
+          <div className="text-xs font-medium uppercase tracking-wide text-ink-500">
             ช่วง
           </div>
-          <div className="mt-0.5 text-sm font-semibold tabular-nums text-slate-700">
+          <div className="mt-0.5 text-sm font-semibold tabular-nums text-ink-700">
             {formatTHB(forecast.totalMin)} – {formatTHB(forecast.totalMax)}
           </div>
         </div>
       </div>
 
       <div>
-        <div className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
+        <div className="mb-2 text-xs font-medium uppercase tracking-wide text-ink-500">
           แยกตามหมวด
         </div>
-        <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200">
+        <ul className="divide-y divide-ink-100 rounded-xl border border-ink-200">
           {forecast.byCategory.map((row) => (
             <PredictRow key={row.category} row={row} />
           ))}
           {forecast.byCategory.length === 0 ? (
-            <li className="px-4 py-3 text-sm text-slate-400">
+            <li className="px-4 py-3 text-sm text-ink-400">
               ยังไม่มีข้อมูลค่าใช้จ่ายเพียงพอสำหรับการคาดการณ์
             </li>
           ) : null}
@@ -175,13 +175,13 @@ const PredictRow = ({ row }: { row: CategoryForecast }): ReactNode => {
     <li className="flex items-center justify-between gap-4 px-4 py-2.5">
       <div className="flex items-center gap-2">
         <span aria-hidden="true">{meta.icon}</span>
-        <span className="text-sm text-slate-800">{meta.label}</span>
+        <span className="text-sm text-ink-800">{meta.label}</span>
       </div>
       <div className="text-right">
-        <div className="text-sm font-semibold tabular-nums text-slate-900">
+        <div className="text-sm font-semibold tabular-nums text-ink-900">
           {formatTHB(row.pointForecast)}
         </div>
-        <div className="text-xs tabular-nums text-slate-500">
+        <div className="text-xs tabular-nums text-ink-500">
           {formatTHB(row.rangeMin)} – {formatTHB(row.rangeMax)}
         </div>
       </div>
@@ -211,21 +211,21 @@ const CompareView = ({
     <>
       <div className="grid gap-4 sm:grid-cols-3">
         <div>
-          <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
+          <div className="text-xs font-medium uppercase tracking-wide text-ink-500">
             ประมาณการ
           </div>
-          <div className="mt-0.5 text-2xl font-bold tabular-nums text-slate-900">
+          <div className="mt-0.5 text-2xl font-bold tabular-nums text-ink-900">
             {formatTHB(forecast.totalPoint)}
           </div>
-          <div className="mt-0.5 text-xs tabular-nums text-slate-500">
+          <div className="mt-0.5 text-xs tabular-nums text-ink-500">
             {formatTHB(forecast.totalMin)} – {formatTHB(forecast.totalMax)}
           </div>
         </div>
         <div>
-          <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
+          <div className="text-xs font-medium uppercase tracking-wide text-ink-500">
             จริง
           </div>
-          <div className="mt-0.5 text-2xl font-bold tabular-nums text-slate-900">
+          <div className="mt-0.5 text-2xl font-bold tabular-nums text-ink-900">
             {formatTHB(actualTotal)}
           </div>
           <div
@@ -235,7 +235,7 @@ const CompareView = ({
           </div>
         </div>
         <div>
-          <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
+          <div className="text-xs font-medium uppercase tracking-wide text-ink-500">
             ผลต่าง
           </div>
           <div
@@ -253,12 +253,12 @@ const CompareView = ({
       </div>
 
       <div>
-        <div className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
+        <div className="mb-2 text-xs font-medium uppercase tracking-wide text-ink-500">
           แยกตามหมวด
         </div>
-        <div className="overflow-hidden rounded-xl border border-slate-200">
+        <div className="overflow-hidden rounded-xl border border-ink-200">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+            <thead className="bg-surface text-xs uppercase tracking-wide text-ink-500">
               <tr>
                 <th className="px-4 py-2 text-left font-medium">หมวด</th>
                 <th className="px-4 py-2 text-right font-medium">ประมาณการ</th>
@@ -266,7 +266,7 @@ const CompareView = ({
                 <th className="px-4 py-2 text-right font-medium">ต่าง %</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-ink-100">
               {forecast.byCategory.map((row) => {
                 const actual = actuals[row.category] ?? 0;
                 const v = classifyVariance(
@@ -278,16 +278,16 @@ const CompareView = ({
                 const meta = EXPENSE_CATEGORIES[row.category];
                 return (
                   <tr key={row.category}>
-                    <td className="px-4 py-2 text-slate-800">
+                    <td className="px-4 py-2 text-ink-800">
                       <span className="mr-1.5" aria-hidden="true">
                         {meta.icon}
                       </span>
                       {meta.label}
                     </td>
-                    <td className="px-4 py-2 text-right tabular-nums text-slate-700">
+                    <td className="px-4 py-2 text-right tabular-nums text-ink-700">
                       {formatTHB(row.pointForecast)}
                     </td>
-                    <td className="px-4 py-2 text-right tabular-nums text-slate-900">
+                    <td className="px-4 py-2 text-right tabular-nums text-ink-900">
                       {formatTHB(actual)}
                     </td>
                     <td
@@ -333,13 +333,13 @@ export const BudgetForecast = (): ReactNode => {
 
   if (!forecast) {
     return (
-      <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="space-y-4 rounded-2xl border border-ink-200 bg-card p-6 shadow-sm">
         <header>
-          <h2 className="text-lg font-semibold text-slate-900">
+          <h2 className="text-lg font-semibold text-ink-900">
             ประมาณการเดือนหน้า
           </h2>
         </header>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-ink-500">
           ยังไม่มีข้อมูลค่าใช้จ่ายเพียงพอสำหรับการคาดการณ์
         </p>
       </section>
@@ -351,22 +351,22 @@ export const BudgetForecast = (): ReactNode => {
   const inCompareMode = forecast.hasActual;
 
   return (
-    <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section className="space-y-4 rounded-2xl border border-ink-200 bg-card p-6 shadow-sm">
       <header className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900">
+          <h2 className="text-lg font-semibold text-ink-900">
             {inCompareMode
               ? `ประมาณการ vs จริง — ${forecastLabel}`
               : `ประมาณการเดือนหน้า — ${forecastLabel}`}
           </h2>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-ink-500">
             {inCompareMode
               ? 'เปรียบเทียบคาดการณ์กับยอดจริงของเดือนนี้'
               : 'การคาดการณ์ใช้ค่าเฉลี่ย 3 เดือนล่าสุดในแต่ละหมวด'}
           </p>
         </div>
         {basisLabel ? (
-          <span className="self-start rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-600">
+          <span className="self-start rounded-full border border-ink-200 bg-surface px-2.5 py-0.5 text-xs font-medium text-ink-600">
             อ้างอิงจาก {basisLabel}
           </span>
         ) : null}
@@ -383,7 +383,7 @@ export const BudgetForecast = (): ReactNode => {
       )}
 
       {!inCompareMode ? (
-        <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">
+        <p className="rounded-lg bg-surface px-3 py-2 text-xs text-ink-500">
           ℹ️ การคาดการณ์ใช้ค่าเฉลี่ย 3 เดือนล่าสุดในแต่ละหมวด ช่วงคาดการณ์
           คำนวณจากความผันผวนของข้อมูล (CV — coefficient of variation)
         </p>

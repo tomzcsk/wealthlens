@@ -208,8 +208,8 @@ const ChartTooltip = ({
   });
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-md">
-      <div className="mb-1 text-xs font-semibold text-slate-700">
+    <div className="rounded-lg border border-ink-200 bg-card px-3 py-2 shadow-md">
+      <div className="mb-1 text-xs font-semibold text-ink-700">
         {String(label ?? '')}
       </div>
       <ul className="space-y-0.5">
@@ -222,7 +222,7 @@ const ChartTooltip = ({
           return (
             <li
               key={key}
-              className="flex items-center justify-between gap-3 text-xs text-slate-700"
+              className="flex items-center justify-between gap-3 text-xs text-ink-700"
             >
               <span className="flex items-center gap-1.5">
                 <span
@@ -364,9 +364,9 @@ export const MultiYearComparison = ({
   return (
     <div className="space-y-6">
       {/* ---------- Year toggle pills ---------- */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <section className="rounded-2xl border border-ink-200 bg-card p-4 shadow-sm">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="mr-2 text-sm font-medium text-slate-700">
+          <span className="mr-2 text-sm font-medium text-ink-700">
             เปรียบเทียบรายปี:
           </span>
           {availableYears.map((year) => {
@@ -384,7 +384,7 @@ export const MultiYearComparison = ({
                   'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium transition',
                   isOn
                     ? 'border-transparent text-white shadow-sm'
-                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50',
+                    : 'border-ink-200 bg-card text-ink-600 hover:border-ink-300 hover:bg-hover',
                   isLast ? 'cursor-not-allowed opacity-90' : 'cursor-pointer',
                 ].join(' ')}
                 style={isOn ? { backgroundColor: color } : undefined}
@@ -405,12 +405,12 @@ export const MultiYearComparison = ({
       </section>
 
       {/* ---------- Multi-line chart ---------- */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="rounded-2xl border border-ink-200 bg-card p-6 shadow-sm">
         <header className="mb-4">
-          <h2 className="text-lg font-semibold text-slate-900">
+          <h2 className="text-lg font-semibold text-ink-900">
             แนวโน้มรายได้สุทธิ
           </h2>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-ink-500">
             เปรียบเทียบ Net All รายเดือน ข้ามปี
           </p>
         </header>
@@ -474,7 +474,7 @@ export const MultiYearComparison = ({
           </div>
         ) : (
           <div
-            className="flex items-center justify-center text-sm text-slate-400"
+            className="flex items-center justify-center text-sm text-ink-400"
             style={{ height }}
             role="status"
           >
@@ -484,12 +484,12 @@ export const MultiYearComparison = ({
       </section>
 
       {/* ---------- Summary table ---------- */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="rounded-2xl border border-ink-200 bg-card p-6 shadow-sm">
         <header className="mb-4">
-          <h2 className="text-lg font-semibold text-slate-900">
+          <h2 className="text-lg font-semibold text-ink-900">
             สรุปรายปี
           </h2>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-ink-500">
             ตัวเลขรวมแต่ละปี — % คือการเปลี่ยนแปลงเทียบกับปีก่อนหน้า
             {maxNetAllYear !== null
               ? ` · ปีที่ Net All สูงสุด: ${maxNetAllYear}`
@@ -500,8 +500,8 @@ export const MultiYearComparison = ({
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 text-left">
-                <th className="py-2 pr-4 font-semibold text-slate-600">
+              <tr className="border-b border-ink-200 text-left">
+                <th className="py-2 pr-4 font-semibold text-ink-600">
                   รายการ
                 </th>
                 {selectedYears.map((year) => {
@@ -513,18 +513,18 @@ export const MultiYearComparison = ({
                       : formatPercent(yoy / 100, { signed: true });
                   const yoyTone =
                     yoy === null || yoy === undefined
-                      ? 'text-slate-400'
+                      ? 'text-ink-400'
                       : yoy > 0
-                        ? 'text-emerald-600'
+                        ? 'text-income-ink'
                         : yoy < 0
-                          ? 'text-rose-600'
-                          : 'text-slate-500';
+                          ? 'text-expense-ink'
+                          : 'text-ink-500';
                   return (
                     <th
                       key={year}
                       className={[
-                        'px-3 py-2 text-right font-semibold text-slate-900',
-                        isMax ? 'bg-emerald-50' : '',
+                        'px-3 py-2 text-right font-semibold text-ink-900',
+                        isMax ? 'bg-income-50' : '',
                       ].join(' ')}
                     >
                       <div className="flex flex-col items-end gap-0.5">
@@ -553,11 +553,11 @@ export const MultiYearComparison = ({
                   key={row.key}
                   className={
                     rowIdx % 2 === 0
-                      ? 'bg-white'
-                      : 'bg-slate-50/40'
+                      ? 'bg-card'
+                      : 'bg-surface/40'
                   }
                 >
-                  <td className="py-2 pr-4 font-medium text-slate-700">
+                  <td className="py-2 pr-4 font-medium text-ink-700">
                     {row.label}
                   </td>
                   {selectedYears.map((year) => {
@@ -568,8 +568,8 @@ export const MultiYearComparison = ({
                       <td
                         key={year}
                         className={[
-                          'px-3 py-2 text-right tabular-nums text-slate-800',
-                          isMax ? 'bg-emerald-50' : '',
+                          'px-3 py-2 text-right tabular-nums text-ink-800',
+                          isMax ? 'bg-income-50' : '',
                         ].join(' ')}
                       >
                         {formatTHB(value)}

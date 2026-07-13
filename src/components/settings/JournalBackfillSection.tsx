@@ -70,16 +70,16 @@ export const JournalBackfillSection = (): ReactNode => {
   return (
     <section
       aria-labelledby="settings-journal-backfill"
-      className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4"
+      className="bg-card rounded-2xl border border-ink-200 shadow-sm p-6 space-y-4"
     >
       <header>
         <h2
           id="settings-journal-backfill"
-          className="text-lg font-semibold text-slate-900"
+          className="text-lg font-semibold text-ink-900"
         >
           แปลงยอดเก่าเป็นรายการ
         </h2>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-ink-500">
           เปลี่ยนยอดบัญชีที่กรอกไว้ก่อนมีสมุดรายการ ให้กลายเป็นบรรทัด
           "ยอดที่กรอกไว้เดิม" — ยอดเงินทุกบัญชีไม่เปลี่ยน และย้อนกลับได้
         </p>
@@ -88,26 +88,26 @@ export const JournalBackfillSection = (): ReactNode => {
       {plan.cellCount > 0 ? (
         <div className="space-y-3">
           {existing > 0 && (
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-ink-500">
               เคยแปลงไว้{' '}
-              <span className="font-semibold tabular-nums text-slate-700">
+              <span className="font-semibold tabular-nums text-ink-700">
                 {formatNumber(existing)}
               </span>{' '}
               บรรทัด — มียอดลอยชุดใหม่รอแปลงอีก
             </p>
           )}
-          <p className="text-sm text-slate-700">
+          <p className="text-sm text-ink-700">
             จะสร้าง{' '}
-            <span className="font-semibold tabular-nums text-slate-900">
+            <span className="font-semibold tabular-nums text-ink-900">
               {formatNumber(plan.cellCount)}
             </span>{' '}
             บรรทัด ใน{' '}
-            <span className="font-semibold tabular-nums text-slate-900">
+            <span className="font-semibold tabular-nums text-ink-900">
               {formatNumber(plan.accountCount)}
             </span>{' '}
             บัญชี
           </p>
-          <p className="text-sm font-semibold text-income bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+          <p className="text-sm font-semibold text-income-ink bg-income-50 border border-income-200 rounded-lg px-3 py-2">
             <span aria-hidden="true">✓ </span>
             ยอดเงินทุกบัญชีไม่เปลี่ยน
           </p>
@@ -123,16 +123,16 @@ export const JournalBackfillSection = (): ReactNode => {
       ) : existing > 0 ? (
         // แปลงครบแล้ว — เหลือทางถอยอย่างเดียว
         <div className="space-y-3">
-          <p className="text-sm text-slate-700">
+          <p className="text-sm text-ink-700">
             แปลงแล้ว{' '}
-            <span className="font-semibold tabular-nums text-slate-900">
+            <span className="font-semibold tabular-nums text-ink-900">
               {formatNumber(existing)}
             </span>{' '}
             บรรทัด
           </p>
           {confirmingUndo ? (
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
-              <p className="text-sm font-medium text-amber-900">
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-warning-50 border border-warning-200 px-3 py-2">
+              <p className="text-sm font-medium text-warning-900">
                 ยืนยันย้อนกลับ? ลบบรรทัด "ยอดที่กรอกไว้เดิม" ทั้งหมด —
                 ยอดเงินไม่เปลี่ยน
               </p>
@@ -140,7 +140,7 @@ export const JournalBackfillSection = (): ReactNode => {
                 <button
                   type="button"
                   onClick={handleUndo}
-                  className="rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 transition-colors"
+                  className="rounded-md bg-warning px-3 py-1.5 text-xs font-semibold text-white hover:bg-warning-dark transition-colors"
                 >
                   ✓ ยืนยันย้อนกลับ
                 </button>
@@ -148,7 +148,7 @@ export const JournalBackfillSection = (): ReactNode => {
                   type="button"
                   onClick={() => setConfirmingUndo(false)}
                   aria-label="ยกเลิก"
-                  className="rounded-md px-3 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-100 transition-colors"
+                  className="rounded-md px-3 py-1.5 text-xs font-medium text-ink-500 hover:bg-raised transition-colors"
                 >
                   ✕
                 </button>
@@ -158,7 +158,7 @@ export const JournalBackfillSection = (): ReactNode => {
             <button
               type="button"
               onClick={() => setConfirmingUndo(true)}
-              className="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-sm font-semibold px-4 py-2 rounded-lg shadow-sm transition-colors"
+              className="inline-flex items-center gap-1.5 bg-card hover:bg-hover border border-ink-300 text-ink-700 text-sm font-semibold px-4 py-2 rounded-lg shadow-sm transition-colors"
             >
               <span aria-hidden="true">↩︎</span>
               ย้อนกลับ
@@ -168,13 +168,13 @@ export const JournalBackfillSection = (): ReactNode => {
       ) : (
         // ยอดทุกเซลล์มีรายการรองรับแล้ว และไม่เคยต้องแปลง
         <div className="space-y-3">
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-ink-400">
             ทุกเดือนมีรายการครบแล้ว ไม่ต้องแปลง
           </p>
           <button
             type="button"
             disabled
-            className="inline-flex items-center gap-1.5 bg-slate-100 border border-slate-200 text-slate-400 text-sm font-semibold px-4 py-2 rounded-lg cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 bg-raised border border-ink-200 text-ink-400 text-sm font-semibold px-4 py-2 rounded-lg cursor-not-allowed"
           >
             แปลงยอดเก่าเป็นรายการ
           </button>
