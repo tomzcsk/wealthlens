@@ -6,6 +6,7 @@ import type { WealthLensData } from '../src/types';
 import { endOfMonth, monthsIn, parseYm, toYm } from '../src/utils/monthRange';
 import { buildSavingsRateSeries, rollingAverage } from '../src/utils/savingsRate';
 import { buildNetWorthHistory, growthBetween } from '../src/utils/netWorthHistory';
+import { computeNetWorth } from '../src/utils/netWorth';
 
 let failures = 0;
 const assert = (label: string, ok: boolean, detail = ''): void => {
@@ -227,6 +228,45 @@ console.log('\n— ทองที่ยังไม่ซื้อ / ขาย�
     'ต.ค. (ขายไปแล้ว) = 0 ไม่ใช่ค้างอยู่ตลอดกาล',
     at('2025-10').assets === 0,
     String(at('2025-10').assets),
+  );
+}
+
+console.log('\n— G1: จุดสุดท้ายของ history === computeNetWorth() ของ /wealth เป๊ะ —');
+{
+  const data = {
+    years: {
+      '2025': {
+        income: [],
+        expenses: [],
+        savings: [
+          { month: 3, items: [{ id: 's1', category: 'general', name: 'ออม', amount: 20_000 }] },
+          // หมวดทองต้องถูกตัดทิ้งทั้งสองฝั่ง (ทองนับจาก ledger ทางเดียว — กฎ F38)
+          { month: 4, items: [{ id: 's2', category: 'gold', name: 'ซื้อทอง', amount: 80_000 }] },
+        ],
+      },
+    },
+    bankAccounts: [
+      acct('a1', 'กรุงศรี', { '2025': { '1': 100_000, '6': 25_000 } }),
+      acct('a2', 'เงินสด', { '2025': { '6': 150_000 } }),
+    ],
+    goldHoldings: [
+      { id: 'g1', purchaseDate: '2025-02-10', weightBaht: 2, totalCost: 80_000 },
+    ],
+  } as unknown as WealthLensData;
+
+  const goldValue = { marketValue: 0, totalInvested: 80_000 }; // ยังไม่ตั้ง spot → ราคาทุน
+  const today = computeNetWorth(data, goldValue, [], [], new Date('2025-12-31'));
+
+  const history = buildNetWorthHistory(data, () => null, [], []);
+  const last = history[history.length - 1];
+
+  assert(
+    `assets ตรงกัน (history ${last.assets} vs netWorth ${today.totalAssets})`,
+    last.assets === today.totalAssets,
+  );
+  assert(
+    `netWorth ตรงกัน (history ${last.netWorth} vs netWorth ${today.netWorth})`,
+    last.netWorth === today.netWorth,
   );
 }
 
