@@ -82,7 +82,7 @@ export const MonthTransactionList = ({
 
   if (transactions.length === 0) {
     return (
-      <p className="px-3 py-3 text-xs text-slate-400">
+      <p className="px-3 py-3 text-xs text-ink-400">
         ยอดที่กรอกไว้ ไม่มีรายละเอียดรายการ
       </p>
     );
@@ -94,13 +94,13 @@ export const MonthTransactionList = ({
   const hasOpening = Math.round(opening * 100) !== 0;
 
   return (
-    <div className="rounded-lg border border-slate-100 divide-y divide-slate-100 bg-slate-50/40">
+    <div className="rounded-lg border border-ink-100 divide-y divide-ink-100 bg-surface/40">
       {hasOpening && (
         <div className="flex items-center gap-3 px-3 py-2">
-          <span className="flex-1 min-w-0 truncate text-sm italic text-slate-400">
+          <span className="flex-1 min-w-0 truncate text-sm italic text-ink-400">
             ยอดก่อนมีรายการ
           </span>
-          <span className="financial-number text-sm tabular-nums text-slate-400">
+          <span className="financial-number text-sm tabular-nums text-ink-400">
             {formatTHB(opening)}
           </span>
           <span className="w-14 shrink-0" aria-hidden="true" />
@@ -114,17 +114,17 @@ export const MonthTransactionList = ({
         return (
           <div key={tx.id} className="flex items-center gap-3 px-3 py-2">
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm text-slate-900">{tx.label}</p>
+              <p className="truncate text-sm text-ink-900">{tx.label}</p>
               {(tx.date || badge) && (
-                <div className="flex items-center gap-2 text-xs text-slate-400">
+                <div className="flex items-center gap-2 text-xs text-ink-400">
                   {tx.date && <span>{formatThaiDate(tx.date)}</span>}
-                  {badge && <span className="text-slate-500">{badge}</span>}
+                  {badge && <span className="text-ink-500">{badge}</span>}
                 </div>
               )}
             </div>
             <span
               className={`financial-number text-sm tabular-nums ${
-                isNegative ? 'text-expense' : 'text-income'
+                isNegative ? 'text-expense-ink' : 'text-income-ink'
               }`}
             >
               {signedAmount(tx.amount)}
@@ -139,7 +139,7 @@ export const MonthTransactionList = ({
                     setConfirmingId(null);
                   }}
                   aria-label="ยืนยันการลบรายการ"
-                  className="w-14 shrink-0 whitespace-nowrap text-right text-xs font-semibold text-red-600 transition hover:text-red-700"
+                  className="w-14 shrink-0 whitespace-nowrap text-right text-xs font-semibold text-expense-ink transition hover:text-expense-700"
                 >
                   ยืนยัน?
                 </button>
@@ -148,7 +148,7 @@ export const MonthTransactionList = ({
                   type="button"
                   onClick={() => setConfirmingId(tx.id)}
                   aria-label="ลบรายการ"
-                  className="w-14 shrink-0 text-right text-slate-300 transition hover:text-red-600"
+                  className="w-14 shrink-0 text-right text-ink-300 transition hover:text-expense-ink"
                 >
                   ✕
                 </button>
@@ -160,13 +160,13 @@ export const MonthTransactionList = ({
         );
       })}
 
-      <div className="flex items-center gap-3 bg-slate-100/70 px-3 py-2">
-        <span className="min-w-0 flex-1 text-sm font-semibold text-slate-700">
+      <div className="flex items-center gap-3 bg-raised/70 px-3 py-2">
+        <span className="min-w-0 flex-1 text-sm font-semibold text-ink-700">
           รวม
         </span>
         <span
           className={`financial-number text-sm font-semibold tabular-nums ${
-            monthTotal < 0 ? 'text-red-700' : 'text-slate-900'
+            monthTotal < 0 ? 'text-expense-700' : 'text-ink-900'
           }`}
         >
           {formatTHB(monthTotal)}

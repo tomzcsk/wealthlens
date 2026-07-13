@@ -56,7 +56,7 @@ export const BankAccountCard = ({
   return (
     <div
       style={{ borderLeftColor: accent }}
-      className="bg-white rounded-2xl border border-slate-200 border-l-4 shadow-sm p-5 space-y-3 hover:shadow-md transition"
+      className="bg-card rounded-2xl border border-ink-200 border-l-4 shadow-sm p-5 space-y-3 hover:shadow-md transition"
     >
       <button
         type="button"
@@ -66,11 +66,11 @@ export const BankAccountCard = ({
         <div className="flex items-center gap-2.5 min-w-0">
           <BankAvatar account={account} size="md" />
           <div className="min-w-0 flex-1">
-            <div className="font-semibold text-slate-900 truncate">
+            <div className="font-semibold text-ink-900 truncate">
               {account.name}
             </div>
             {account.type != null && account.type !== 'other' && (
-              <span className="mt-0.5 inline-block rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+              <span className="mt-0.5 inline-block rounded-full bg-raised px-2 py-0.5 text-[11px] font-medium text-ink-600">
                 {TYPE_BADGE[account.type]}
               </span>
             )}
@@ -80,14 +80,14 @@ export const BankAccountCard = ({
         <div>
           <div
             className={`text-2xl font-bold financial-number tabular-nums ${
-              isNegative ? 'text-red-700' : 'text-slate-900'
+              isNegative ? 'text-expense-700' : 'text-ink-900'
             }`}
           >
             {formatTHB(headline, { decimals: 0 })}
           </div>
           <div className="mt-0.5 flex items-center justify-between text-xs">
-            <span className="text-slate-500">ยอดสะสมทุกปี</span>
-            <span className="text-slate-400 financial-number tabular-nums">
+            <span className="text-ink-500">ยอดสะสมทุกปี</span>
+            <span className="text-ink-400 financial-number tabular-nums">
               ปี {year} {formatTHB(yearTotal, { decimals: 0 })}
             </span>
           </div>
@@ -98,14 +98,14 @@ export const BankAccountCard = ({
         <button
           type="button"
           onClick={() => setAction('deposit')}
-          className="flex-1 rounded-lg border border-emerald-200 text-income py-1.5 text-xs font-semibold hover:bg-emerald-50 transition"
+          className="flex-1 rounded-lg border border-income-200 text-income-ink py-1.5 text-xs font-semibold hover:bg-income-50 transition"
         >
           ↓ ฝาก
         </button>
         <button
           type="button"
           onClick={() => setAction('withdraw')}
-          className="flex-1 rounded-lg border border-red-200 text-expense py-1.5 text-xs font-semibold hover:bg-red-50 transition"
+          className="flex-1 rounded-lg border border-expense-200 text-expense-ink py-1.5 text-xs font-semibold hover:bg-expense-50 transition"
         >
           ↑ ถอน
         </button>
@@ -114,7 +114,7 @@ export const BankAccountCard = ({
           onClick={() => setAction('transfer')}
           disabled={!hasOtherAccounts}
           title={hasOtherAccounts ? undefined : 'ต้องมีบัญชีอื่นอย่างน้อย 1 บัญชี'}
-          className="flex-1 rounded-lg border border-primary/30 text-primary py-1.5 text-xs font-semibold hover:bg-primary-light transition disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex-1 rounded-lg border border-primary-ink/30 text-primary-ink py-1.5 text-xs font-semibold hover:bg-primary-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
         >
           ⇄ โอน
         </button>

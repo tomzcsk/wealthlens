@@ -50,12 +50,12 @@ const MODE_META: Record<
   deposit: {
     title: 'ฝากเงิน',
     verb: 'ฝาก',
-    submitClass: 'bg-income hover:bg-emerald-700',
+    submitClass: 'bg-income hover:bg-income-dark',
   },
   withdraw: {
     title: 'ถอนเงิน',
     verb: 'ถอน',
-    submitClass: 'bg-expense hover:bg-red-700',
+    submitClass: 'bg-expense hover:bg-expense-dark',
   },
   transfer: {
     title: 'โอนเงิน',
@@ -125,13 +125,13 @@ export const BankActionForm = ({
   };
 
   const inputCls =
-    'mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30';
+    'mt-1 w-full rounded-lg border border-ink-300 px-3 py-2 text-sm focus:border-primary-ink focus:outline-none focus:ring-2 focus:ring-primary-ink/30';
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="text-sm text-slate-500">
+      <div className="text-sm text-ink-500">
         {account.name} · เดือน {monthLabel}
-        <span className="block text-xs text-slate-400">
+        <span className="block text-xs text-ink-400">
           ยอดเดือนนี้ตอนนี้:{' '}
           <span className="financial-number tabular-nums">
             {formatTHB(curBalance)}
@@ -139,7 +139,7 @@ export const BankActionForm = ({
         </span>
       </div>
 
-      <label className="block text-sm font-medium text-slate-700">
+      <label className="block text-sm font-medium text-ink-700">
         จำนวนเงิน (บาท)
         <input
           type="text"
@@ -153,7 +153,7 @@ export const BankActionForm = ({
       </label>
 
       {mode === 'transfer' && (
-        <label className="block text-sm font-medium text-slate-700">
+        <label className="block text-sm font-medium text-ink-700">
           โอนไปบัญชี
           <select
             value={toId}
@@ -171,7 +171,7 @@ export const BankActionForm = ({
       )}
 
       {error && (
-        <div className="rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
+        <div className="rounded-md bg-expense-50 border border-expense-200 px-3 py-2 text-sm text-expense-700">
           {error}
         </div>
       )}
@@ -180,7 +180,7 @@ export const BankActionForm = ({
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          className="rounded-lg border border-ink-300 px-4 py-2 text-sm font-medium text-ink-700 hover:bg-hover"
         >
           ยกเลิก
         </button>

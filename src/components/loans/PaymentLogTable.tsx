@@ -41,14 +41,14 @@ export const PaymentLogTable = ({
   );
 
   return (
-    <section className="bg-white rounded-2xl border border-slate-200 shadow-sm">
-      <header className="px-4 py-3 border-b border-slate-100 flex items-baseline justify-between">
-        <h2 className="text-sm font-semibold text-slate-700">
+    <section className="bg-card rounded-2xl border border-ink-200 shadow-sm">
+      <header className="px-4 py-3 border-b border-ink-100 flex items-baseline justify-between">
+        <h2 className="text-sm font-semibold text-ink-700">
           ประวัติการชำระ
         </h2>
-        <span className="text-xs text-slate-400">
+        <span className="text-xs text-ink-400">
           {log.length} รายการ · รวม{' '}
-          <span className="financial-number tabular-nums text-slate-600">
+          <span className="financial-number tabular-nums text-ink-600">
             {formatNumber(total, { decimals: 2 })}
           </span>{' '}
           บาท
@@ -56,7 +56,7 @@ export const PaymentLogTable = ({
       </header>
 
       {log.length === 0 ? (
-        <div className="px-6 py-12 text-center text-sm text-slate-500">
+        <div className="px-6 py-12 text-center text-sm text-ink-500">
           ยังไม่มีรายการชำระ — เพิ่มโปะพิเศษด้วยปุ่ม &quot;+ เพิ่มโปะ&quot;
           หรือกรอก กยศ ในฟอร์มรายได้รายเดือน
         </div>
@@ -64,7 +64,7 @@ export const PaymentLogTable = ({
         <>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
+              <thead className="bg-surface text-xs uppercase tracking-wider text-ink-500">
                 <tr>
                   <th className="px-3 py-2 text-left font-semibold">วันที่</th>
                   <th className="px-3 py-2 text-left font-semibold">
@@ -81,32 +81,32 @@ export const PaymentLogTable = ({
                 {visible.map((row: PaymentLogEntry, idx) => (
                   <tr
                     key={`${row.source}-${row.extraId ?? row.date}-${idx}`}
-                    className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition"
+                    className="border-b border-ink-100 last:border-b-0 hover:bg-hover transition"
                   >
-                    <td className="px-3 py-2 text-slate-600">
+                    <td className="px-3 py-2 text-ink-600">
                       {formatThaiDate(row.date)}
                     </td>
-                    <td className="px-3 py-2 text-xs tabular-nums text-slate-400">
+                    <td className="px-3 py-2 text-xs tabular-nums text-ink-400">
                       {row.reference ?? '—'}
                     </td>
                     <td className="px-3 py-2">
-                      <span className="text-slate-700">{row.label}</span>
+                      <span className="text-ink-700">{row.label}</span>
                       {row.source === 'auto' ? (
-                        <span className="ml-2 inline-flex items-center rounded-full bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500">
+                        <span className="ml-2 inline-flex items-center rounded-full bg-raised px-1.5 py-0.5 text-xs text-ink-500">
                           auto
                         </span>
                       ) : (
-                        <span className="ml-2 inline-flex items-center rounded-full bg-amber-50 px-1.5 py-0.5 text-xs text-amber-700">
+                        <span className="ml-2 inline-flex items-center rounded-full bg-warning-50 px-1.5 py-0.5 text-xs text-warning-700">
                           โปะ
                         </span>
                       )}
                       {row.notes && (
-                        <span className="ml-2 text-xs text-slate-400">
+                        <span className="ml-2 text-xs text-ink-400">
                           · {row.notes}
                         </span>
                       )}
                     </td>
-                    <td className="px-3 py-2 text-right financial-number tabular-nums text-slate-900">
+                    <td className="px-3 py-2 text-right financial-number tabular-nums text-ink-900">
                       {formatNumber(row.amount, { decimals: 2 })}
                     </td>
                     <td className="px-3 py-2 text-right">
@@ -115,7 +115,7 @@ export const PaymentLogTable = ({
                           type="button"
                           onClick={() => onDeleteExtra(row.extraId!)}
                           aria-label="ลบโปะนี้"
-                          className="p-1 text-slate-400 hover:text-expense transition"
+                          className="p-1 text-ink-400 hover:text-expense-ink transition"
                         >
                           🗑️
                         </button>
@@ -127,11 +127,11 @@ export const PaymentLogTable = ({
             </table>
           </div>
           {log.length > VISIBLE_DEFAULT && (
-            <div className="px-4 py-2 border-t border-slate-100 text-center">
+            <div className="px-4 py-2 border-t border-ink-100 text-center">
               <button
                 type="button"
                 onClick={() => setExpanded((v) => !v)}
-                className="text-xs font-medium text-primary hover:text-primary-dark"
+                className="text-xs font-medium text-primary-ink hover:text-primary-700"
               >
                 {expanded
                   ? '▴ แสดง 20 รายการล่าสุด'

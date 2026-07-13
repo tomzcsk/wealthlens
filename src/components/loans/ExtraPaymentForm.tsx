@@ -94,20 +94,20 @@ export const ExtraPaymentForm = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-slate-700">
+        <label className="block text-sm font-medium text-ink-700">
           วันที่ชำระ
           <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
             required
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="mt-1 w-full rounded-lg border border-ink-300 px-3 py-2 text-sm focus:border-primary-ink focus:outline-none focus:ring-2 focus:ring-primary-ink/30"
           />
         </label>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700">
+        <label className="block text-sm font-medium text-ink-700">
           จำนวนเงิน (บาท)
           <input
             type="text"
@@ -116,56 +116,56 @@ export const ExtraPaymentForm = ({
             onChange={handleAmountChange}
             placeholder="เช่น 10,000"
             autoFocus
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-base financial-number tabular-nums text-right focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="mt-1 w-full rounded-lg border border-ink-300 px-3 py-2 text-base financial-number tabular-nums text-right focus:border-primary-ink focus:outline-none focus:ring-2 focus:ring-primary-ink/30"
           />
         </label>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700">
+        <label className="block text-sm font-medium text-ink-700">
           เลขอ้างอิงรายการ
-          <span className="text-xs text-slate-400 font-normal"> (ถ้ามี)</span>
+          <span className="text-xs text-ink-400 font-normal"> (ถ้ามี)</span>
           <input
             type="text"
             value={reference}
             onChange={(e) => setReference(e.target.value)}
             placeholder="เช่น 68062600000000073388"
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm tabular-nums focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="mt-1 w-full rounded-lg border border-ink-300 px-3 py-2 text-sm tabular-nums focus:border-primary-ink focus:outline-none focus:ring-2 focus:ring-primary-ink/30"
           />
         </label>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700">
+        <label className="block text-sm font-medium text-ink-700">
           หมายเหตุ
-          <span className="text-xs text-slate-400 font-normal"> (ถ้ามี)</span>
+          <span className="text-xs text-ink-400 font-normal"> (ถ้ามี)</span>
           <input
             type="text"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="เช่น โปะกลางปี"
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="mt-1 w-full rounded-lg border border-ink-300 px-3 py-2 text-sm focus:border-primary-ink focus:outline-none focus:ring-2 focus:ring-primary-ink/30"
           />
         </label>
       </div>
 
-      <label className="flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 cursor-pointer hover:bg-slate-100 transition">
+      <label className="flex items-start gap-2 rounded-lg border border-ink-200 bg-surface p-3 cursor-pointer hover:bg-raised transition">
         <input
           type="checkbox"
           checked={createExpenseEntry}
           onChange={(e) => setCreateExpenseEntry(e.target.checked)}
-          className="mt-0.5 h-4 w-4 rounded border-slate-400 text-primary focus:ring-primary"
+          className="mt-0.5 h-4 w-4 rounded border-ink-400 text-primary-ink focus:ring-primary-ink"
         />
-        <span className="text-sm text-slate-700">
+        <span className="text-sm text-ink-700">
           สร้างรายการค่าใช้จ่ายในเดือนที่ชำระด้วย
-          <span className="block text-xs text-slate-500 mt-0.5">
+          <span className="block text-xs text-ink-500 mt-0.5">
             หมวด &quot;การเงิน&quot; — เห็นเงินไหลออกใน Overview เดือนนั้น
           </span>
         </span>
       </label>
 
       {error && (
-        <div className="rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
+        <div className="rounded-md bg-expense-50 border border-expense-200 px-3 py-2 text-sm text-expense-700">
           {error}
         </div>
       )}
@@ -174,7 +174,7 @@ export const ExtraPaymentForm = ({
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          className="rounded-lg border border-ink-300 px-4 py-2 text-sm font-medium text-ink-700 hover:bg-hover"
         >
           ยกเลิก
         </button>

@@ -25,7 +25,7 @@ export const BankAvatar = ({
   if (!bank || broken) {
     return (
       <span
-        className={`inline-flex shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-400 ${box}`}
+        className={`inline-flex shrink-0 items-center justify-center rounded-lg bg-raised text-ink-400 ${box}`}
         aria-hidden="true"
       >
         🏦
@@ -47,7 +47,7 @@ export const BankAvatar = ({
 
   return (
     <span
-      className={`inline-flex shrink-0 items-center justify-center rounded-lg bg-white border border-slate-200 overflow-hidden ${box}`}
+      className={`inline-flex shrink-0 items-center justify-center rounded-lg bg-card border border-ink-200 overflow-hidden ${box}`}
       title={bank.label}
     >
       <img

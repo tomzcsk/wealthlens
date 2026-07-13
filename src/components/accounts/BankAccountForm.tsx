@@ -73,8 +73,8 @@ export const BankAccountForm = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <span className="block text-sm font-medium text-slate-700 mb-2">ธนาคาร</span>
-        <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto rounded-lg border border-slate-200 p-2">
+        <span className="block text-sm font-medium text-ink-700 mb-2">ธนาคาร</span>
+        <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto rounded-lg border border-ink-200 p-2">
           {THAI_BANKS.map((b) => (
             <button
               key={b.key}
@@ -83,12 +83,12 @@ export const BankAccountForm = ({
               onClick={() => handlePickBank(b.key)}
               className={`flex items-center gap-1.5 rounded-lg border px-2 py-1.5 text-xs font-medium transition ${
                 bankKey === b.key
-                  ? 'border-primary ring-2 ring-primary/30 bg-primary/5'
-                  : 'border-slate-200 hover:border-slate-300'
+                  ? 'border-primary-ink ring-2 ring-primary-ink/30 bg-primary/5'
+                  : 'border-ink-200 hover:border-ink-300'
               }`}
             >
               <BankAvatar account={{ name: b.label, bankKey: b.key }} size="sm" />
-              <span className="text-slate-700">{b.label}</span>
+              <span className="text-ink-700">{b.label}</span>
             </button>
           ))}
           <button
@@ -97,23 +97,23 @@ export const BankAccountForm = ({
             onClick={() => setBankKey(null)}
             className={`flex items-center gap-1.5 rounded-lg border px-2 py-1.5 text-xs font-medium transition ${
               bankKey === null
-                ? 'border-primary ring-2 ring-primary/30 bg-primary/5'
-                : 'border-slate-200 hover:border-slate-300'
+                ? 'border-primary-ink ring-2 ring-primary-ink/30 bg-primary/5'
+                : 'border-ink-200 hover:border-ink-300'
             }`}
           >
             <span
-              className="inline-flex items-center justify-center rounded-lg bg-slate-100 text-slate-500 font-semibold px-2 py-1 text-[10px] min-w-[2.5rem]"
+              className="inline-flex items-center justify-center rounded-lg bg-raised text-ink-500 font-semibold px-2 py-1 text-[10px] min-w-[2.5rem]"
               aria-hidden="true"
             >
               🏦
             </span>
-            <span className="text-slate-700">อื่นๆ (พิมพ์เอง)</span>
+            <span className="text-ink-700">อื่นๆ (พิมพ์เอง)</span>
           </button>
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700">
+        <label className="block text-sm font-medium text-ink-700">
           ชื่อบัญชี
           <input
             type="text"
@@ -121,32 +121,32 @@ export const BankAccountForm = ({
             onChange={(e) => setName(e.target.value)}
             placeholder="เช่น กรุงศรี, กสิกร"
             required
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="mt-1 w-full rounded-lg border border-ink-300 px-3 py-2 text-sm focus:border-primary-ink focus:outline-none focus:ring-2 focus:ring-primary-ink/30"
           />
         </label>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700">
+        <label className="block text-sm font-medium text-ink-700">
           ประเภทบัญชี
           <select
             value={type}
             onChange={(e) => setType(e.target.value as BankAccountType)}
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="mt-1 w-full rounded-lg border border-ink-300 px-3 py-2 text-sm focus:border-primary-ink focus:outline-none focus:ring-2 focus:ring-primary-ink/30"
           >
             <option value="salary">บัญชีเงินเดือน</option>
             <option value="savings">บัญชีออมทรัพย์</option>
             <option value="cash">เงินสด</option>
             <option value="other">อื่นๆ</option>
           </select>
-          <span className="mt-1 block text-xs text-slate-500">
+          <span className="mt-1 block text-xs text-ink-500">
             ใช้ตั้งค่าเริ่มต้นว่าเงินเดือนจะเข้าบัญชีไหน
           </span>
         </label>
       </div>
 
       {error && (
-        <div className="rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
+        <div className="rounded-md bg-expense-50 border border-expense-200 px-3 py-2 text-sm text-expense-700">
           {error}
         </div>
       )}
@@ -155,7 +155,7 @@ export const BankAccountForm = ({
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          className="rounded-lg border border-ink-300 px-4 py-2 text-sm font-medium text-ink-700 hover:bg-hover"
         >
           ยกเลิก
         </button>

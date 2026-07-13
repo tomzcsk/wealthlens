@@ -203,14 +203,14 @@ export const LoanForm = ({
   };
 
   const inputCls =
-    'mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30';
+    'mt-1 w-full rounded-lg border border-ink-300 px-3 py-2 text-sm focus:border-primary-ink focus:outline-none focus:ring-2 focus:ring-primary-ink/30';
   const cellCls =
-    'w-full rounded border border-slate-300 px-2 py-1 text-sm financial-number tabular-nums text-right focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30';
+    'w-full rounded border border-ink-300 px-2 py-1 text-sm financial-number tabular-nums text-right focus:border-primary-ink focus:outline-none focus:ring-1 focus:ring-primary-ink/30';
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <label className="block text-sm font-medium text-slate-700">
+        <label className="block text-sm font-medium text-ink-700">
           ชื่อหนี้
           <input
             type="text"
@@ -221,7 +221,7 @@ export const LoanForm = ({
             className={inputCls}
           />
         </label>
-        <label className="block text-sm font-medium text-slate-700">
+        <label className="block text-sm font-medium text-ink-700">
           ประเภท
           <select
             value={type}
@@ -247,7 +247,7 @@ export const LoanForm = ({
           ).map(([value, label]) => (
             <label
               key={value}
-              className="flex items-center gap-2 text-slate-700"
+              className="flex items-center gap-2 text-ink-700"
             >
               <input
                 type="radio"
@@ -272,7 +272,7 @@ export const LoanForm = ({
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
-            <label className="block text-sm font-medium text-slate-700">
+            <label className="block text-sm font-medium text-ink-700">
               วันเริ่มงวดแรก
               <input
                 type="date"
@@ -281,7 +281,7 @@ export const LoanForm = ({
                 className={inputCls}
               />
             </label>
-            <label className="block text-sm font-medium text-slate-700">
+            <label className="block text-sm font-medium text-ink-700">
               จำนวนงวด
               <input
                 type="number"
@@ -291,7 +291,7 @@ export const LoanForm = ({
                 className={inputCls}
               />
             </label>
-            <label className="block text-sm font-medium text-slate-700">
+            <label className="block text-sm font-medium text-ink-700">
               ความถี่
               <select
                 value={frequency}
@@ -309,14 +309,14 @@ export const LoanForm = ({
           <button
             type="button"
             onClick={regenerate}
-            className="rounded-lg border border-primary px-4 py-2 text-sm font-semibold text-primary hover:bg-primary-light transition"
+            className="rounded-lg border border-primary-ink px-4 py-2 text-sm font-semibold text-primary-ink hover:bg-primary-50 transition"
           >
             {rows.length > 0 ? 'สร้างตารางใหม่' : 'สร้างตาราง'}
           </button>
         </>
       )}
 
-      <label className="flex items-start gap-2 text-sm text-slate-700">
+      <label className="flex items-start gap-2 text-sm text-ink-700">
         <input
           type="checkbox"
           checked={assumeOnSchedule}
@@ -325,7 +325,7 @@ export const LoanForm = ({
         />
         <span>
           ถือว่าจ่ายตามงวดอัตโนมัติ
-          <span className="block text-xs text-slate-500">
+          <span className="block text-xs text-ink-500">
             ยอดคงเหลือลดตามงวดที่ถึงกำหนด โดยไม่ต้องบันทึกอะไร ·
             ถ้าผูกรายจ่ายรายเดือนกับหนี้ก้อนนี้แล้ว ไม่ต้องติ๊ก (รายจ่ายจริงมาก่อนเสมอ)
           </span>
@@ -334,9 +334,9 @@ export const LoanForm = ({
 
       {rows.length > 0 && (
         <div className="space-y-2">
-          <div className="overflow-x-auto rounded-lg border border-slate-200">
+          <div className="overflow-x-auto rounded-lg border border-ink-200">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-xs text-slate-500">
+            <thead className="bg-surface text-xs text-ink-500">
               <tr>
                 <th className="px-2 py-2 text-left">งวด</th>
                 <th className="px-2 py-2 text-left">ครบกำหนด</th>
@@ -349,8 +349,8 @@ export const LoanForm = ({
             <tbody>
               {(showAllRows ? rows : rows.slice(0, ROWS_PREVIEW_LIMIT)).map(
                 (r, idx) => (
-                <tr key={r.id} className="border-t border-slate-100">
-                  <td className="px-2 py-1 tabular-nums text-slate-500">
+                <tr key={r.id} className="border-t border-ink-100">
+                  <td className="px-2 py-1 tabular-nums text-ink-500">
                     {idx + 1}
                   </td>
                   <td className="px-2 py-1">
@@ -360,7 +360,7 @@ export const LoanForm = ({
                       onChange={(e) =>
                         patchRow(r.id, 'dueDate', e.target.value)
                       }
-                      className="rounded border border-slate-300 px-2 py-1 text-sm focus:border-primary focus:outline-none"
+                      className="rounded border border-ink-300 px-2 py-1 text-sm focus:border-primary-ink focus:outline-none"
                     />
                   </td>
                   <td className="px-2 py-1">
@@ -385,7 +385,7 @@ export const LoanForm = ({
                       className={cellCls}
                     />
                   </td>
-                  <td className="px-2 py-1 text-right tabular-nums text-slate-700">
+                  <td className="px-2 py-1 text-right tabular-nums text-ink-700">
                     {formatNumber(rowTotal(r), { decimals: 0 })}
                   </td>
                   <td className="px-2 py-1 text-right">
@@ -393,7 +393,7 @@ export const LoanForm = ({
                       type="button"
                       onClick={() => removeRow(r.id)}
                       aria-label={`ลบงวด ${idx + 1}`}
-                      className="text-slate-400 hover:text-expense"
+                      className="text-ink-400 hover:text-expense-ink"
                     >
                       ✕
                     </button>
@@ -401,7 +401,7 @@ export const LoanForm = ({
                 </tr>
               ))}
             </tbody>
-            <tfoot className="bg-slate-50 text-sm font-semibold">
+            <tfoot className="bg-surface text-sm font-semibold">
               <tr>
                 <td className="px-2 py-2" colSpan={4}>
                   รวมทั้งก้อน
@@ -418,7 +418,7 @@ export const LoanForm = ({
             <button
               type="button"
               onClick={() => setShowAllRows(true)}
-              className="w-full rounded-lg border border-slate-200 py-2 text-sm text-primary hover:bg-slate-50 transition"
+              className="w-full rounded-lg border border-ink-200 py-2 text-sm text-primary-ink hover:bg-hover transition"
             >
               แสดงทั้งหมด ({rows.length} งวด)
             </button>
@@ -427,7 +427,7 @@ export const LoanForm = ({
       )}
 
       {error && (
-        <div className="rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
+        <div className="rounded-md bg-expense-50 border border-expense-200 px-3 py-2 text-sm text-expense-700">
           {error}
         </div>
       )}
@@ -436,7 +436,7 @@ export const LoanForm = ({
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          className="rounded-lg border border-ink-300 px-4 py-2 text-sm font-medium text-ink-700 hover:bg-hover"
         >
           ยกเลิก
         </button>

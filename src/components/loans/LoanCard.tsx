@@ -43,20 +43,20 @@ export const LoanCard = ({ loan, onOpen }: LoanCardProps): ReactNode => {
     <button
       type="button"
       onClick={onOpen}
-      className="text-left w-full bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3 hover:border-primary hover:shadow-md transition"
+      className="text-left w-full bg-card rounded-2xl border border-ink-200 shadow-sm p-5 space-y-3 hover:border-primary-ink hover:shadow-md transition"
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="font-semibold text-slate-900">{loan.name}</div>
-        <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
+        <div className="font-semibold text-ink-900">{loan.name}</div>
+        <span className="shrink-0 rounded-full bg-raised px-2 py-0.5 text-xs text-ink-500">
           {TYPE_LABEL[loan.type]}
         </span>
       </div>
 
       <div>
-        <div className="text-2xl font-bold financial-number tabular-nums text-slate-900">
+        <div className="text-2xl font-bold financial-number tabular-nums text-ink-900">
           {formatTHB(remaining, { decimals: 0 })}
         </div>
-        <div className="text-xs text-slate-500">
+        <div className="text-xs text-ink-500">
           เหลือต้องชำระ
           {yearsRemaining > 0 ? ` · อีก ${yearsRemaining} ปี` : ''}
           {endLabel ? ` · จบ ${endLabel}` : ''}
@@ -64,17 +64,17 @@ export const LoanCard = ({ loan, onOpen }: LoanCardProps): ReactNode => {
       </div>
 
       <div className="space-y-1">
-        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
+        <div className="h-2 w-full overflow-hidden rounded-full bg-track">
           <div
-            className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+            className="h-full rounded-full bg-income-fill transition-all duration-500"
             style={{ width: `${progressFraction * 100}%` }}
           />
         </div>
         <div className="flex items-center justify-between text-xs">
-          <span className="font-semibold tabular-nums text-emerald-700">
+          <span className="font-semibold tabular-nums text-income-700">
             {formatPercent(progressFraction)}
           </span>
-          <span className="text-slate-400 financial-number tabular-nums">
+          <span className="text-ink-400 financial-number tabular-nums">
             {formatTHB(totalPaid, { decimals: 0 })} /{' '}
             {formatTHB(scheduleTotal, { decimals: 0 })}
           </span>

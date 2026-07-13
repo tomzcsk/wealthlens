@@ -53,7 +53,7 @@ export const AmortizationBuilder = ({
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
-        <label className="block text-sm font-medium text-slate-700">
+        <label className="block text-sm font-medium text-ink-700">
           วันงวดแรก
           <input
             type="date"
@@ -62,7 +62,7 @@ export const AmortizationBuilder = ({
             className={inputCls}
           />
         </label>
-        <label className="block text-sm font-medium text-slate-700">
+        <label className="block text-sm font-medium text-ink-700">
           ยอดคงเหลือ (บาท)
           <input
             type="text"
@@ -73,7 +73,7 @@ export const AmortizationBuilder = ({
             className={inputCls}
           />
         </label>
-        <label className="block text-sm font-medium text-slate-700">
+        <label className="block text-sm font-medium text-ink-700">
           ดอกเบี้ย (%/ปี)
           <input
             type="text"
@@ -84,7 +84,7 @@ export const AmortizationBuilder = ({
             className={inputCls}
           />
         </label>
-        <label className="block text-sm font-medium text-slate-700">
+        <label className="block text-sm font-medium text-ink-700">
           จ่ายต่อเดือน (บาท)
           <input
             type="text"
@@ -98,7 +98,7 @@ export const AmortizationBuilder = ({
       </div>
 
       {preview.ok && (
-        <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-sm text-slate-700">
+        <div className="rounded-lg bg-surface border border-ink-200 px-3 py-2 text-sm text-ink-700">
           <span className="font-semibold tabular-nums">
             {preview.rows.length} งวด
           </span>{' '}
@@ -113,7 +113,7 @@ export const AmortizationBuilder = ({
         </div>
       )}
       {!preview.ok && (openingText !== '' || paymentText !== '') && (
-        <div className="rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800">
+        <div className="rounded-md bg-warning-50 border border-warning-200 px-3 py-2 text-sm text-warning-800">
           {AUTO_ERROR_TEXT[preview.error]}
         </div>
       )}
@@ -124,7 +124,7 @@ export const AmortizationBuilder = ({
           if (preview.ok) onGenerate(preview.rows);
         }}
         disabled={!preview.ok}
-        className="rounded-lg border border-primary px-4 py-2 text-sm font-semibold text-primary hover:bg-primary-light transition disabled:opacity-40"
+        className="rounded-lg border border-primary-ink px-4 py-2 text-sm font-semibold text-primary-ink hover:bg-primary-50 transition disabled:opacity-40"
       >
         สร้างตาราง
       </button>

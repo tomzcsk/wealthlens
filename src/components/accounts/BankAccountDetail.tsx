@@ -41,21 +41,21 @@ const MonthRow = ({
   const hasValue = value !== undefined;
   const isNegative = hasValue && value < 0;
   return (
-    <div className="group flex items-center gap-2 rounded-md px-3 py-2 transition hover:bg-slate-50">
+    <div className="group flex items-center gap-2 rounded-md px-3 py-2 transition hover:bg-hover">
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={isOpen}
         className="flex min-w-0 flex-1 items-center gap-2 text-left"
       >
-        <span aria-hidden="true" className="text-xs text-slate-300">
+        <span aria-hidden="true" className="text-xs text-ink-300">
           {isOpen ? '▾' : '▸'}
         </span>
-        <span className="truncate text-sm text-slate-900">
+        <span className="truncate text-sm text-ink-900">
           {THAI_MONTHS_LONG[month - 1]}
         </span>
         {txCount > 0 && (
-          <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
+          <span className="shrink-0 rounded-full bg-raised px-2 py-0.5 text-xs text-ink-500">
             {txCount} รายการ
           </span>
         )}
@@ -63,10 +63,10 @@ const MonthRow = ({
       <span
         className={`text-sm financial-number tabular-nums ${
           !hasValue
-            ? 'text-slate-400 italic'
+            ? 'text-ink-400 italic'
             : isNegative
-              ? 'text-red-700'
-              : 'text-slate-900'
+              ? 'text-expense-700'
+              : 'text-ink-900'
         }`}
       >
         {hasValue ? formatTHB(value) : '+ ใส่ยอด'}
@@ -75,7 +75,7 @@ const MonthRow = ({
         type="button"
         onClick={onEdit}
         aria-label="แก้ไขยอด"
-        className="p-1 text-slate-400 transition hover:text-primary"
+        className="p-1 text-ink-400 transition hover:text-primary-ink"
       >
         ✏️
       </button>
@@ -141,24 +141,24 @@ export const BankAccountDetail = ({
 
   return (
     <div className="space-y-6">
-      <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-1">
-        <div className="flex items-center gap-2 text-xs text-slate-500 uppercase tracking-wider">
+      <section className="bg-card rounded-2xl border border-ink-200 shadow-sm p-6 space-y-1">
+        <div className="flex items-center gap-2 text-xs text-ink-500 uppercase tracking-wider">
           <BankAvatar account={account} />
           <span>{account.name}</span>
         </div>
         <div className="flex items-baseline gap-3">
           <span
             className={`text-3xl font-bold financial-number tabular-nums ${
-              allTimeTotal < 0 ? 'text-red-700' : 'text-slate-900'
+              allTimeTotal < 0 ? 'text-expense-700' : 'text-ink-900'
             }`}
           >
             {formatTHB(allTimeTotal, { decimals: 0 })}
           </span>
-          <span className="text-sm text-slate-500">
+          <span className="text-sm text-ink-500">
             ยอดสะสมทุกปี · ปี {year}{' '}
             <span
               className={`financial-number tabular-nums ${
-                yearTotal < 0 ? 'text-red-600' : 'text-slate-600'
+                yearTotal < 0 ? 'text-expense-ink' : 'text-ink-600'
               }`}
             >
               {formatTHB(yearTotal, { decimals: 0 })}
@@ -170,14 +170,14 @@ export const BankAccountDetail = ({
           <button
             type="button"
             onClick={() => setAction('deposit')}
-            className="rounded-lg bg-income px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 transition"
+            className="rounded-lg bg-income px-4 py-2 text-sm font-semibold text-white hover:bg-income-dark transition"
           >
             ↓ ฝาก
           </button>
           <button
             type="button"
             onClick={() => setAction('withdraw')}
-            className="rounded-lg bg-expense px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 transition"
+            className="rounded-lg bg-expense px-4 py-2 text-sm font-semibold text-white hover:bg-expense-dark transition"
           >
             ↑ ถอน
           </button>
@@ -186,14 +186,14 @@ export const BankAccountDetail = ({
             onClick={() => setAction('transfer')}
             disabled={!hasOtherAccounts}
             title={hasOtherAccounts ? undefined : 'ต้องมีบัญชีอื่นอย่างน้อย 1 บัญชี'}
-            className="rounded-lg border border-primary px-4 py-2 text-sm font-semibold text-primary hover:bg-primary-light transition disabled:opacity-40 disabled:cursor-not-allowed"
+            className="rounded-lg border border-primary-ink px-4 py-2 text-sm font-semibold text-primary-ink hover:bg-primary-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
           >
             ⇄ โอน
           </button>
         </div>
       </section>
 
-      <section className="bg-white rounded-lg border border-slate-200 divide-y divide-slate-100">
+      <section className="bg-card rounded-lg border border-ink-200 divide-y divide-ink-100">
         <div className="px-1 py-2">
           {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
             const monthTx = txByMonth.get(month) ?? [];

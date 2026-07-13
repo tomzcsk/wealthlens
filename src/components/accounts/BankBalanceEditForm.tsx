@@ -109,14 +109,14 @@ export const BankBalanceEditForm = ({
       <div>
         <label
           htmlFor="bank-balance-delta-input"
-          className="block text-sm font-medium text-slate-700 mb-1.5"
+          className="block text-sm font-medium text-ink-700 mb-1.5"
         >
           ยอดบัญชี — {monthLabel} {year}
         </label>
 
-        <div className="flex items-center justify-between rounded-md bg-slate-50 border border-slate-200 px-3 py-2 mb-3">
-          <span className="text-sm text-slate-600">ยอดปัจจุบันเดือนนี้</span>
-          <span className="text-base font-medium tabular-nums text-slate-800">
+        <div className="flex items-center justify-between rounded-md bg-surface border border-ink-200 px-3 py-2 mb-3">
+          <span className="text-sm text-ink-600">ยอดปัจจุบันเดือนนี้</span>
+          <span className="text-base font-medium tabular-nums text-ink-800">
             {formatTHBAuto(base)}
           </span>
         </div>
@@ -129,21 +129,21 @@ export const BankBalanceEditForm = ({
           value={text}
           onChange={(e) => handleChange(e.target.value)}
           placeholder="เช่น +5,000 หรือ -3,000"
-          className="w-full px-3 py-2 text-base tabular-nums border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          className="w-full px-3 py-2 text-base tabular-nums border border-ink-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-ink focus:border-primary-ink transition"
         />
-        <p className="mt-1.5 text-xs text-slate-500">
+        <p className="mt-1.5 text-xs text-ink-500">
           เพิ่ม/ถอน · บวก = ฝากเข้า · ลบ = ถอนออก
         </p>
 
-        <div className="flex items-center justify-between rounded-md bg-primary-light border border-blue-100 px-3 py-2 mt-3">
-          <span className="text-sm text-slate-600">ยอดใหม่หลังบันทึก</span>
+        <div className="flex items-center justify-between rounded-md bg-primary-50 border border-primary-100 px-3 py-2 mt-3">
+          <span className="text-sm text-ink-600">ยอดใหม่หลังบันทึก</span>
           <span
             className={`text-lg font-semibold tabular-nums ${
               delta === null || delta === 0
-                ? 'text-slate-800'
+                ? 'text-ink-800'
                 : delta > 0
-                  ? 'text-income'
-                  : 'text-expense'
+                  ? 'text-income-ink'
+                  : 'text-expense-ink'
             }`}
           >
             {formatTHBAuto(newTotal)}
@@ -157,7 +157,7 @@ export const BankBalanceEditForm = ({
             <button
               type="button"
               onClick={handleClear}
-              className="px-3 py-2 text-sm font-medium text-expense bg-white border border-red-200 rounded-md hover:bg-red-50 transition"
+              className="px-3 py-2 text-sm font-medium text-expense-ink bg-card border border-expense-200 rounded-md hover:bg-expense-50 transition"
             >
               🗑️ ล้างยอดเดือนนี้
             </button>
@@ -167,7 +167,7 @@ export const BankBalanceEditForm = ({
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition"
+            className="px-4 py-2 text-sm font-medium text-ink-700 bg-card border border-ink-200 rounded-md hover:bg-hover transition"
           >
             ยกเลิก
           </button>

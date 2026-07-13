@@ -56,39 +56,39 @@ const LoanHero = ({
       : null;
 
   return (
-    <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+    <section className="bg-card rounded-2xl border border-ink-200 shadow-sm p-6 space-y-4">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="text-xs text-slate-500 uppercase tracking-wider">
+          <div className="text-xs text-ink-500 uppercase tracking-wider">
             {loan.name}
           </div>
           <div className="mt-1 flex items-baseline gap-3">
-            <span className="text-3xl font-bold financial-number tabular-nums text-slate-900">
+            <span className="text-3xl font-bold financial-number tabular-nums text-ink-900">
               <AnimatedNumber
                 value={remaining}
                 format={(v) => formatTHB(v, { decimals: 2 })}
               />
             </span>
-            <span className="text-sm text-slate-500">เหลือต้องชำระ</span>
+            <span className="text-sm text-ink-500">เหลือต้องชำระ</span>
           </div>
-          <div className="mt-1 text-sm text-slate-500">
+          <div className="mt-1 text-sm text-ink-500">
             {yearsRemaining > 0
               ? `อีก ${yearsRemaining} ปี`
               : 'ครบกำหนดสุดท้ายแล้ว'}
             {endLabel != null && (
-              <span className="text-slate-400"> · จบ {endLabel}</span>
+              <span className="text-ink-400"> · จบ {endLabel}</span>
             )}
           </div>
           {Math.round(principalRemaining) !== Math.round(remaining) && (
-            <div className="mt-1 text-sm text-slate-500">
+            <div className="mt-1 text-sm text-ink-500">
               เงินต้นคงเหลือ{' '}
-              <span className="financial-number tabular-nums text-slate-700">
+              <span className="financial-number tabular-nums text-ink-700">
                 {formatTHB(principalRemaining, { decimals: 2 })}
               </span>
             </div>
           )}
           {linkedCount > 0 && (
-            <div className="mt-1 text-xs text-slate-400">
+            <div className="mt-1 text-xs text-ink-400">
               ยอดคำนวณจากรายจ่ายที่ผูกไว้ {linkedCount} รายการ
             </div>
           )}
@@ -104,7 +104,7 @@ const LoanHero = ({
 
       <div className="space-y-2">
         <div
-          className="h-2 w-full overflow-hidden rounded-full bg-slate-200"
+          className="h-2 w-full overflow-hidden rounded-full bg-track"
           role="progressbar"
           aria-valuenow={Math.round(progressFraction * 100)}
           aria-valuemin={0}
@@ -112,17 +112,17 @@ const LoanHero = ({
           aria-label={`ความคืบหน้าการชำระ ${loan.name}`}
         >
           <div
-            className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+            className="h-full rounded-full bg-income-fill transition-all duration-500"
             style={{ width: `${progressFraction * 100}%` }}
           />
         </div>
         <div className="flex items-center justify-between text-xs">
-          <span className="font-semibold tabular-nums text-emerald-700">
+          <span className="font-semibold tabular-nums text-income-700">
             {formatPercent(progressFraction)}
           </span>
-          <span className="text-slate-500">
+          <span className="text-ink-500">
             จ่ายไปแล้ว{' '}
-            <span className="financial-number tabular-nums text-slate-700">
+            <span className="financial-number tabular-nums text-ink-700">
               {formatTHB(totalPaid, { decimals: 2 })}
             </span>{' '}
             /{' '}
@@ -149,23 +149,23 @@ const ThisYearCard = ({ summary }: { summary: LoanSummary }): ReactNode => {
     : installment.dueDate;
 
   return (
-    <section className="bg-white rounded-2xl border border-emerald-200 shadow-sm p-6 space-y-3">
+    <section className="bg-card rounded-2xl border border-income-200 shadow-sm p-6 space-y-3">
       <div className="flex items-baseline justify-between gap-2">
         <div className="flex items-baseline gap-2">
-          <h2 className="text-sm font-semibold text-slate-700">
+          <h2 className="text-sm font-semibold text-ink-700">
             งวดที่ {installment.installmentNumber}
           </h2>
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-ink-400">
             ครบกำหนด {dueLabel}
           </span>
         </div>
-        <span className="text-xs text-slate-400">
+        <span className="text-xs text-ink-400">
           ต้น{' '}
-          <span className="financial-number tabular-nums text-slate-600">
+          <span className="financial-number tabular-nums text-ink-600">
             {formatNumber(installment.principalAmount, { decimals: 2 })}
           </span>{' '}
           · ดอก{' '}
-          <span className="financial-number tabular-nums text-slate-600">
+          <span className="financial-number tabular-nums text-ink-600">
             {formatNumber(installment.interestAmount, { decimals: 2 })}
           </span>
         </span>
@@ -173,27 +173,27 @@ const ThisYearCard = ({ summary }: { summary: LoanSummary }): ReactNode => {
 
       <div className="grid grid-cols-3 gap-4">
         <div>
-          <div className="text-xs text-slate-500">ต้องจ่าย</div>
-          <div className="financial-number text-lg font-bold tabular-nums text-slate-900">
+          <div className="text-xs text-ink-500">ต้องจ่าย</div>
+          <div className="financial-number text-lg font-bold tabular-nums text-ink-900">
             {formatTHB(dueThisYear, { decimals: 2 })}
           </div>
         </div>
         <div>
-          <div className="text-xs text-slate-500">จ่ายไปแล้ว</div>
-          <div className="financial-number text-lg font-bold tabular-nums text-emerald-700">
+          <div className="text-xs text-ink-500">จ่ายไปแล้ว</div>
+          <div className="financial-number text-lg font-bold tabular-nums text-income-700">
             {formatTHB(paidThisYear, { decimals: 2 })}
           </div>
         </div>
         <div>
-          <div className="text-xs text-slate-500">เหลืออีก</div>
-          <div className="financial-number text-lg font-bold tabular-nums text-slate-900">
+          <div className="text-xs text-ink-500">เหลืออีก</div>
+          <div className="financial-number text-lg font-bold tabular-nums text-ink-900">
             {formatTHB(remaining, { decimals: 2 })}
           </div>
         </div>
       </div>
 
       <div
-        className="h-2 w-full overflow-hidden rounded-full bg-slate-200"
+        className="h-2 w-full overflow-hidden rounded-full bg-track"
         role="progressbar"
         aria-valuenow={Math.round(fraction * 100)}
         aria-valuemin={0}
@@ -201,15 +201,15 @@ const ThisYearCard = ({ summary }: { summary: LoanSummary }): ReactNode => {
         aria-label="ความคืบหน้าการชำระงวดนี้"
       >
         <div
-          className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+          className="h-full rounded-full bg-income-fill transition-all duration-500"
           style={{ width: `${fraction * 100}%` }}
         />
       </div>
       <div className="text-xs">
-        <span className="font-semibold tabular-nums text-emerald-700">
+        <span className="font-semibold tabular-nums text-income-700">
           {formatPercent(fraction)}
         </span>
-        <span className="text-slate-400"> ของงวดนี้</span>
+        <span className="text-ink-400"> ของงวดนี้</span>
       </div>
     </section>
   );
@@ -292,13 +292,13 @@ export const LoanDetail = ({ loan }: LoanDetailProps): ReactNode => {
       >
         {pendingExtra && (
           <div className="px-6 py-5 space-y-4">
-            <p className="text-sm text-slate-700">
+            <p className="text-sm text-ink-700">
               <span className="font-semibold financial-number tabular-nums">
                 {formatTHB(pendingExtra.amount, { decimals: 2 })}
               </span>{' '}
               · {pendingExtra.date}
               {pendingExtra.reference && (
-                <span className="block mt-1 text-xs tabular-nums text-slate-400">
+                <span className="block mt-1 text-xs tabular-nums text-ink-400">
                   ref {pendingExtra.reference}
                 </span>
               )}
@@ -309,10 +309,10 @@ export const LoanDetail = ({ loan }: LoanDetailProps): ReactNode => {
                   <button
                     type="button"
                     onClick={() => handleDeleteExtra(false)}
-                    className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 text-left transition"
+                    className="px-4 py-2 text-sm font-medium text-ink-700 bg-card border border-ink-300 rounded-md hover:bg-hover text-left transition"
                   >
                     <span className="block">ลบโปะอย่างเดียว</span>
-                    <span className="block text-xs text-slate-500 mt-0.5">
+                    <span className="block text-xs text-ink-500 mt-0.5">
                       เก็บค่าใช้จ่ายเดือนนั้นไว้
                     </span>
                   </button>
@@ -320,7 +320,7 @@ export const LoanDetail = ({ loan }: LoanDetailProps): ReactNode => {
               <button
                 type="button"
                 onClick={() => handleDeleteExtra(true)}
-                className="px-4 py-2 text-sm font-medium text-white bg-expense rounded-md hover:bg-red-700 text-left transition"
+                className="px-4 py-2 text-sm font-medium text-white bg-expense rounded-md hover:bg-expense-dark text-left transition"
               >
                 <span className="block">
                   {pendingExtra.linkedExpenseItemId
@@ -328,7 +328,7 @@ export const LoanDetail = ({ loan }: LoanDetailProps): ReactNode => {
                     : 'ลบโปะนี้'}
                 </span>
                 {pendingExtra.linkedExpenseItemId && (
-                  <span className="block text-xs text-red-100 mt-0.5">
+                  <span className="block text-xs text-expense-on-fill-100 mt-0.5">
                     ลบรายการค่าใช้จ่ายของเดือนชำระด้วย
                   </span>
                 )}
@@ -336,7 +336,7 @@ export const LoanDetail = ({ loan }: LoanDetailProps): ReactNode => {
               <button
                 type="button"
                 onClick={() => setPendingDeleteExtra(null)}
-                className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-md transition"
+                className="px-4 py-2 text-sm font-medium text-ink-600 hover:bg-hover rounded-md transition"
               >
                 ยกเลิก
               </button>

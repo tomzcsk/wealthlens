@@ -58,16 +58,16 @@ export const LoanScheduleTable = ({
   const totalAll = sorted.reduce((acc, i) => acc + i.totalAmount, 0);
 
   return (
-    <section className="bg-white rounded-2xl border border-slate-200 shadow-sm">
-      <header className="px-4 py-3 border-b border-slate-100 flex items-baseline justify-between">
-        <h2 className="text-sm font-semibold text-slate-700">ตารางผ่อนชำระ</h2>
-        <span className="text-xs text-slate-400">
+    <section className="bg-card rounded-2xl border border-ink-200 shadow-sm">
+      <header className="px-4 py-3 border-b border-ink-100 flex items-baseline justify-between">
+        <h2 className="text-sm font-semibold text-ink-700">ตารางผ่อนชำระ</h2>
+        <span className="text-xs text-ink-400">
           {sorted.length} งวด · จบ {formatScheduleDate(sorted[sorted.length - 1]?.dueDate ?? '')}
         </span>
       </header>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
+          <thead className="bg-surface text-xs uppercase tracking-wider text-ink-500">
             <tr>
               <th className="px-3 py-2 text-left font-semibold">งวด</th>
               <th className="px-3 py-2 text-left font-semibold">วันที่</th>
@@ -85,55 +85,55 @@ export const LoanScheduleTable = ({
               return (
                 <tr
                   key={row.installmentNumber}
-                  className={`border-b border-slate-100 last:border-b-0 ${
+                  className={`border-b border-ink-100 last:border-b-0 ${
                     isCurrent
-                      ? 'bg-emerald-50 hover:bg-emerald-100'
-                      : 'hover:bg-slate-50'
+                      ? 'bg-income-50 hover:bg-income-100'
+                      : 'hover:bg-hover'
                   } transition`}
                 >
-                  <td className="px-3 py-2 text-slate-700 font-medium">
+                  <td className="px-3 py-2 text-ink-700 font-medium">
                     {row.installmentNumber}
                     {isCurrent && (
                       <span
                         aria-hidden="true"
-                        className="ml-1.5 text-emerald-600"
+                        className="ml-1.5 text-income-ink"
                       >
                         ⭐
                       </span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-slate-600">
+                  <td className="px-3 py-2 text-ink-600">
                     {formatScheduleDate(row.dueDate)}
                   </td>
-                  <td className="px-3 py-2 text-right tabular-nums text-slate-600">
+                  <td className="px-3 py-2 text-right tabular-nums text-ink-600">
                     {formatPercent(row.principalRatio, { decimals: 2 })}
                   </td>
-                  <td className="px-3 py-2 text-right financial-number tabular-nums text-slate-900">
+                  <td className="px-3 py-2 text-right financial-number tabular-nums text-ink-900">
                     {formatNumber(row.principalAmount, { decimals: 2 })}
                   </td>
-                  <td className="px-3 py-2 text-right financial-number tabular-nums text-slate-600">
+                  <td className="px-3 py-2 text-right financial-number tabular-nums text-ink-600">
                     {formatNumber(row.interestAmount, { decimals: 2 })}
                   </td>
-                  <td className="px-3 py-2 text-right financial-number tabular-nums text-slate-900 font-medium">
+                  <td className="px-3 py-2 text-right financial-number tabular-nums text-ink-900 font-medium">
                     {formatNumber(row.totalAmount, { decimals: 2 })}
                   </td>
-                  <td className="px-3 py-2 text-right financial-number tabular-nums text-slate-500">
+                  <td className="px-3 py-2 text-right financial-number tabular-nums text-ink-500">
                     {formatNumber(cumulative[idx] ?? 0, { decimals: 2 })}
                   </td>
                 </tr>
               );
             })}
-            <tr className="bg-slate-50 font-semibold">
-              <td colSpan={3} className="px-3 py-2.5 text-slate-700">
+            <tr className="bg-surface font-semibold">
+              <td colSpan={3} className="px-3 py-2.5 text-ink-700">
                 ยอดรวม
               </td>
-              <td className="px-3 py-2.5 text-right financial-number tabular-nums text-slate-900">
+              <td className="px-3 py-2.5 text-right financial-number tabular-nums text-ink-900">
                 {formatNumber(totalPrincipal, { decimals: 2 })}
               </td>
-              <td className="px-3 py-2.5 text-right financial-number tabular-nums text-slate-900">
+              <td className="px-3 py-2.5 text-right financial-number tabular-nums text-ink-900">
                 {formatNumber(totalInterest, { decimals: 2 })}
               </td>
-              <td className="px-3 py-2.5 text-right financial-number tabular-nums text-slate-900">
+              <td className="px-3 py-2.5 text-right financial-number tabular-nums text-ink-900">
                 {formatTHB(totalAll, { decimals: 2 })}
               </td>
               <td />
