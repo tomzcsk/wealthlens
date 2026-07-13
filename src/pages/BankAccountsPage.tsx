@@ -74,10 +74,10 @@ export const BankAccountsPage = (): ReactNode => {
   const header = (
     <div className="flex items-center justify-between">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">
+        <h1 className="text-2xl font-bold text-ink-900">
           🏦 บัญชีธนาคาร
         </h1>
-        <p className="text-sm text-slate-500 mt-1">
+        <p className="text-sm text-ink-500 mt-1">
           ยอดเงินออมแต่ละบัญชี รายเดือน
         </p>
       </div>
@@ -116,8 +116,8 @@ export const BankAccountsPage = (): ReactNode => {
     return (
       <div className="space-y-6">
         {header}
-        <div className="rounded-lg border border-dashed border-slate-200 bg-white p-8 text-center space-y-4">
-          <p className="text-sm text-slate-500">ยังไม่มีบัญชีธนาคาร</p>
+        <div className="rounded-lg border border-dashed border-ink-200 bg-card p-8 text-center space-y-4">
+          <p className="text-sm text-ink-500">ยังไม่มีบัญชีธนาคาร</p>
           <button
             type="button"
             onClick={() => setForm('create')}
@@ -142,7 +142,7 @@ export const BankAccountsPage = (): ReactNode => {
             <button
               type="button"
               onClick={() => setOpenId(null)}
-              className="text-sm text-slate-500 hover:text-slate-900"
+              className="text-sm text-ink-500 hover:text-ink-900"
             >
               ← บัญชีทั้งหมด
             </button>
@@ -150,14 +150,14 @@ export const BankAccountsPage = (): ReactNode => {
               <button
                 type="button"
                 onClick={() => setForm({ editId: detailAccount.id })}
-                className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                className="rounded-lg border border-ink-300 px-3 py-1.5 text-sm font-medium text-ink-700 hover:bg-hover"
               >
                 แก้ไข
               </button>
               <button
                 type="button"
                 onClick={() => setPendingDeleteId(detailAccount.id)}
-                className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-expense hover:bg-red-50"
+                className="rounded-lg border border-expense-200 px-3 py-1.5 text-sm font-medium text-expense-ink hover:bg-expense-50"
               >
                 ลบ
               </button>
@@ -237,13 +237,13 @@ export const BankAccountsPage = (): ReactNode => {
           <div className="px-6 py-5 space-y-4">
             {blockedReason ? (
               <>
-                <p className="text-sm text-slate-700">
+                <p className="text-sm text-ink-700">
                   ลบ{' '}
                   <span className="font-semibold">{pendingAccount.name}</span>{' '}
                   ไม่ได้ — ยังถูกใช้อยู่ที่{' '}
                   <span className="font-semibold">{blockedReason}</span>
                 </p>
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-ink-500">
                   ถอดการผูกจากรายการเหล่านั้นก่อน แล้วจึงลบบัญชีนี้ได้ —
                   ถ้าลบตอนนี้ ยอดที่รายการเหล่านั้นเคยหัก/ฝากจะไม่มีที่ให้คืน
                 </p>
@@ -251,7 +251,7 @@ export const BankAccountsPage = (): ReactNode => {
                   <button
                     type="button"
                     onClick={() => setPendingDeleteId(null)}
-                    className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    className="rounded-lg border border-ink-300 px-4 py-2 text-sm font-medium text-ink-700 hover:bg-hover"
                   >
                     เข้าใจแล้ว
                   </button>
@@ -259,7 +259,7 @@ export const BankAccountsPage = (): ReactNode => {
               </>
             ) : (
               <>
-                <p className="text-sm text-slate-700">
+                <p className="text-sm text-ink-700">
                   ลบบัญชี{' '}
                   <span className="font-semibold">{pendingAccount.name}</span>{' '}
                   และยอดทั้งหมด?
@@ -268,14 +268,14 @@ export const BankAccountsPage = (): ReactNode => {
                   <button
                     type="button"
                     onClick={() => setPendingDeleteId(null)}
-                    className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    className="rounded-lg border border-ink-300 px-4 py-2 text-sm font-medium text-ink-700 hover:bg-hover"
                   >
                     ยกเลิก
                   </button>
                   <button
                     type="button"
                     onClick={handleDelete}
-                    className="rounded-lg bg-expense px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+                    className="rounded-lg bg-expense px-4 py-2 text-sm font-semibold text-white hover:bg-expense-dark"
                   >
                     ลบบัญชี
                   </button>

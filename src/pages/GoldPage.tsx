@@ -77,10 +77,10 @@ const SpotEntry = ({ purity, value }: SpotEntryProps): ReactNode => {
 
   if (!editing) {
     return (
-      <div className="flex items-baseline justify-between gap-2 px-3 py-2 rounded-md hover:bg-slate-50">
-        <span className="text-sm text-slate-600">{PURITY_LABELS[purity]}</span>
+      <div className="flex items-baseline justify-between gap-2 px-3 py-2 rounded-md hover:bg-hover">
+        <span className="text-sm text-ink-600">{PURITY_LABELS[purity]}</span>
         <div className="flex items-baseline gap-2">
-          <span className="text-sm financial-number tabular-nums text-slate-900">
+          <span className="text-sm financial-number tabular-nums text-ink-900">
             {value != null ? `${formatTHB(value)} / บาท` : '—'}
           </span>
           <button
@@ -89,7 +89,7 @@ const SpotEntry = ({ purity, value }: SpotEntryProps): ReactNode => {
               setDraft(value != null ? formatNumber(value) : '');
               setEditing(true);
             }}
-            className="text-xs text-primary hover:text-primary-dark"
+            className="text-xs text-primary-ink hover:text-primary-700"
           >
             แก้ไข
           </button>
@@ -100,7 +100,7 @@ const SpotEntry = ({ purity, value }: SpotEntryProps): ReactNode => {
 
   return (
     <div className="flex items-center gap-2 px-3 py-2">
-      <span className="text-sm text-slate-600 shrink-0">
+      <span className="text-sm text-ink-600 shrink-0">
         {PURITY_LABELS[purity]}
       </span>
       <input
@@ -114,7 +114,7 @@ const SpotEntry = ({ purity, value }: SpotEntryProps): ReactNode => {
           if (e.key === 'Escape') setEditing(false);
         }}
         placeholder="44,000"
-        className="flex-1 bg-slate-50 border border-slate-200 rounded-md px-2 py-1 text-sm financial-number text-right focus:outline-none focus:ring-2 focus:ring-primary"
+        className="flex-1 bg-surface border border-ink-200 rounded-md px-2 py-1 text-sm financial-number text-right focus:outline-none focus:ring-2 focus:ring-primary-ink"
       />
       <button
         type="button"
@@ -126,7 +126,7 @@ const SpotEntry = ({ purity, value }: SpotEntryProps): ReactNode => {
       <button
         type="button"
         onClick={() => setEditing(false)}
-        className="px-2 py-1 text-xs text-slate-500 hover:text-slate-900"
+        className="px-2 py-1 text-xs text-ink-500 hover:text-ink-900"
       >
         ยกเลิก
       </button>
@@ -164,46 +164,46 @@ const HoldingRow = ({
     : null;
 
   return (
-    <div className="grid grid-cols-12 gap-2 items-center px-3 py-2.5 border-b border-slate-100 last:border-b-0 text-sm hover:bg-slate-50 transition">
-      <div className="col-span-2 text-slate-700">
+    <div className="grid grid-cols-12 gap-2 items-center px-3 py-2.5 border-b border-ink-100 last:border-b-0 text-sm hover:bg-hover transition">
+      <div className="col-span-2 text-ink-700">
         <div>{holding.purchaseDate}</div>
         {isSold && holding.sold && (
-          <div className="text-xs text-slate-400 mt-0.5">
+          <div className="text-xs text-ink-400 mt-0.5">
             ขาย {holding.sold.soldDate}
           </div>
         )}
       </div>
       <div className="col-span-2 min-w-0">
-        <div className="text-slate-900 truncate" title={holding.brand}>
+        <div className="text-ink-900 truncate" title={holding.brand}>
           {holding.brand}
         </div>
-        <div className="text-xs text-slate-500">
+        <div className="text-xs text-ink-500">
           {TYPE_LABELS[holding.type]} · {holding.purity}%
         </div>
       </div>
       <div className="col-span-1 text-right">
-        <div className="financial-number tabular-nums text-slate-900">
+        <div className="financial-number tabular-nums text-ink-900">
           {holding.weightBaht}
         </div>
-        <div className="text-xs text-slate-400">
+        <div className="text-xs text-ink-400">
           {formatNumber(holding.weightBaht * GRAMS_PER_BAHT, { decimals: 2 })}g
         </div>
       </div>
-      <div className="col-span-2 text-right financial-number tabular-nums text-slate-900">
+      <div className="col-span-2 text-right financial-number tabular-nums text-ink-900">
         {formatTHB(holding.totalCost)}
-        <div className="text-xs text-slate-400">
+        <div className="text-xs text-ink-400">
           {formatTHB(pricePerBaht, { decimals: 0 })}/บาท
         </div>
       </div>
       <div className="col-span-2 text-right">
         {isSold && realizedPnl != null && holding.sold ? (
           <>
-            <div className="financial-number tabular-nums text-slate-900">
+            <div className="financial-number tabular-nums text-ink-900">
               {formatTHB(holding.sold.soldPrice)}
             </div>
             <div
               className={`text-xs financial-number ${
-                realizedPnl >= 0 ? 'text-income' : 'text-expense'
+                realizedPnl >= 0 ? 'text-income-ink' : 'text-expense-ink'
               }`}
             >
               {realizedPnl >= 0 ? '+' : ''}
@@ -212,13 +212,13 @@ const HoldingRow = ({
           </>
         ) : marketValue != null ? (
           <>
-            <div className="financial-number tabular-nums text-slate-900">
+            <div className="financial-number tabular-nums text-ink-900">
               {formatTHB(marketValue)}
             </div>
             {unrealizedPnl != null && (
               <div
                 className={`text-xs financial-number ${
-                  unrealizedPnl >= 0 ? 'text-income' : 'text-expense'
+                  unrealizedPnl >= 0 ? 'text-income-ink' : 'text-expense-ink'
                 }`}
               >
                 {unrealizedPnl >= 0 ? '+' : ''}
@@ -227,7 +227,7 @@ const HoldingRow = ({
             )}
           </>
         ) : (
-          <span className="text-xs text-slate-400">—</span>
+          <span className="text-xs text-ink-400">—</span>
         )}
       </div>
       <div className="col-span-3 flex items-center justify-end gap-1.5">
@@ -235,7 +235,7 @@ const HoldingRow = ({
           <button
             type="button"
             onClick={() => onSell(holding)}
-            className="px-2 py-1 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded hover:bg-amber-100 transition"
+            className="px-2 py-1 text-xs font-medium text-warning-700 bg-warning-50 border border-warning-200 rounded hover:bg-warning-100 transition"
           >
             💰 ขาย
           </button>
@@ -244,7 +244,7 @@ const HoldingRow = ({
           <button
             type="button"
             onClick={() => onUnsell(holding)}
-            className="px-2 py-1 text-xs text-slate-500 border border-slate-200 rounded hover:bg-slate-50 transition"
+            className="px-2 py-1 text-xs text-ink-500 border border-ink-200 rounded hover:bg-hover transition"
           >
             ↩️ ยกเลิกขาย
           </button>
@@ -253,7 +253,7 @@ const HoldingRow = ({
           type="button"
           onClick={() => onEdit(holding)}
           aria-label={`แก้ไข ${holding.brand}`}
-          className="p-1 text-slate-400 hover:text-primary transition"
+          className="p-1 text-ink-400 hover:text-primary-ink transition"
         >
           ✏️
         </button>
@@ -261,7 +261,7 @@ const HoldingRow = ({
           type="button"
           onClick={() => onDelete(holding)}
           aria-label={`ลบ ${holding.brand}`}
-          className="p-1 text-slate-400 hover:text-expense transition"
+          className="p-1 text-ink-400 hover:text-expense-ink transition"
         >
           🗑️
         </button>
@@ -375,8 +375,8 @@ export const GoldPage = (): ReactNode => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">🪙 ทองคำ</h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <h1 className="text-2xl font-bold text-ink-900">🪙 ทองคำ</h1>
+          <p className="text-sm text-ink-500 mt-1">
             asset ledger ทุกการซื้อ-ขายทองคำ — auto-link เข้า ออม/ลงทุน หรือ Kept
           </p>
         </div>
@@ -430,14 +430,14 @@ export const GoldPage = (): ReactNode => {
       </div>
 
       {/* Spot price editor */}
-      <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-2">
+      <section className="bg-card rounded-2xl border border-ink-200 shadow-sm p-4 space-y-2">
         <header className="flex items-center justify-between px-3 gap-2">
-          <h2 className="text-sm font-semibold text-slate-700">
+          <h2 className="text-sm font-semibold text-ink-700">
             ราคาทองปัจจุบัน
           </h2>
           <div className="flex items-center gap-3">
             {spotPrice?.updatedAt && (
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-ink-400">
                 อัปเดต {spotPrice.updatedAt.slice(0, 10)}
               </span>
             )}
@@ -445,18 +445,18 @@ export const GoldPage = (): ReactNode => {
               type="button"
               onClick={() => void handleFetchSpot()}
               disabled={fetchingSpot}
-              className="px-2.5 py-1 text-xs font-medium text-primary bg-primary-light border border-primary/20 rounded hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="px-2.5 py-1 text-xs font-medium text-primary-ink bg-primary-50 border border-primary-ink/20 rounded hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
               {fetchingSpot ? '⏳ กำลังดึง...' : '🔄 ดึงจาก สมาคมค้าทองคำ'}
             </button>
           </div>
         </header>
-        <div className="divide-y divide-slate-100">
+        <div className="divide-y divide-ink-100">
           <SpotEntry purity="96.5" value={spotPrice?.['96.5']} />
           <SpotEntry purity="99.99" value={spotPrice?.['99.99']} />
         </div>
         {spotPrice?.autoFetchedAt && (
-          <p className="px-3 pt-1 text-xs text-slate-500">
+          <p className="px-3 pt-1 text-xs text-ink-500">
             🟢 96.5% จาก สมาคมค้าทองคำ
             {spotPrice.autoFetchedRound && ` · ${spotPrice.autoFetchedRound}`}
             {' · '}
@@ -468,7 +468,7 @@ export const GoldPage = (): ReactNode => {
             })}
           </p>
         )}
-        <p className="px-3 pt-1 text-xs text-slate-400">
+        <p className="px-3 pt-1 text-xs text-ink-400">
           ราคาที่ใช้ = ราคาที่ร้านรับซื้อทองแท่ง (resale value). 99.99%
           ต้องกรอกเอง — API ไม่มีข้อมูล
         </p>
@@ -479,12 +479,12 @@ export const GoldPage = (): ReactNode => {
 
       {/* Active holdings */}
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-slate-900">
+        <h2 className="text-lg font-semibold text-ink-900">
           ยังถืออยู่ ({summary.activeCount})
         </h2>
         {summary.activeHoldings.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-slate-200 bg-white p-8 text-center">
-            <p className="text-sm text-slate-500 mb-4">ยังไม่มีทองในพอร์ต</p>
+          <div className="rounded-lg border border-dashed border-ink-200 bg-card p-8 text-center">
+            <p className="text-sm text-ink-500 mb-4">ยังไม่มีทองในพอร์ต</p>
             <button
               type="button"
               onClick={() => setCreateOpen(true)}
@@ -494,8 +494,8 @@ export const GoldPage = (): ReactNode => {
             </button>
           </div>
         ) : (
-          <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-            <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+          <div className="bg-card rounded-lg border border-ink-200 overflow-hidden">
+            <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-surface text-xs font-semibold text-ink-500 uppercase tracking-wider">
               <div className="col-span-2">วันที่</div>
               <div className="col-span-2">แบรนด์</div>
               <div className="col-span-1 text-right">บาท</div>
@@ -523,13 +523,13 @@ export const GoldPage = (): ReactNode => {
           <button
             type="button"
             onClick={() => setShowSold((v) => !v)}
-            className="text-sm text-slate-600 hover:text-slate-900"
+            className="text-sm text-ink-600 hover:text-ink-900"
           >
             {showSold ? '▾' : '▸'} ขายไปแล้ว ({summary.soldCount})
           </button>
           {showSold && (
-            <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-              <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            <div className="bg-card rounded-lg border border-ink-200 overflow-hidden">
+              <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-surface text-xs font-semibold text-ink-500 uppercase tracking-wider">
                 <div className="col-span-2">วันที่ซื้อ / ขาย</div>
                 <div className="col-span-2">แบรนด์</div>
                 <div className="col-span-1 text-right">บาท</div>
@@ -622,12 +622,12 @@ export const GoldPage = (): ReactNode => {
         {pendingDelete && (
           <div className="px-6 py-5 space-y-4">
             <div>
-              <p className="text-sm text-slate-700">
+              <p className="text-sm text-ink-700">
                 <span className="font-semibold">{pendingDelete.brand}</span>{' '}
                 · {pendingDelete.weightBaht} บาท · ซื้อเมื่อ{' '}
                 {pendingDelete.purchaseDate}
               </p>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-ink-500">
                 ต้นทุน {formatTHB(pendingDelete.totalCost)}
                 {pendingDelete.paymentMethod === 'cash' && (
                   <> · จ่ายเงินสด → สร้าง SavingsItem ไว้</>
@@ -641,20 +641,20 @@ export const GoldPage = (): ReactNode => {
               <button
                 type="button"
                 onClick={() => handleDelete(false)}
-                className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 text-left transition"
+                className="px-4 py-2 text-sm font-medium text-ink-700 bg-card border border-ink-300 rounded-md hover:bg-hover text-left transition"
               >
                 <span className="block">ลบทองอย่างเดียว</span>
-                <span className="block text-xs text-slate-500 mt-0.5">
+                <span className="block text-xs text-ink-500 mt-0.5">
                   เก็บ side-effect ในเดือนนั้นไว้ (savings / kept ยังเดิม)
                 </span>
               </button>
               <button
                 type="button"
                 onClick={() => handleDelete(true)}
-                className="px-4 py-2 text-sm font-medium text-white bg-expense rounded-md hover:bg-red-700 text-left transition"
+                className="px-4 py-2 text-sm font-medium text-white bg-expense rounded-md hover:bg-expense-dark text-left transition"
               >
                 <span className="block">ลบทอง + revert side-effect</span>
-                <span className="block text-xs text-red-100 mt-0.5">
+                <span className="block text-xs text-expense-on-fill-100 mt-0.5">
                   {pendingDelete.paymentMethod === 'cash'
                     ? 'ลบ SavingsItem ของเดือนซื้อด้วย'
                     : 'คืน Kept ของเดือนซื้อด้วย'}
@@ -663,7 +663,7 @@ export const GoldPage = (): ReactNode => {
               <button
                 type="button"
                 onClick={() => setPendingDelete(null)}
-                className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-md transition"
+                className="px-4 py-2 text-sm font-medium text-ink-600 hover:bg-hover rounded-md transition"
               >
                 ยกเลิก
               </button>
@@ -686,39 +686,39 @@ interface GoldAssistantProps {
 }
 
 const SIGNAL_TONE_CLASS: Record<AssistantSignalTone, string> = {
-  buy: 'border-emerald-200 bg-emerald-50',
-  sell: 'border-amber-200 bg-amber-50',
-  neutral: 'border-slate-200 bg-slate-50',
-  info: 'border-blue-200 bg-blue-50',
-  warmup: 'border-slate-200 bg-white',
+  buy: 'border-income-200 bg-income-50',
+  sell: 'border-warning-200 bg-warning-50',
+  neutral: 'border-ink-200 bg-surface',
+  info: 'border-primary-200 bg-primary-50',
+  warmup: 'border-ink-200 bg-card',
 };
 
 const SIGNAL_TONE_TEXT: Record<AssistantSignalTone, string> = {
-  buy: 'text-emerald-700',
-  sell: 'text-amber-700',
-  neutral: 'text-slate-700',
-  info: 'text-blue-700',
-  warmup: 'text-slate-500',
+  buy: 'text-income-700',
+  sell: 'text-warning-700',
+  neutral: 'text-ink-700',
+  info: 'text-primary-700',
+  warmup: 'text-ink-500',
 };
 
 const GoldAssistant = ({ assistant }: GoldAssistantProps): ReactNode => {
   const { signals, recentSnapshotCount, ma30Price, spotPrice } = assistant;
 
   return (
-    <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3">
+    <section className="bg-card rounded-2xl border border-ink-200 shadow-sm p-4 space-y-3">
       <header className="flex items-baseline justify-between px-1">
         <div className="flex items-baseline gap-2">
-          <h2 className="text-sm font-semibold text-slate-700">
+          <h2 className="text-sm font-semibold text-ink-700">
             🤖 ผู้ช่วยทอง
           </h2>
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-ink-400">
             สัญญาณจากข้อมูลของคุณ · ไม่ใช่คำแนะนำการลงทุน
           </span>
         </div>
         {ma30Price != null && spotPrice != null && (
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-ink-400">
             MA 30 วัน:{' '}
-            <span className="financial-number tabular-nums text-slate-600">
+            <span className="financial-number tabular-nums text-ink-600">
               {formatTHB(ma30Price, { decimals: 0 })}
             </span>{' '}
             · {recentSnapshotCount} จุด
@@ -738,7 +738,7 @@ const GoldAssistant = ({ assistant }: GoldAssistantProps): ReactNode => {
               <span className="mr-1.5">{sig.emoji}</span>
               {sig.title}
             </div>
-            <div className="text-xs text-slate-600 mt-1 leading-relaxed">
+            <div className="text-xs text-ink-600 mt-1 leading-relaxed">
               {sig.detail}
             </div>
           </div>
@@ -755,9 +755,9 @@ const GoldAssistant = ({ assistant }: GoldAssistantProps): ReactNode => {
 type KpiTone = 'default' | 'income' | 'expense';
 
 const KPI_TONE: Record<KpiTone, string> = {
-  default: 'text-slate-900',
-  income: 'text-income',
-  expense: 'text-expense',
+  default: 'text-ink-900',
+  income: 'text-income-ink',
+  expense: 'text-expense-ink',
 };
 
 const Kpi = ({
@@ -771,8 +771,8 @@ const Kpi = ({
   sub?: string;
   tone?: KpiTone;
 }): ReactNode => (
-  <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4">
-    <div className="text-xs text-slate-500 uppercase tracking-wider">
+  <div className="bg-card border border-ink-200 rounded-2xl shadow-sm p-4">
+    <div className="text-xs text-ink-500 uppercase tracking-wider">
       {label}
     </div>
     <div
@@ -780,7 +780,7 @@ const Kpi = ({
     >
       {value}
     </div>
-    {sub && <div className="mt-1 text-xs text-slate-500">{sub}</div>}
+    {sub && <div className="mt-1 text-xs text-ink-500">{sub}</div>}
   </div>
 );
 

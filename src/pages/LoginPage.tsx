@@ -20,21 +20,21 @@ export const LoginPage = (): ReactNode => {
           <div className="text-5xl mb-3" aria-hidden="true">
             💰
           </div>
-          <h1 className="text-4xl font-bold text-primary tracking-tight">
+          <h1 className="text-4xl font-bold text-primary-ink tracking-tight">
             WealthLens
           </h1>
-          <p className="mt-2 text-base text-slate-600">
+          <p className="mt-2 text-base text-ink-600">
             Personal Finance Dashboard ส่วนตัว
           </p>
         </div>
 
         {/* Login card */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-xl p-8 space-y-6">
+        <div className="bg-card rounded-2xl border border-ink-200 shadow-xl p-8 space-y-6">
           <div className="text-center space-y-2">
-            <h2 className="text-xl font-semibold text-slate-900">
+            <h2 className="text-xl font-semibold text-ink-900">
               ยินดีต้อนรับ
             </h2>
-            <p className="text-sm text-slate-500 leading-relaxed">
+            <p className="text-sm text-ink-500 leading-relaxed">
               เข้าสู่ระบบด้วย Gmail
               ของคุณเพื่อเริ่มใช้งาน — ข้อมูลจะถูกบันทึกใน Google Drive
               ส่วนตัวของคุณเท่านั้น
@@ -45,21 +45,21 @@ export const LoginPage = (): ReactNode => {
             <button
               type="button"
               onClick={signIn}
-              className="w-full flex items-center justify-center gap-3 bg-white border-2 border-slate-200 hover:border-primary hover:bg-primary-light/30 text-slate-900 font-semibold px-5 py-3 rounded-xl transition-all shadow-sm hover:shadow-md"
+              className="w-full flex items-center justify-center gap-3 bg-card border-2 border-ink-200 hover:border-primary-ink hover:bg-primary-50/30 text-ink-900 font-semibold px-5 py-3 rounded-xl transition-all shadow-sm hover:shadow-md"
             >
               <GoogleLogo />
               <span>เข้าสู่ระบบด้วย Google</span>
             </button>
           ) : (
-            <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-900">
+            <div className="rounded-xl bg-warning-50 border border-warning-200 p-4 text-sm text-warning-900">
               <div className="font-semibold mb-1">⚠️ Drive Sync ปิดอยู่</div>
-              <p className="text-xs leading-relaxed text-amber-800">
+              <p className="text-xs leading-relaxed text-warning-800">
                 ตั้งค่า{' '}
-                <code className="bg-white px-1.5 py-0.5 rounded text-amber-900 border border-amber-200">
+                <code className="bg-card px-1.5 py-0.5 rounded text-warning-900 border border-warning-200">
                   VITE_GOOGLE_CLIENT_ID
                 </code>{' '}
                 ใน{' '}
-                <code className="bg-white px-1.5 py-0.5 rounded text-amber-900 border border-amber-200">
+                <code className="bg-card px-1.5 py-0.5 rounded text-warning-900 border border-warning-200">
                   .env.local
                 </code>{' '}
                 เพื่อเปิดใช้ — ดูรายละเอียดที่{' '}
@@ -75,11 +75,11 @@ export const LoginPage = (): ReactNode => {
             </div>
           )}
 
-          <ul className="space-y-2.5 pt-3 border-t border-slate-100">
+          <ul className="space-y-2.5 pt-3 border-t border-ink-100">
             {FEATURES.map((f) => (
               <li
                 key={f.label}
-                className="flex items-start gap-3 text-sm text-slate-600"
+                className="flex items-start gap-3 text-sm text-ink-600"
               >
                 <span aria-hidden="true" className="text-base">
                   {f.icon}
@@ -91,9 +91,9 @@ export const LoginPage = (): ReactNode => {
         </div>
 
         {/* Footer note */}
-        <p className="mt-6 text-center text-xs text-slate-400">
+        <p className="mt-6 text-center text-xs text-ink-400">
           Drive scope:{' '}
-          <code className="px-1 py-0.5 bg-white/60 rounded">drive.file</code>{' '}
+          <code className="px-1 py-0.5 bg-card/60 rounded">drive.file</code>{' '}
           — เห็นแค่ไฟล์ที่แอปสร้างเอง
         </p>
       </div>

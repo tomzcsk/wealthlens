@@ -65,7 +65,7 @@ export const LoansPage = (): ReactNode => {
   // เพื่อไม่ให้หัวข้อซ้อนกัน.
   const header = (
     <div className="flex items-center justify-between">
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-ink-500">
         ตารางผ่อน + ประวัติชำระ ของหนี้ระยะยาว
       </p>
       {loans.length > 0 && (
@@ -103,8 +103,8 @@ export const LoansPage = (): ReactNode => {
     return (
       <div className="space-y-6">
         {header}
-        <div className="rounded-lg border border-dashed border-slate-200 bg-white p-8 text-center space-y-4">
-          <p className="text-sm text-slate-500">ยังไม่มีข้อมูลหนี้</p>
+        <div className="rounded-lg border border-dashed border-ink-200 bg-card p-8 text-center space-y-4">
+          <p className="text-sm text-ink-500">ยังไม่มีข้อมูลหนี้</p>
           <button
             type="button"
             onClick={() => setForm('create')}
@@ -119,7 +119,7 @@ export const LoansPage = (): ReactNode => {
                 seedLoan(gslLoan);
                 pushToast({ message: 'โหลด กยศ ตัวอย่างแล้ว', tone: 'success' });
               }}
-              className="text-xs text-slate-400 underline hover:text-slate-600"
+              className="text-xs text-ink-400 underline hover:text-ink-600"
             >
               โหลด กยศ ตัวอย่าง (ของ Tom)
             </button>
@@ -141,7 +141,7 @@ export const LoansPage = (): ReactNode => {
             <button
               type="button"
               onClick={() => setOpenId(null)}
-              className="text-sm text-slate-500 hover:text-slate-900"
+              className="text-sm text-ink-500 hover:text-ink-900"
             >
               ← หนี้ทั้งหมด
             </button>
@@ -149,14 +149,14 @@ export const LoansPage = (): ReactNode => {
               <button
                 type="button"
                 onClick={() => setForm({ editId: detailLoan.id })}
-                className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                className="rounded-lg border border-ink-300 px-3 py-1.5 text-sm font-medium text-ink-700 hover:bg-hover"
               >
                 แก้ไข
               </button>
               <button
                 type="button"
                 onClick={() => setPendingDeleteId(detailLoan.id)}
-                className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-expense hover:bg-red-50"
+                className="rounded-lg border border-expense-200 px-3 py-1.5 text-sm font-medium text-expense-ink hover:bg-expense-50"
               >
                 ลบ
               </button>
@@ -183,7 +183,7 @@ export const LoansPage = (): ReactNode => {
       >
         {pendingLoan && (
           <div className="px-6 py-5 space-y-4">
-            <p className="text-sm text-slate-700">
+            <p className="text-sm text-ink-700">
               ลบ{' '}
               <span className="font-semibold">{pendingLoan.name}</span>{' '}
               (ยอดคงเหลือ{' '}
@@ -196,14 +196,14 @@ export const LoansPage = (): ReactNode => {
               <button
                 type="button"
                 onClick={() => setPendingDeleteId(null)}
-                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                className="rounded-lg border border-ink-300 px-4 py-2 text-sm font-medium text-ink-700 hover:bg-hover"
               >
                 ยกเลิก
               </button>
               <button
                 type="button"
                 onClick={handleDelete}
-                className="rounded-lg bg-expense px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+                className="rounded-lg bg-expense px-4 py-2 text-sm font-semibold text-white hover:bg-expense-dark"
               >
                 ลบหนี้
               </button>

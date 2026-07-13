@@ -52,22 +52,22 @@ const PlanCard = ({ plan, onDelete }: PlanCardProps): ReactNode => {
       ? Math.min(100, Math.round((plan.paidAmount / plan.totalAmount) * 100))
       : 0;
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-4">
+    <div className="bg-card border border-ink-200 rounded-2xl shadow-sm p-5 space-y-4">
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span aria-hidden="true">{meta.icon}</span>
-            <h3 className="text-base font-semibold text-slate-900 truncate">
+            <h3 className="text-base font-semibold text-ink-900 truncate">
               {plan.name}
             </h3>
             {plan.isCompleted && (
-              <span className="px-2 py-0.5 text-[10px] font-medium text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-full">
+              <span className="px-2 py-0.5 text-[10px] font-medium text-income-800 bg-income-50 border border-income-200 rounded-full">
                 ผ่อนครบแล้ว
               </span>
             )}
           </div>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-ink-500 mt-1">
             {meta.label} · เริ่ม{' '}
             {formatThaiMonthYearShort(plan.startYear, plan.startMonth)} → จบ{' '}
             {formatThaiMonthYearShort(plan.endYear, plan.endMonth)}
@@ -76,7 +76,7 @@ const PlanCard = ({ plan, onDelete }: PlanCardProps): ReactNode => {
         <button
           type="button"
           onClick={() => onDelete(plan)}
-          className="text-xs text-slate-400 hover:text-expense transition shrink-0"
+          className="text-xs text-ink-400 hover:text-expense-ink transition shrink-0"
           aria-label={`ลบแผน ${plan.name}`}
         >
           🗑️ ลบทั้งแผน
@@ -85,7 +85,7 @@ const PlanCard = ({ plan, onDelete }: PlanCardProps): ReactNode => {
 
       {/* Progress bar */}
       <div>
-        <div className="flex items-baseline justify-between text-xs text-slate-500 mb-1">
+        <div className="flex items-baseline justify-between text-xs text-ink-500 mb-1">
           <span>
             ผ่อนไป {plan.paidMonths}/{plan.totalMonths} งวด
           </span>
@@ -93,24 +93,24 @@ const PlanCard = ({ plan, onDelete }: PlanCardProps): ReactNode => {
             {formatTHB(plan.paidAmount)} / {formatTHB(plan.totalAmount)}
           </span>
         </div>
-        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+        <div className="h-2 bg-raised rounded-full overflow-hidden">
           <div
             className={`h-full transition-all ${
-              plan.isCompleted ? 'bg-emerald-500' : 'bg-primary'
+              plan.isCompleted ? 'bg-income-fill' : 'bg-primary'
             }`}
             style={{ width: `${progressPct}%` }}
           />
         </div>
         <div className="mt-2 grid grid-cols-2 gap-3 text-xs">
           <div>
-            <div className="text-slate-500">คงเหลือ</div>
-            <div className="font-semibold text-slate-900 financial-number tabular-nums">
+            <div className="text-ink-500">คงเหลือ</div>
+            <div className="font-semibold text-ink-900 financial-number tabular-nums">
               {formatTHB(plan.remainingAmount)}
             </div>
           </div>
           <div className="text-right">
-            <div className="text-slate-500">งวดถัดไป</div>
-            <div className="font-semibold text-slate-900">
+            <div className="text-ink-500">งวดถัดไป</div>
+            <div className="font-semibold text-ink-900">
               {plan.nextDue ? (
                 <>
                   {formatThaiMonthYearShort(
@@ -123,7 +123,7 @@ const PlanCard = ({ plan, onDelete }: PlanCardProps): ReactNode => {
                   </span>
                 </>
               ) : (
-                <span className="text-slate-400">—</span>
+                <span className="text-ink-400">—</span>
               )}
             </div>
           </div>
@@ -135,7 +135,7 @@ const PlanCard = ({ plan, onDelete }: PlanCardProps): ReactNode => {
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="text-xs text-primary hover:text-primary-dark"
+          className="text-xs text-primary-ink hover:text-primary-700"
         >
           {expanded ? '▾ ซ่อน timeline' : `▸ ดู timeline (${plan.schedule.length} งวด)`}
         </button>
@@ -150,14 +150,14 @@ const PlanCard = ({ plan, onDelete }: PlanCardProps): ReactNode => {
                 <li
                   key={inst.sequence}
                   className={`flex items-center justify-between text-xs px-3 py-1.5 rounded ${
-                    faded ? 'bg-white text-slate-400' : 'bg-slate-50 text-slate-600'
+                    faded ? 'bg-card text-ink-400' : 'bg-surface text-ink-600'
                   }`}
                 >
                   <span>
                     งวด {inst.sequence}/{plan.totalMonths} ·{' '}
                     {formatThaiMonthYearShort(inst.year, inst.month)}
                     {!inst.materialized && (
-                      <span className="ml-2 inline-block px-1 text-[10px] text-slate-500 bg-slate-100 rounded">
+                      <span className="ml-2 inline-block px-1 text-[10px] text-ink-500 bg-raised rounded">
                         คาดการณ์
                       </span>
                     )}
@@ -252,7 +252,7 @@ export const InstallmentsPage = (): ReactNode => {
     <div className="space-y-6">
       {/* ชื่อหน้า/แท็บเป็นของ DebtPage แล้ว — เหลือแค่คำบรรยาย + ปุ่มสร้างแผนผ่อน */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-ink-500">
           ทุกแผนผ่อน 0% หรือผ่อนหลายงวดที่กำลังทยอยจ่ายอยู่
         </p>
         <button
@@ -285,10 +285,10 @@ export const InstallmentsPage = (): ReactNode => {
 
       {/* Active plans */}
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-slate-900">กำลังผ่อนอยู่</h2>
+        <h2 className="text-lg font-semibold text-ink-900">กำลังผ่อนอยู่</h2>
         {activePlans.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-slate-200 bg-white p-8 text-center">
-            <p className="text-sm text-slate-500 mb-4">
+          <div className="rounded-lg border border-dashed border-ink-200 bg-card p-8 text-center">
+            <p className="text-sm text-ink-500 mb-4">
               ยังไม่มีแผนผ่อนที่ active
             </p>
             <button
@@ -318,7 +318,7 @@ export const InstallmentsPage = (): ReactNode => {
           <button
             type="button"
             onClick={() => setShowCompleted((v) => !v)}
-            className="text-sm text-slate-600 hover:text-slate-900"
+            className="text-sm text-ink-600 hover:text-ink-900"
           >
             {showCompleted ? '▾' : '▸'} ผ่อนครบแล้ว ({completedPlans.length})
           </button>
@@ -365,13 +365,13 @@ export const InstallmentsPage = (): ReactNode => {
       >
         {pendingDelete && (
           <div className="px-6 py-5 space-y-4">
-            <p className="text-sm text-slate-700">
+            <p className="text-sm text-ink-700">
               ลบแผน{' '}
               <span className="font-semibold">{pendingDelete.name}</span>{' '}
               ({pendingDelete.totalMonths} งวด รวม{' '}
               {formatTHB(pendingDelete.totalAmount)})?
             </p>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-ink-500">
               เลือก "ยกเลิกสถานะผ่อน" ถ้าแค่อยากเอา badge ออกแต่เก็บรายการรายจ่ายไว้
               (เช่น รถยนต์) — หรือ "ลบทุกงวด" ถ้าต้องการลบรายการออกจริง (เช่น
               แผนซื้อของผ่อน) · ลบทุกงวด undo ไม่ได้
@@ -380,14 +380,14 @@ export const InstallmentsPage = (): ReactNode => {
               <button
                 type="button"
                 onClick={confirmUntag}
-                className="w-full px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition"
+                className="w-full px-4 py-2 text-sm font-medium text-ink-700 bg-card border border-ink-300 rounded-md hover:bg-hover transition"
               >
                 ยกเลิกสถานะผ่อน (เก็บรายการไว้)
               </button>
               <button
                 type="button"
                 onClick={confirmDelete}
-                className="w-full px-4 py-2 text-sm font-medium text-white bg-expense rounded-md hover:bg-red-700 transition"
+                className="w-full px-4 py-2 text-sm font-medium text-white bg-expense rounded-md hover:bg-expense-dark transition"
               >
                 ลบทุกงวด ({pendingDelete.totalMonths} งวด รวม{' '}
                 {pendingDelete.instances.length} แถว)
@@ -395,7 +395,7 @@ export const InstallmentsPage = (): ReactNode => {
               <button
                 type="button"
                 onClick={() => setPendingDelete(null)}
-                className="w-full px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 transition"
+                className="w-full px-4 py-2 text-sm font-medium text-ink-500 hover:text-ink-700 transition"
               >
                 ยกเลิก
               </button>
@@ -410,9 +410,9 @@ export const InstallmentsPage = (): ReactNode => {
 type KpiTone = 'default' | 'expense' | 'net';
 
 const KPI_TONE: Record<KpiTone, string> = {
-  default: 'text-slate-900',
-  expense: 'text-expense',
-  net: 'text-net',
+  default: 'text-ink-900',
+  expense: 'text-expense-ink',
+  net: 'text-net-ink',
 };
 
 const Kpi = ({
@@ -424,8 +424,8 @@ const Kpi = ({
   value: string;
   tone: KpiTone;
 }): ReactNode => (
-  <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4">
-    <div className="text-xs text-slate-500 uppercase tracking-wider">
+  <div className="bg-card border border-ink-200 rounded-2xl shadow-sm p-4">
+    <div className="text-xs text-ink-500 uppercase tracking-wider">
       {label}
     </div>
     <div

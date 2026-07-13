@@ -46,7 +46,7 @@ export const DebtPage = (): ReactNode => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-slate-900">💰 หนี้สิน</h1>
+      <h1 className="text-2xl font-bold text-ink-900">💰 หนี้สิน</h1>
 
       {/* Tab bar — plain buttons + aria-current (pill idiom reused from the
           year-toggle pills in MultiYearComparison). Buttons are natively
@@ -66,7 +66,7 @@ export const DebtPage = (): ReactNode => {
                 'rounded-full border px-4 py-1.5 text-sm font-medium transition',
                 isActive
                   ? 'border-transparent bg-primary text-white shadow-sm'
-                  : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50',
+                  : 'border-ink-200 bg-card text-ink-600 hover:border-ink-300 hover:bg-hover',
               ].join(' ')}
             >
               {tab.label}

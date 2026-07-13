@@ -64,19 +64,19 @@ export const MonthlyPage = (): ReactNode => {
             type="button"
             onClick={() => goMonth(month - 1)}
             disabled={month <= 1}
-            className="px-3 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-sm"
+            className="px-3 py-2 rounded-lg border border-ink-200 hover:bg-hover disabled:opacity-40 disabled:cursor-not-allowed text-sm"
             aria-label="เดือนก่อนหน้า"
           >
             ← {month > 1 ? THAI_MONTHS_LONG[month - 2] : ''}
           </button>
-          <h1 className="text-2xl font-bold text-slate-900 min-w-[12rem] text-center">
+          <h1 className="text-2xl font-bold text-ink-900 min-w-[12rem] text-center">
             {monthName}
           </h1>
           <button
             type="button"
             onClick={() => goMonth(month + 1)}
             disabled={month >= 12}
-            className="px-3 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-sm"
+            className="px-3 py-2 rounded-lg border border-ink-200 hover:bg-hover disabled:opacity-40 disabled:cursor-not-allowed text-sm"
             aria-label="เดือนถัดไป"
           >
             {month < 12 ? THAI_MONTHS_LONG[month] : ''} →
@@ -85,15 +85,15 @@ export const MonthlyPage = (): ReactNode => {
         <button
           type="button"
           onClick={() => navigate('/')}
-          className="text-sm text-slate-500 hover:text-slate-900"
+          className="text-sm text-ink-500 hover:text-ink-900"
         >
           ← กลับภาพรวม
         </button>
       </div>
 
-      <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+      <section className="bg-card rounded-2xl border border-ink-200 shadow-sm p-6 space-y-4">
         <header className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900">รายได้</h2>
+          <h2 className="text-lg font-semibold text-ink-900">รายได้</h2>
           <button
             type="button"
             onClick={() => setEditingIncome(true)}
@@ -135,17 +135,17 @@ export const MonthlyPage = (): ReactNode => {
             />
           </div>
         ) : (
-          <p className="text-slate-500 text-sm py-8 text-center">
+          <p className="text-ink-500 text-sm py-8 text-center">
             ยังไม่มีข้อมูลรายได้สำหรับเดือนนี้ — กด "เพิ่มรายได้" เพื่อเพิ่ม
           </p>
         )}
       </section>
 
-      <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+      <section className="bg-card rounded-2xl border border-ink-200 shadow-sm p-6 space-y-4">
         <header className="flex items-baseline justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">ออม / ลงทุน</h2>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <h2 className="text-lg font-semibold text-ink-900">ออม / ลงทุน</h2>
+            <p className="text-xs text-ink-500 mt-0.5">
               เงินที่กันไว้สะสม — ไม่ใช่ค่าใช้จ่าย
             </p>
           </div>
@@ -200,11 +200,11 @@ export const MonthlyPage = (): ReactNode => {
 type StatTone = 'default' | 'muted' | 'income' | 'expense' | 'net';
 
 const TONE_CLASS: Record<StatTone, string> = {
-  default: 'text-slate-900',
-  muted: 'text-slate-500',
-  income: 'text-income',
-  expense: 'text-expense',
-  net: 'text-net',
+  default: 'text-ink-900',
+  muted: 'text-ink-500',
+  income: 'text-income-ink',
+  expense: 'text-expense-ink',
+  net: 'text-net-ink',
 };
 
 const Stat = ({
@@ -219,7 +219,7 @@ const Stat = ({
   emphasize?: boolean;
 }): ReactNode => (
   <div className="space-y-1">
-    <div className="text-xs text-slate-500 uppercase tracking-wider">
+    <div className="text-xs text-ink-500 uppercase tracking-wider">
       {label}
     </div>
     <div

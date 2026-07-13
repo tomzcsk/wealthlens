@@ -109,8 +109,8 @@ export const WealthPage = (): ReactNode => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">💎 ความมั่งคั่ง</h1>
-        <p className="text-sm text-slate-500 mt-1">
+        <h1 className="text-2xl font-bold text-ink-900">💎 ความมั่งคั่ง</h1>
+        <p className="text-sm text-ink-500 mt-1">
           สินทรัพย์ − หนี้ = เงินที่เป็นของคุณจริงๆ
         </p>
       </div>

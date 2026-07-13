@@ -30,11 +30,11 @@ import { useSyncStore, type SyncStatus } from '@/stores/syncStore';
 import { formatRelativeTime, formatThaiDate } from '@/utils/formatters';
 
 const STATUS_LABEL: Record<SyncStatus, { icon: string; label: string; tone: string }> = {
-  idle: { icon: '○', label: 'ไม่ได้ซิงค์', tone: 'text-slate-500' },
-  syncing: { icon: '↻', label: 'กำลังซิงค์...', tone: 'text-primary' },
-  synced: { icon: '✓', label: 'ซิงค์แล้ว', tone: 'text-income' },
-  offline: { icon: '○', label: 'ออฟไลน์', tone: 'text-slate-500' },
-  error: { icon: '!', label: 'ซิงค์ผิดพลาด', tone: 'text-expense' },
+  idle: { icon: '○', label: 'ไม่ได้ซิงค์', tone: 'text-ink-500' },
+  syncing: { icon: '↻', label: 'กำลังซิงค์...', tone: 'text-primary-ink' },
+  synced: { icon: '✓', label: 'ซิงค์แล้ว', tone: 'text-income-ink' },
+  offline: { icon: '○', label: 'ออฟไลน์', tone: 'text-ink-500' },
+  error: { icon: '!', label: 'ซิงค์ผิดพลาด', tone: 'text-expense-ink' },
 };
 
 const RESTORE_CONFIRM =
@@ -89,37 +89,37 @@ export const SettingsPage = (): ReactNode => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-slate-900">ตั้งค่า</h1>
+      <h1 className="text-2xl font-bold text-ink-900">ตั้งค่า</h1>
 
       <section
         aria-labelledby="settings-data-sync"
-        className="bg-white border border-slate-200 rounded-xl p-6 space-y-4"
+        className="bg-card border border-ink-200 rounded-xl p-6 space-y-4"
       >
         <header>
           <h2
             id="settings-data-sync"
-            className="text-lg font-semibold text-slate-900"
+            className="text-lg font-semibold text-ink-900"
           >
             ซิงค์ข้อมูล
           </h2>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-ink-500">
             ข้อมูลจะถูกซิงค์กับ Google Drive ของคุณโดยอัตโนมัติ —
             แอปไม่เก็บข้อมูลไว้บน server กลาง
           </p>
         </header>
 
         {!isReady ? (
-          <div className="rounded-lg bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-600">
-            <div className="font-medium text-slate-700">Drive Sync ปิดอยู่</div>
-            <p className="mt-1 text-xs text-slate-500">
-              ตั้งค่า <code className="px-1 py-0.5 bg-white border rounded">VITE_GOOGLE_CLIENT_ID</code>
-              {' '}ใน <code className="px-1 py-0.5 bg-white border rounded">.env.local</code>
+          <div className="rounded-lg bg-surface border border-ink-200 px-4 py-3 text-sm text-ink-600">
+            <div className="font-medium text-ink-700">Drive Sync ปิดอยู่</div>
+            <p className="mt-1 text-xs text-ink-500">
+              ตั้งค่า <code className="px-1 py-0.5 bg-card border rounded">VITE_GOOGLE_CLIENT_ID</code>
+              {' '}ใน <code className="px-1 py-0.5 bg-card border rounded">.env.local</code>
               {' '}เพื่อเปิดใช้งานการซิงค์กับ Google Drive
             </p>
           </div>
         ) : !isSignedIn ? (
-          <div className="rounded-lg bg-slate-50 border border-slate-200 px-4 py-4 flex items-center justify-between gap-4">
-            <p className="text-sm text-slate-600">
+          <div className="rounded-lg bg-surface border border-ink-200 px-4 py-4 flex items-center justify-between gap-4">
+            <p className="text-sm text-ink-600">
               ยังไม่ได้เข้าสู่ระบบ Google
             </p>
             <GoogleSignInButton />
@@ -128,26 +128,26 @@ export const SettingsPage = (): ReactNode => {
           <>
             <div className="flex flex-col gap-1 text-sm">
               <div className="flex items-center gap-2">
-                <span className="text-slate-500">สถานะ:</span>
+                <span className="text-ink-500">สถานะ:</span>
                 <span className={`font-medium ${statusInfo.tone}`}>
                   <span aria-hidden="true" className="mr-1">{statusInfo.icon}</span>
                   {statusInfo.label}
                 </span>
               </div>
-              <div className="flex items-center gap-2 text-slate-500">
+              <div className="flex items-center gap-2 text-ink-500">
                 <span>ซิงค์ล่าสุด:</span>
-                <span className="font-medium text-slate-700 tabular-nums">
+                <span className="font-medium text-ink-700 tabular-nums">
                   {formatTimestamp(lastSyncedAt)}
                 </span>
               </div>
               {user ? (
-                <div className="flex items-center gap-2 text-slate-500">
+                <div className="flex items-center gap-2 text-ink-500">
                   <span>บัญชี:</span>
-                  <span className="font-medium text-slate-700">{user.email}</span>
+                  <span className="font-medium text-ink-700">{user.email}</span>
                 </div>
               ) : null}
               {status === 'error' && errorMessage ? (
-                <div className="mt-1 text-xs text-expense">{errorMessage}</div>
+                <div className="mt-1 text-xs text-expense-ink">{errorMessage}</div>
               ) : null}
             </div>
 
@@ -164,13 +164,13 @@ export const SettingsPage = (): ReactNode => {
                 type="button"
                 onClick={onReload}
                 disabled={busy !== null}
-                className="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 border border-slate-300 disabled:opacity-50 disabled:cursor-not-allowed text-slate-700 text-sm font-semibold px-4 py-2 rounded-lg shadow-sm transition-colors"
+                className="inline-flex items-center gap-1.5 bg-card hover:bg-hover border border-ink-300 disabled:opacity-50 disabled:cursor-not-allowed text-ink-700 text-sm font-semibold px-4 py-2 rounded-lg shadow-sm transition-colors"
               >
                 {busy === 'reload' ? 'กำลังคืนค่า...' : 'คืนค่าจาก Drive'}
               </button>
             </div>
 
-            <p className="text-xs text-slate-500 leading-relaxed">
+            <p className="text-xs text-ink-500 leading-relaxed">
               <span aria-hidden="true">⚠️ </span>
               คืนค่าจาก Drive จะแทนที่ข้อมูลในเครื่องด้วยข้อมูลล่าสุดจาก
               Google Drive ทั้งหมด

@@ -76,12 +76,12 @@ const PRINT_STYLES = `
 `;
 
 const HEADER_CELL =
-  'px-2 py-1.5 text-right font-semibold text-slate-700 border-b border-slate-300 tabular-nums';
+  'px-2 py-1.5 text-right font-semibold text-ink-700 border-b border-ink-300 tabular-nums';
 const HEADER_CELL_LEFT =
-  'px-2 py-1.5 text-left font-semibold text-slate-700 border-b border-slate-300';
+  'px-2 py-1.5 text-left font-semibold text-ink-700 border-b border-ink-300';
 const BODY_CELL =
-  'px-2 py-1 text-right tabular-nums border-b border-slate-100';
-const BODY_CELL_LEFT = 'px-2 py-1 text-left border-b border-slate-100';
+  'px-2 py-1 text-right tabular-nums border-b border-ink-100';
+const BODY_CELL_LEFT = 'px-2 py-1 text-left border-b border-ink-100';
 
 interface CategoryRowVm {
   category: string;
@@ -217,13 +217,13 @@ const PrintReportPage = (): ReactNode => {
       <style>{PRINT_STYLES}</style>
 
       {/* Top toolbar — never prints. */}
-      <div className="no-print bg-slate-100 border-b border-slate-200 sticky top-0 z-10">
+      <div className="no-print bg-raised border-b border-ink-200 sticky top-0 z-10">
         <div className="max-w-[210mm] mx-auto px-4 py-3 flex items-center justify-between gap-4">
-          <div className="text-sm text-slate-600">
-            <span className="font-semibold text-slate-800">
+          <div className="text-sm text-ink-600">
+            <span className="font-semibold text-ink-800">
               WealthLens รายงานรายปี
             </span>
-            <span className="ml-2 text-slate-500">ปี {safeYear}</span>
+            <span className="ml-2 text-ink-500">ปี {safeYear}</span>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -238,27 +238,27 @@ const PrintReportPage = (): ReactNode => {
         </div>
       </div>
 
-      <article className="print-page text-slate-900">
+      <article className="print-page text-ink-900">
         {/* ── Header ───────────────────────────────────────────── */}
-        <header className="flex items-end justify-between border-b-2 border-slate-900 pb-3 mb-6 avoid-break">
+        <header className="flex items-end justify-between border-b-2 border-ink-900 pb-3 mb-6 avoid-break">
           <div>
-            <div className="text-xs uppercase tracking-wider text-slate-500">
+            <div className="text-xs uppercase tracking-wider text-ink-500">
               รายงานสรุปการเงินรายปี
             </div>
             <h1 className="text-3xl font-bold mt-1">WealthLens — ปี {safeYear}</h1>
           </div>
-          <div className="text-right text-xs text-slate-500 leading-tight">
+          <div className="text-right text-xs text-ink-500 leading-tight">
             <div>สร้างเมื่อ</div>
-            <div className="font-medium text-slate-700">{generatedAt}</div>
+            <div className="font-medium text-ink-700">{generatedAt}</div>
           </div>
         </header>
 
         {/* ── Year Summary ─────────────────────────────────────── */}
         <section className="avoid-break mb-6">
-          <h2 className="text-base font-semibold text-slate-700 uppercase tracking-wide mb-3">
+          <h2 className="text-base font-semibold text-ink-700 uppercase tracking-wide mb-3">
             สรุปรายปี
           </h2>
-          <div className="grid grid-cols-2 gap-x-8 gap-y-2 border border-slate-300 rounded p-4">
+          <div className="grid grid-cols-2 gap-x-8 gap-y-2 border border-ink-300 rounded p-4">
             <SummaryLine label="รายรับรวม (Net All)" value={summary.netAll} accent="net" />
             <SummaryLine label="ค่าใช้จ่ายทั้งหมด" value={summary.totalExpenses} accent="expense" />
             <SummaryLine label="เงินเดือน" value={summary.salary} />
@@ -269,14 +269,14 @@ const PrintReportPage = (): ReactNode => {
             <SummaryLine label="เหลือจริง (Kept)" value={summary.remaining} accent="kept" />
             <SummaryLine label="รายได้สุทธิเฉลี่ย" value={avgMonthlyNet} />
           </div>
-          <p className="text-xs text-slate-500 mt-2">
+          <p className="text-xs text-ink-500 mt-2">
             จำนวนเดือนที่มีข้อมูล: <span className="tabular-nums font-medium">{summary.monthsWithData}</span>
           </p>
         </section>
 
         {/* ── Monthly Breakdown ───────────────────────────────── */}
         <section className="mb-6">
-          <h2 className="text-base font-semibold text-slate-700 uppercase tracking-wide mb-3">
+          <h2 className="text-base font-semibold text-ink-700 uppercase tracking-wide mb-3">
             แยกรายเดือน
           </h2>
           <table className="w-full text-xs border-collapse">
@@ -306,13 +306,13 @@ const PrintReportPage = (): ReactNode => {
                     <td className={BODY_CELL}>{formatNumber(row.totalDeductions)}</td>
                     <td className={BODY_CELL}>{formatNumber(row.netAll)}</td>
                     <td className={BODY_CELL}>{formatNumber(row.totalExpenses)}</td>
-                    <td className={`${BODY_CELL} ${row.remaining < 0 ? 'text-expense font-semibold' : ''}`}>
+                    <td className={`${BODY_CELL} ${row.remaining < 0 ? 'text-expense-ink font-semibold' : ''}`}>
                       {formatNumber(row.remaining)}
                     </td>
                   </tr>
                 );
               })}
-              <tr className="font-semibold border-t-2 border-slate-400">
+              <tr className="font-semibold border-t-2 border-ink-400">
                 <td className="px-2 py-1.5 text-left">รวม</td>
                 <td className={BODY_CELL}>{formatNumber(summary.salary)}</td>
                 <td className={BODY_CELL}>{formatNumber(summary.bonus)}</td>
@@ -336,11 +336,11 @@ const PrintReportPage = (): ReactNode => {
 
         {/* ── Expense Breakdown by Category ─────────────────────── */}
         <section className="mb-6 avoid-break">
-          <h2 className="text-base font-semibold text-slate-700 uppercase tracking-wide mb-3">
+          <h2 className="text-base font-semibold text-ink-700 uppercase tracking-wide mb-3">
             ค่าใช้จ่ายแยกตามหมวด
           </h2>
           {categoryRows.length === 0 ? (
-            <p className="text-sm text-slate-500 italic">ยังไม่มีค่าใช้จ่ายในปีนี้</p>
+            <p className="text-sm text-ink-500 italic">ยังไม่มีค่าใช้จ่ายในปีนี้</p>
           ) : (
             <table className="w-full text-sm border-collapse">
               <thead>
@@ -368,7 +368,7 @@ const PrintReportPage = (): ReactNode => {
                     <td className={BODY_CELL}>{row.pct.toFixed(1)}%</td>
                   </tr>
                 ))}
-                <tr className="font-semibold border-t-2 border-slate-400">
+                <tr className="font-semibold border-t-2 border-ink-400">
                   <td className="px-2 py-1.5 text-left">รวม</td>
                   <td className={BODY_CELL}>{formatTHB(summary.totalExpenses)}</td>
                   <td className={BODY_CELL}>100.0%</td>
@@ -380,11 +380,11 @@ const PrintReportPage = (): ReactNode => {
 
         {/* ── Top Subscriptions ─────────────────────────────────── */}
         <section className="mb-6 avoid-break">
-          <h2 className="text-base font-semibold text-slate-700 uppercase tracking-wide mb-3">
+          <h2 className="text-base font-semibold text-ink-700 uppercase tracking-wide mb-3">
             Subscription หลัก
           </h2>
           {topSubs.length === 0 ? (
-            <p className="text-sm text-slate-500 italic">
+            <p className="text-sm text-ink-500 italic">
               ยังไม่มี subscription ในปีนี้
             </p>
           ) : (
@@ -418,7 +418,7 @@ const PrintReportPage = (): ReactNode => {
         </section>
 
         {/* ── Footer ────────────────────────────────────────────── */}
-        <footer className="border-t border-slate-300 pt-3 mt-8 flex items-center justify-between text-[10px] text-slate-500">
+        <footer className="border-t border-ink-300 pt-3 mt-8 flex items-center justify-between text-[10px] text-ink-500">
           <span>WealthLens — บัญชีส่วนตัว</span>
           <span>ปี {safeYear} · สร้างเมื่อ {generatedAt}</span>
         </footer>
@@ -436,15 +436,15 @@ interface SummaryLineProps {
 const SummaryLine = ({ label, value, accent }: SummaryLineProps): ReactNode => {
   const valueClass =
     accent === 'expense'
-      ? 'text-expense font-semibold'
+      ? 'text-expense-ink font-semibold'
       : accent === 'net'
-        ? 'text-income font-semibold'
+        ? 'text-income-ink font-semibold'
         : accent === 'kept'
-          ? (value < 0 ? 'text-expense font-semibold' : 'text-savings font-semibold')
-          : 'text-slate-900';
+          ? (value < 0 ? 'text-expense-ink font-semibold' : 'text-savings-ink font-semibold')
+          : 'text-ink-900';
   return (
     <div className="flex items-baseline justify-between gap-4 text-sm">
-      <span className="text-slate-600">{label}</span>
+      <span className="text-ink-600">{label}</span>
       <span className={`tabular-nums ${valueClass}`}>{formatTHB(value)}</span>
     </div>
   );
