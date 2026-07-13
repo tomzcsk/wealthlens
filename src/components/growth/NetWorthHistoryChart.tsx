@@ -10,10 +10,16 @@
  *   นั้นมีอยู่มาตลอด. เส้นจะกระโดด — และการปล่อยให้มันกระโดดเฉย ๆ คือการบอกว่า
  *   "เดือนนั้นรวยขึ้น" ซึ่งไม่จริง. กราฟจึงต้องพูดออกมาสามทาง:
  *     1. หมุด <ReferenceDot> ทุกเดือนที่เริ่มติดตามบัญชีใหม่ + บอกชื่อบัญชี
- *     2. ช่วงที่ยังครอบคลุมไม่ครบทุกบัญชี วาดด้วยเส้นประจาง ๆ + ป้ายบอกว่า
- *        "ครอบคลุม n จาก N บัญชี"
+ *     2. ช่วงที่ยังครอบคลุมไม่ครบทุกบัญชี = **แถบพื้นหลังจาง** (<ReferenceArea>)
  *     3. tooltip บอกทั้งสามอย่าง (สินทรัพย์/หนี้/สุทธิ) + เตือนเมื่อทองยังคิด
  *        ด้วยราคาทุน
+ *
+ * **บทเรียนของรอบก่อน (สำคัญกว่าโค้ดบรรทัดไหนในไฟล์นี้):** เดิมช่วงที่ยัง
+ * ครอบคลุมไม่ครบถูกวาดเป็นเส้นประ strokeOpacity 0.5. แต่ Tom เพิ่งบันทึกบัญชี
+ * ครบใน "เดือนสุดท้าย" ของอนุกรม → คำเตือนจึงกลืนกราฟทั้งใบ (42 จาก 43 เดือน)
+ * เหลือแค่ผืนขาว ทั้งที่ข้อมูลจริงเล่าเรื่องดี ๆ ว่าเงินดีขึ้น ฿3M ใน 3 ปีครึ่ง.
+ * กฎที่ตามมา: **ข้อมูลจริงต้องดังที่สุดบนกราฟเสมอ — คำเตือนอยู่ข้างหลังมัน
+ * ไม่ใช่ทับมัน.** เส้นนี้ไม่ใช่ค่าประมาณ มันคือความมั่งคั่งจริงจากข้อมูลที่มีจริง
  *
  * ไม่มีเส้นทำนายอนาคต — เราไม่เดา
  *
@@ -26,6 +32,7 @@ import {
   Area,
   AreaChart,
   CartesianGrid,
+  ReferenceArea,
   ReferenceDot,
   ResponsiveContainer,
   Tooltip,
@@ -43,8 +50,10 @@ import type { NetWorthPoint } from '@/utils/netWorthHistory';
 /** UXUI.md §2 — Net violet (เส้นเดียวกับ "รายได้สุทธิ" ในหน้าวิเคราะห์). */
 const COLOR_NET = '#7C3AED';
 
+/** UXUI.md §2 — warning amber: ใช้เป็น "แถบพื้นหลัง" ของคำเตือน ไม่ใช่สีของข้อมูล */
+const COLOR_CAVEAT = '#F59E0B';
+
 const FULL_GRADIENT_ID = 'wl-networth-full-gradient';
-const PARTIAL_GRADIENT_ID = 'wl-networth-partial-gradient';
 
 /** "ก.ค. '26" — รูปแบบเดียวกับแกน X ของกราฟ 48 เดือน */
 const labelOf = (ym: string): string => {
@@ -58,35 +67,18 @@ const yTickFormatter = (value: number): string =>
 interface Row {
   ym: string;
   label: string;
-  /** เส้นทึบ — ช่วงที่ครอบคลุมทุกบัญชีแล้ว (null = ไม่วาด) */
-  covered: number | null;
-  /** เส้นประจาง — ช่วงที่ยังครอบคลุมไม่ครบ (null = ไม่วาด) */
-  partial: number | null;
+  /** เส้นเดียว ทึบ เต็มความชัด — ข้อมูลจริงทุกเดือน ไม่แบ่งชั้นความน่าเชื่อถือ */
+  netWorth: number;
   point: NetWorthPoint;
 }
 
-/**
- * แยกอนุกรมเป็นสองเส้น: ช่วง "ครบทุกบัญชี" (ทึบ) กับ "ยังไม่ครบ" (ประจาง)
- * จุดแรกของช่วงครบต้องอยู่ในทั้งสองเส้น ไม่งั้นจะมีรอยขาดตรงรอยต่อ
- * (ท่อนที่คร่อมจุดกระโดดจึงเป็นเส้นประ — ตรงตามความจริง: มันคือท่อนที่วิธีนับเปลี่ยน)
- */
-const toRows = (
-  points: readonly NetWorthPoint[],
-  totalAccounts: number,
-): Row[] => {
-  const isFull = (p: NetWorthPoint): boolean =>
-    totalAccounts === 0 || p.accountsCovered >= totalAccounts;
-  const firstFullIdx = points.findIndex(isFull);
-
-  return points.map((point, idx) => ({
+const toRows = (points: readonly NetWorthPoint[]): Row[] =>
+  points.map((point) => ({
     ym: point.ym,
     label: labelOf(point.ym),
-    covered: isFull(point) ? point.netWorth : null,
-    partial:
-      !isFull(point) || idx === firstFullIdx ? point.netWorth : null,
+    netWorth: point.netWorth,
     point,
   }));
-};
 
 // ---------------------------------------------------------------------------
 // Tooltip
@@ -174,10 +166,7 @@ export const NetWorthHistoryChart = ({
   const anim = chartAnimation(reduced);
   const chart = useChartTheme();
 
-  const rows = useMemo(
-    () => toRows(points, totalAccounts),
-    [points, totalAccounts],
-  );
+  const rows = useMemo(() => toRows(points), [points]);
   const jumps = useMemo(
     () => points.filter((p) => p.isTrackingJump),
     [points],
@@ -186,7 +175,9 @@ export const NetWorthHistoryChart = ({
     () => points.filter((p) => p.accountsCovered < totalAccounts),
     [points, totalAccounts],
   );
+  const firstPartial = partialMonths[0];
   const lastPartial = partialMonths[partialMonths.length - 1];
+  const firstYm = points[0]?.ym;
   const lastYm = points[points.length - 1]?.ym;
 
   if (rows.length === 0) {
@@ -225,17 +216,7 @@ export const NetWorthHistoryChart = ({
           >
             <defs>
               <linearGradient id={FULL_GRADIENT_ID} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={COLOR_NET} stopOpacity={0.45} />
-                <stop offset="100%" stopColor={COLOR_NET} stopOpacity={0} />
-              </linearGradient>
-              <linearGradient
-                id={PARTIAL_GRADIENT_ID}
-                x1="0"
-                y1="0"
-                x2="0"
-                y2="1"
-              >
-                <stop offset="0%" stopColor={COLOR_NET} stopOpacity={0.14} />
+                <stop offset="0%" stopColor={COLOR_NET} stopOpacity={0.35} />
                 <stop offset="100%" stopColor={COLOR_NET} stopOpacity={0} />
               </linearGradient>
             </defs>
@@ -268,24 +249,34 @@ export const NetWorthHistoryChart = ({
               content={<HistoryTooltip totalAccounts={totalAccounts} />}
               cursor={{ stroke: chart.cursorStroke, strokeDasharray: '3 3' }}
             />
-            {/* ช่วงที่ครอบคลุมไม่ครบ — เส้นประจาง ๆ: ข้อมูลจริง แต่เล่าไม่หมด */}
+            {/* คำเตือนอยู่ "หลัง" เส้น: แถบพื้นหลังจาง ๆ คลุมเดือนที่ยังบันทึก
+                ไม่ครบทุกบัญชี. วาดก่อน <Area> เพื่อให้เส้นทับมัน ไม่ใช่มันทับเส้น */}
+            {firstPartial && lastPartial && (
+              <ReferenceArea
+                x1={firstPartial.ym}
+                x2={lastPartial.ym}
+                fill={COLOR_CAVEAT}
+                fillOpacity={0.09}
+                stroke="none"
+                ifOverflow="extendDomain"
+                label={{
+                  value: 'บันทึกยังไม่ครบทุกบัญชี',
+                  position: 'insideTopLeft',
+                  fontSize: 10,
+                  fill: chart.axisTick,
+                }}
+              />
+            )}
+            {/* เส้นเดียว ทึบ เต็มความชัด — ตัวเอกของกราฟ */}
             <Area
               type="monotone"
-              dataKey="partial"
+              dataKey="netWorth"
               stroke={COLOR_NET}
-              strokeWidth={2}
-              strokeDasharray="5 4"
-              strokeOpacity={0.5}
-              fill={`url(#${PARTIAL_GRADIENT_ID})`}
-              connectNulls={false}
-              activeDot={false}
-              {...anim}
-            />
-            <Area
-              type="monotone"
-              dataKey="covered"
-              stroke={COLOR_NET}
-              strokeWidth={2.25}
+              strokeWidth={2.5}
+              /* ค่าทุกตัวติดลบ → baseline ปริยายของ Recharts คือ "ขอบบน" ของโดเมน
+                 พื้นที่จึงพุ่งขึ้นไปเป็นเพดานแทนที่จะรองอยู่ใต้เส้น. ตรึงฐานไว้ที่
+                 ค่าต่ำสุดของโดเมน ให้ไล่เฉดนั่งใต้เส้นเสมอ ไม่ว่าตัวเลขบวกหรือลบ */
+              baseValue="dataMin"
               fill={`url(#${FULL_GRADIENT_ID})`}
               connectNulls={false}
               {...anim}
@@ -307,6 +298,11 @@ export const NetWorthHistoryChart = ({
                   // จุดกระโดดที่เป็นเดือนล่าสุด (ของจริง: ก.ค. 2026) นั่งชิดขอบขวา
                   // ป้ายวางบน "top" จะถูกตัดหาย — ย้ายไปทางซ้ายของหมุดแทน
                   position: p.ym === lastYm ? 'left' : 'top',
+                  // ยกป้ายพ้นเส้น: ป้ายที่นั่งบนเส้นทำให้ทั้งคู่อ่านไม่ออกทั้งคู่
+                  offset: 10,
+                  dy: p.ym === lastYm ? -12 : -4,
+                  // หมุดแรกนั่งชิดแกน Y — ป้ายที่จัดกึ่งกลางจะยื่นไปทับตัวเลขแกน
+                  dx: p.ym === firstYm ? 18 : 0,
                   fontSize: 10,
                   fill: chart.axisTick,
                 }}
@@ -319,8 +315,10 @@ export const NetWorthHistoryChart = ({
       <div className="mt-3 space-y-1 border-t border-ink-200 pt-3 text-xs text-ink-500">
         {lastPartial && (
           <p>
-            เส้นประ = ช่วงที่ยังบันทึกไม่ครบทุกบัญชี — ถึง {labelOf(lastPartial.ym)}{' '}
-            ครอบคลุม {lastPartial.accountsCovered} จาก {totalAccounts} บัญชี
+            แถบสีจาง = ช่วงที่ยังบันทึกไม่ครบทุกบัญชี ({labelOf(partialMonths[0].ym)}{' '}
+            – {labelOf(lastPartial.ym)}) — เดือนสุดท้ายของช่วงครอบคลุม{' '}
+            {lastPartial.accountsCovered} จาก {totalAccounts} บัญชี. เส้นคือ
+            ตัวเลขจริงจากข้อมูลที่มี ไม่ใช่ค่าประมาณ
           </p>
         )}
         {jumps.length > 0 && (
