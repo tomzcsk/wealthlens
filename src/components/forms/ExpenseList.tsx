@@ -58,6 +58,8 @@ export interface ExpenseListProps {
   groupByCategory?: boolean;
   /** Show the top-right "+ เพิ่มค่าใช้จ่าย" button. Default true. */
   showAddButton?: boolean;
+  /** เปิดฟอร์ม "เพิ่มค่าใช้จ่าย" ทันทีที่ mount (มาจากปุ่มลอยบนมือถือ, F47). */
+  autoOpenAdd?: boolean;
 }
 
 interface ExpenseRowProps {
@@ -196,6 +198,7 @@ export const ExpenseList = ({
   month,
   groupByCategory = true,
   showAddButton = true,
+  autoOpenAdd = false,
 }: ExpenseListProps): ReactNode => {
   // Subscribe to the stable `data` ref and derive items via useMemo —
   // selectMonthExpenses returns a fresh `[]` when the month is empty,
@@ -296,8 +299,11 @@ export const ExpenseList = ({
     });
   };
 
-  const [modalOpen, setModalOpen] = useState(false);
+  // seed จาก prop ใน useState (ไม่ใช่ useEffect) — parent เคลียร์ query param
+  // ทันทีหลัง mount, effect จะแข่งกับมันแล้วฟอร์มไม่เปิด
+  const [modalOpen, setModalOpen] = useState(autoOpenAdd);
   const [editing, setEditing] = useState<ExpenseItem | null>(null);
+
   const [defaultCategory, setDefaultCategory] = useState<
     ExpenseCategory | undefined
   >(undefined);
@@ -305,6 +311,20 @@ export const ExpenseList = ({
   /** Item pending an installment-aware delete decision (only set for งวด rows). */
   const [pendingInstallmentDelete, setPendingInstallmentDelete] =
     useState<ExpenseItem | null>(null);
+
+  // กดปุ่มลอยขณะอยู่หน้า /monthly อยู่แล้ว → component ไม่ remount, useState
+  // ข้างบนจึงไม่ทำงาน. จับ prop ที่เพิ่งพลิกเป็น true ตอน render (React ยอมให้
+  // ปรับ state ตอน props เปลี่ยน) — ไม่ใช้ useEffect เพราะ parent เคลียร์ param
+  // ใน effect ของมันเอง สองฝ่ายจะไล่กัน
+  const [autoOpenSeen, setAutoOpenSeen] = useState(autoOpenAdd);
+  if (autoOpenAdd !== autoOpenSeen) {
+    setAutoOpenSeen(autoOpenAdd);
+    if (autoOpenAdd) {
+      setEditing(null);
+      setDefaultCategory(undefined);
+      setModalOpen(true);
+    }
+  }
 
   // Group items in stable category order. Empty categories are dropped from
   // the rendered list so the grouped view doesn't spam empty headers.

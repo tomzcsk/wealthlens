@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { useFinanceStore } from '@/stores';
@@ -38,6 +38,14 @@ export const MonthlyPage = (): ReactNode => {
     Number(searchParams.get('month')) || fallbackMonth(),
   );
   const [editingIncome, setEditingIncome] = useState(false);
+
+  // ปุ่มลอยบนมือถือส่ง ?add=expense มา (F47) — เปิดฟอร์มรายจ่ายให้เลย แล้วล้าง
+  // param ทิ้ง ไม่งั้น refresh/กดย้อนกลับจะเด้งฟอร์มขึ้นมาอีก
+  const autoOpenAdd = searchParams.get('add') === 'expense';
+
+  useEffect(() => {
+    if (autoOpenAdd) setSearchParams({}, { replace: true });
+  }, [autoOpenAdd, setSearchParams]);
 
   const goMonth = (next: number) => {
     const clamped = clampMonth(next);
@@ -154,7 +162,7 @@ export const MonthlyPage = (): ReactNode => {
         <SavingsList year={year} month={month} />
       </section>
 
-      <ExpenseList year={year} month={month} />
+      <ExpenseList year={year} month={month} autoOpenAdd={autoOpenAdd} />
 
       {/* hero กลับด้าน: พื้นมืดทั้งสองโหมด — ลูกในนี้ใช้ token inverse/on-fill เท่านั้น */}
       <section className="bg-inverse text-white rounded-2xl shadow-sm p-6">

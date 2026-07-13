@@ -3,7 +3,7 @@
  *
  * Two-column grid on desktop (240px sidebar + flexible main).
  * Single-column on mobile: ไม่มี sidebar — เมนูอยู่ที่ <BottomNav /> และ
- * (F47).
+ * ปุ่มลอย <AddFab /> สำหรับเพิ่มรายจ่าย (F47).
  *
  * The Header sits at the top of the main column and is sticky so it
  * stays anchored while the route content scrolls.
@@ -26,6 +26,7 @@ import useAnomalyAlertEffect from '@/hooks/useAnomalyAlertEffect';
 import useDriveSyncCoordinator from '@/hooks/useDriveSyncCoordinator';
 import LoginPage from '@/pages/LoginPage';
 
+import AddFab from './AddFab';
 import BottomNav from './BottomNav';
 import Header from './Header';
 import SessionWatcher from './SessionWatcher';
@@ -63,6 +64,7 @@ export const Layout = (): ReactNode => {
             </main>
           </div>
           <BottomNav />
+          <AddFab />
           <SessionWatcher />
         </div>
       )}
