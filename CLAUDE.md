@@ -61,6 +61,7 @@ src/
 - **เลขวิ่ง (count-up) ใช้เฉพาะ KPI/hero** — ตัวเลขในตารางมีไว้เทียบกัน จึงไม่ animate เด็ดขาด
 - **เมนูทุกที่มาจาก `src/lib/nav.ts`** — ห้าม hardcode รายการเมนูใน component; `Sidebar` (เดสก์ท็อป) กับ `BottomNav` (มือถือ) อ่านทะเบียนเดียวกัน เพิ่มหน้าใหม่แล้วลืมอีกที่ = เมนูสองชุดที่หลุดจากกันโดยไม่มี error ให้เห็น (F47)
 - **สไตล์ที่ทำเพื่อมือถือ ต้องมี breakpoint กำกับเสมอ** — `min-h-11 md:min-h-0`, `md:hidden` — เดสก์ท็อปห้ามขยับ (กฎ M6 ใน `npm run verify:mobile` เป็นประตูกัน) (F47)
+- **ทุกการเขียน `bankAccounts` ต้องจบที่ `ledgerPatch()`** — ที่เดียวที่ ledger กลายเป็น state (เก็บกวาดเซลล์กำพร้าอยู่ตรงนั้นด้วย). `withLedger` เรียกให้อยู่แล้ว แต่เส้นทางที่ประกอบ `BankLedger` เองต้องเรียกเอง — **`withLedger` อย่างเดียวไม่พอ**: `addInstallmentPlan`/`deleteInstallmentPlan` เคยข้ามมันไปเงียบ ๆ ทั้งที่ acceptance ของ F40 ("financeStore ไม่เรียก `applyBankDelta` ตรง") ยังเขียว (F49)
 - **สีทุกสีมาจาก token ใน `src/index.css`** — ห้ามเขียนสีดิบใน component (`bg-white`, `text-slate-500`); `scripts/verify-no-hardcoded-colors.ts` เป็นประตูกัน (allowlist ว่าง, ยกเว้นแค่ `text-white`). กราฟรับสีผ่าน `useChartTheme()` เพราะ Recharts ยัดสีลง SVG attribute ซึ่งไม่รับ `var()` — เขียน `var()` แล้วเส้นหายเงียบ ๆ ไม่มี error (F46)
 
 ### Dev Commands
@@ -87,6 +88,7 @@ npm run verify:mobile  # build + Playwright วัดจอจริง 390×844
 | Phase 3 — Intelligence | ✅ Completed | Anomaly detection, budget forecast, PDF report |
 | Phase 4 — Post-Ship | ✅ Completed | Multi-user login, per-month Kept, Dime/ออมเที่ยว split, reimbursements, ผ่อน 0%, gold ledger, loan tracker (กยศ) |
 | Phase 5 — Polish | ✅ Completed | Dark mode (F46) · Mobile UX (F47) · หน้าเติบโต — net worth ย้อนหลัง + อัตราการออม (F48) |
+| Phase 6 — Debt & Polish | 🔨 In progress (1/3) | เก็บหนี้เทคนิค (F49 ✅) · รื้อหน้าวิเคราะห์ (ยังไม่เริ่ม) · PWA (ยังไม่เริ่ม) |
 
 **เมื่อ complete feature ใด:** อัปเดต `features.json` → เปลี่ยน `status` เป็น `"completed"` และกรอก `completedAt`
 
@@ -117,6 +119,7 @@ npm run verify:mobile  # build + Playwright วัดจอจริง 390×844
 - **`Net. All`** = Net. + Commission + รายได้อื่นๆ (F32) (ตัวเลข KPI หลัก)
 - **`เหลือจริง`** = Net.All - จ่าย (สิ่งที่ Tom เหลือในบัญชีจริงๆ)
 - **Kept → บัญชีธนาคาร (F33):** "Kept (กรุงศรี)" กลายเป็น `bankAccounts` แบบ generic (card-first, หลายบัญชี, ยอดต่อเดือน) — Kept เดิม migrate เป็นบัญชี "กรุงศรี" (`acct-krungsri`) อัตโนมัติตอน rehydrate. `keptBalances` คงไว้เป็น backward-compat (แหล่ง migrate เท่านั้น ไม่อ่านที่อื่นแล้ว). **เป้าหมายออม (savings goal) ถูกตัดออก**. gold 'kept' ตัดยอดบัญชีกรุงศรี
+- **เซลล์ยอด 0 ที่ "ไม่มีรายการรองรับ" ถูกเก็บกวาดอัตโนมัติทุกครั้งที่เขียน ledger (F49)** — คีย์กำพร้าแบบนี้ (`{'2027':{'7':0}}`) เกิดจากการ revert รายการที่เคยหักบัญชี และมันเลื่อนหมุด "เริ่มติดตามบัญชีใหม่" ของหน้าเติบโต (F48 อ่าน `Object.keys(balances)` หาเดือนแรก). **แต่เซลล์ 0 ที่ *มี* รายการ (ฝาก ฿1,000 → ถอน ฿1,000 ในเดือนเดียวกัน) ต้องอยู่ต่อ** — ลบทิ้งคือพัง invariant ของ F40 (Σ tx ในเดือน === ค่าในช่อง). กฎคือ "ไม่มีรายการรองรับ" ไม่ใช่ "ยอดเป็นศูนย์"
 - **`bankAccounts[].balances[ปี][เดือน]` = กระแสเงินของเดือนนั้น ไม่ใช่ยอดคงเหลือสิ้นเดือน** — ยอดจริง ณ เดือนใด = **ผลรวมสะสมของทุกเดือน ≤ เดือนนั้น** (`accountAllTimeTotal()` บวกทุกเดือนเข้าด้วยกัน · การ์ดบัญชีเขียนว่า "ยอดสะสมทุกปี" · invariant F40: Σ รายการในเดือน === ค่าในช่องนั้น) และเดือนที่ไม่มีตัวเลข = เงินไม่ขยับ ยอดคงเดิมเอง **ไม่ต้อง carry-forward**. ชื่อ field ชวนให้อ่านผิดเป็น "ยอดคงเหลือ" — ดราฟต์แรกของ F48 อ่านผิดแบบนั้น และถ้าปล่อยไว้กราฟความมั่งคั่งจะแบนราบผิดทั้งเส้น
 
 ---

@@ -2,7 +2,7 @@
   "project": {
     "name": "WealthLens",
     "description": "Personal Finance Dashboard สำหรับติดตามรายรับ-รายจ่ายส่วนตัว",
-    "version": "1.6.0",
+    "version": "1.7.0",
     "created": "2026-05-06",
     "lastUpdated": "2026-07-13",
     "owner": "Tom",
@@ -1573,6 +1573,49 @@
           }
         }
       ]
+    },
+    {
+      "id": "phase_6",
+      "name": "Phase 6 — Debt & Polish",
+      "description": "เก็บหนี้เทคนิค (F49 ✅) → รื้อหน้าวิเคราะห์ (บนมือถือมันสูง 17 หน้าจอ — ยังไม่เริ่ม) → PWA (ยังไม่เริ่ม)",
+      "status": "in_progress",
+      "completionPercent": 33,
+      "features": [
+        {
+          "id": "F49",
+          "name": "เก็บหนี้เทคนิค (tech-debt sweep)",
+          "description": "หนี้ 5 ข้อที่สะสมมาระหว่าง F44–F48 — สี่ในห้าเป็น 'กฎที่โค้ดอ้างว่ามี แต่ไม่มีอะไรบังคับ' จึงปิดด้วยประตูตรวจ ไม่ใช่ด้วยความจำ; ข้อที่ห้าคือ focus trap ที่ Modal ยอมรับเองมาตั้งแต่ v1 ว่ายังไม่มี",
+          "status": "completed",
+          "priority": "P1",
+          "phase": "phase_6",
+          "acceptanceCriteria": [
+            "หนี้ 1 — เซลล์ยอดศูนย์กำพร้า: revert รายการที่เคยหักบัญชี → ยอดกลับเป็น 0 แต่คีย์ค้าง ({'2027':{'7':0}}). F44/F45 ปล่อยไว้เพราะตอนนั้นไม่มีใครอ่าน 'รายชื่อคีย์' — **เหตุผลนั้นหมดอายุตอน F48 ship**: netWorthHistory.firstMonthOf() ใช้ Object.keys(balances) หาเดือนแรกที่บัญชีถูกติดตาม → คีย์กำพร้าเลื่อนหมุด 'เริ่มติดตามบัญชีใหม่' ไปผิดเดือน. แก้ด้วย src/utils/balancePrune.ts → pruneEmptyBalanceKeys(accounts, transactions) เรียกท้ายทุกการเขียน ledger",
+            "กฎที่ต้องไม่ลืม: **ลบเซลล์ศูนย์เฉพาะเมื่อไม่มีรายการรองรับ** — เดือนที่ฝาก ฿1,000 แล้วถอน ฿1,000 ก็ได้ยอด 0 เหมือนกัน แต่มันมีรายการ และ invariant ของ F40 (Σ tx === balance) บังคับให้เซลล์นั้นต้องมีอยู่. ลบทิ้ง = พังสมุดรายการ (T1 บังคับข้อแรก, T2 บังคับข้อหลัง)",
+            "หนี้ 2 — เลขคณิตบวกยอดเขียนซ้ำสองที่: applyBankDelta (utils/bankAccounts.ts) กับ addRawBalance (financeStore.ts) บอดี้เหมือนกันเป๊ะ. **addRawBalance เก็บชื่อและคอมเมนต์ไว้ทั้งหมด** — มันไม่ใช่ก๊อปปี้ที่ใครลืมลบ แต่คือทางที่จงใจ 'เขียนยอดโดยไม่จดรายการ' (ใช้คืนยอด gold holding รุ่นก่อน F40 ที่หักไว้นอกสมุด) ลบชื่อทิ้ง = ลบเจตนาทิ้ง. ยุบเฉพาะเลขคณิต → addRawBalance เรียก applyBankDelta (T4 ตรวจว่าสูตรเหลือที่เดียว และชื่อยังอยู่)",
+            "หนี้ 3 — สีหมวดค่าใช้จ่ายซ้ำ: canonical คือ EXPENSE_CATEGORIES[cat].hex แต่ ExpensePieChart กับ TrendAnalysis ถือสำเนาส่วนตัวคนละชุด (TrendAnalysis เขียนคอมเมนต์ยอมรับเองว่า 'duplicated rather than centralised') → ดึงจาก canonical ทั้งคู่. **ไม่มีสีไหนเปลี่ยนจริง** — สำเนาทั้งสองยังตรงกับต้นฉบับเป๊ะ หนี้ข้อนี้จึงยังไม่ทันกัด. **spec เข้าใจผิดว่า MultiYearComparison ก็มีสำเนา** — ที่นั่นเป็น YEAR_COLORS (สีของ*ปี*) ไม่ใช่สีหมวด ไม่แตะ",
+            "หนี้ 4 — ROUTES ใน scripts/verify-mobile.ts พิมพ์มือ: เพิ่มหน้าใหม่แล้วไม่มีใครตรวจว่ามันพังบนมือถือไหม (F48 รอดมาได้เพราะมีคนจำได้ว่าต้องเติม '/growth' เอง) → ROUTES = NAV_ITEMS.map(item => item.path) (ทะเบียนเมนูจาก F47) วิ่งครบ 10 หน้าอัตโนมัติ. /report/:year อยู่นอกทะเบียนโดยตั้งใจ — มันคือกระดาษ A4 ไม่ใช่หน้าจอ (T6 กันรายการพิมพ์มือกลับมา)",
+            "หนี้ 5 — Modal ไม่มี focus trap (คอมเมนต์ในไฟล์ยอมรับเองว่า 'intentionally NOT implemented in v1'): Tab หลุดไปปุ่มที่อยู่ข้างหลังป๊อปอัพ → เขียน trap เอง (ไม่เพิ่ม dependency) Tab/Shift+Tab วนในกรอบ + ปิดแล้วคืนโฟกัสให้ปุ่มที่เปิดมัน. **ไม่แตะ aria-hidden** — คอมเมนต์เดิมอธิบายไว้แล้วว่าทำไมถึงจงใจไม่ใส่",
+            "วัดแล้วเจอ (1) — **withLedger ไม่ใช่ประตูเดียวจริงอย่างที่ F40 อ้าง**: addInstallmentPlan/deleteInstallmentPlan ประกอบ BankLedger เองแล้ว spread เข้า state ตรง ๆ ข้ามประตูไปเลย — และ deleteInstallmentPlan (revoke การหักรายงวด) คือโรงงานผลิตคีย์กำพร้าโดยตรง. acceptance ของ F40 เอง ('financeStore ไม่เรียก applyBankDelta ตรง ๆ') ยังผ่านทั้งที่ข้ามประตู. แก้โดยแยกท้ายของ withLedger ออกเป็น ledgerPatch(ledger) แล้วให้ทั้งสองเส้นทางเรียก → กลับมามีที่เดียวจริง ๆ ที่ ledger กลายเป็น state",
+            "วัดแล้วเจอ (2) — **focus trap ที่แผนเขียนไว้ผิดแบบละเอียดอ่อน จับได้จากการขับเบราว์เซอร์จริงเท่านั้น**: จับผู้เปิดใน useEffect แพ้ให้ฟอร์มลูกที่โฟกัสช่องแรกของตัวเอง (passive effect ของลูกวิ่งก่อนของพ่อ) → ได้ <input> ในกรอบมาแทนปุ่มที่เปิด; และคืนโฟกัสใน layout cleanup แพ้ให้ React DOM ที่คืนโฟกัสของมันเองใน resetAfterCommit. รูปที่ถูกต้อง: **จับใน useLayoutEffect · คืนใน passive cleanup** — เหตุผลทั้งสองเขียนไว้ใน Modal.tsx แล้ว เพื่อไม่ให้ใคร 'ทำให้มันง่ายลง' กลับไป",
+            "วัดแล้วเจอ (3) — **ประตูที่ดักของถูกด้วย คือประตูที่คนจะปิดทิ้ง**: กฎที่แผนเสนอไว้สำหรับหนี้ 3 ('ห้ามมี hex ที่ตรงกับสีหมวดใด ๆ ใน src/components/') ใช้จริงไม่ได้ — สีหมวดคือสี Tailwind มาตรฐานที่ของอื่นใช้โดยชอบธรรม (YEAR_COLORS ใช้ #6366F1, แถบคำเตือนของ NetWorthHistoryChart ใช้ #F59E0B). กฎที่เข้ารหัสหนี้ได้จริงคือ **ห้าม component ผูกชื่อหมวด → hex เอง** (T5)",
+            "Verified: scripts/verify-tech-debt.ts (14 assertions: T1/T2 prune, ปีว่างไม่เหลือเปลือก, identity เมื่อไม่มีอะไรให้กวาด, T4 สูตรที่เดียว + ชื่อ addRawBalance ยังอยู่, T5 ไม่มีสำเนาสีหมวด, T6 ROUTES derive) + verify เดิมทั้งชุดเขียว (31 สคริปต์) + npm run verify:mobile เขียวครบ 10 หน้า + typecheck + lint + build",
+            "ข้อมูลจริงของ Tom: คีย์กำพร้า 2 ช่อง (กสิกรไทย 2027-07, เงินสด 2027-07) หายไปจริงหลัง mutation ครั้งถัดไป — **และไม่มีตัวเลขไหนขยับ**: ยอดทุกบัญชีเท่าเดิม (รวมทั้งหมด ฿919,206.79), net worth ยังเป็น ฿-1,699,043 (สินทรัพย์ ฿2,084,607 · หนี้ ฿3,783,650). ไม่ต้องเขียน migration — prune ทำงานท้ายทุกการเขียน ledger อยู่แล้ว"
+          ],
+          "estimatedHours": 5,
+          "dependencies": [
+            "F40",
+            "F44",
+            "F45",
+            "F47",
+            "F48"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-07-13",
+            "notes": "Spec: docs/superpowers/specs/2026-07-13-tech-debt-sweep-design.md | Plan: docs/superpowers/plans/2026-07-13-tech-debt-sweep.md | Commits: 0ee9155 (spec), 6c169e9 (plan), 0e29d93 (balancePrune pure + verify), bd45b4a (prune ท้ายทุก mutation ผ่าน withLedger/ledgerPatch), aabcafb (addRawBalance เรียก applyBankDelta), 05aaab3 (สีหมวดแหล่งเดียว), adc1178 (ROUTES derive จาก NAV_ITEMS), a2828c6 (focus trap ใน Modal) | Files ใหม่: src/utils/balancePrune.ts, scripts/verify-tech-debt.ts | Files แก้: src/stores/financeStore.ts (ledgerPatch + prune + addRawBalance), src/components/ui/Modal.tsx (focus trap), src/components/dashboard/ExpensePieChart.tsx, src/components/analytics/TrendAnalysis.tsx, scripts/verify-mobile.ts | ไม่ทำโดยตั้งใจ: ไม่ลบชื่อ addRawBalance (ป้ายบอกเจตนา), ไม่แตะ aria-hidden ของ Modal, ไม่แตะ YEAR_COLORS, ไม่เขียน migration แยกสำหรับคีย์กำพร้า"
+          }
+        }
+      ]
     }
   ],
   "dataInventory": {
@@ -1660,12 +1703,12 @@
     }
   },
   "progressSummary": {
-    "totalFeatures": 56,
-    "completed": 56,
+    "totalFeatures": 57,
+    "completed": 57,
     "inProgress": 0,
     "pending": 0,
     "overallProgress": "100%",
-    "currentPhase": "shipped",
-    "nextMilestone": "ไม่มี — Phase 5 จบครบทั้งสามงาน (dark mode F46 ✅ · mobile UX F47 ✅ · growth analytics F48 ✅) และยังไม่มี phase ถัดไปที่วางแผนไว้"
+    "currentPhase": "phase_6",
+    "nextMilestone": "Phase 6 เหลือ 2 งาน (ยังไม่เริ่มทั้งคู่): รื้อหน้าวิเคราะห์ (บนมือถือสูง 17 หน้าจอ) · PWA"
   }
 }

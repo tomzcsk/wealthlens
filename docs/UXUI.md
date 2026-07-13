@@ -327,6 +327,7 @@ States: default | positive | negative | loading | empty
 - **Focus states:** ทุก interactive element ต้องมี visible focus ring
 - **ARIA labels:** ทุก chart ต้องมี aria-label อธิบาย
 - **Keyboard navigation:** ทั้งหมดต้องใช้ keyboard ได้
+- **Modal ขังโฟกัสไว้ในกรอบ (F49):** Tab / Shift+Tab **วนอยู่ในแผง** ตราบใดที่ป๊อปอัพเปิดอยู่ (เดิมโฟกัสไหลออกไปโดนปุ่มที่อยู่ *ข้างหลัง* ป๊อปอัพ — คนใช้เมาส์ไม่มีทางรู้ คนใช้คีย์บอร์ดเจอทุกครั้ง) และเมื่อปิด **โฟกัสกลับไปที่ปุ่มที่เปิดมัน** ไม่ใช่เด้งไปต้น `<body>` ให้ต้อง Tab ใหม่ทั้งหน้า. ESC ปิดได้เหมือนเดิม; `aria-hidden` ยัง **จงใจไม่ใส่** บน wrapper (แผงยังอยู่ระหว่างเล่น exit animation ตอนคืนโฟกัส — `aria-hidden` คร่อม element ที่โฟกัสอยู่คือการผิด a11y เสียเอง)
 
 ---
 
