@@ -51,6 +51,13 @@
   --color-expense-bar: 248 113 113;
   --color-warning: 217 119 6;
   --color-warning-light: 255 251 235;
+
+  /* tint = ชั้นเข้มกว่า light หนึ่งขั้น (Tailwind -100) — badge ที่ต้องเด่นกว่าพื้นอ่อน */
+  --color-income-tint: 209 250 229; /* emerald-100 */
+  --color-expense-tint: 254 226 226; /* red-100 */
+  --color-warning-tint: 254 243 199; /* amber-100 */
+  --color-primary-tint: 219 234 254; /* blue-100 */
+
   --color-net: 124 58 237;
   --color-savings: 217 119 6;
   --color-success: 5 150 105;
@@ -103,6 +110,13 @@
   --color-expense-bar: 248 113 113;
   --color-warning: 251 191 36;
   --color-warning-light: 120 53 15;
+
+  /* tint โหมดมืด: เข้มขึ้นหนึ่งขั้นจาก light (900 → 800) — คงลำดับชั้นเดิมของโหมดสว่าง */
+  --color-income-tint: 6 95 70;
+  --color-expense-tint: 153 27 27;
+  --color-warning-tint: 146 64 14;
+  --color-primary-tint: 30 64 175;
+
   --color-net: 167 139 250;
   --color-savings: 251 191 36;
   --color-success: 52 211 153;

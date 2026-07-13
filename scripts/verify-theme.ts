@@ -95,6 +95,10 @@ const LIGHT_MUST_EQUAL: Record<string, string> = {
   'color-expense-light': '#fef2f2', // red-50
   'color-warning-light': '#fffbeb', // amber-50
   'color-primary-light': '#eff6ff', // blue-50
+  'color-income-tint': '#d1fae5', // emerald-100
+  'color-expense-tint': '#fee2e2', // red-100
+  'color-warning-tint': '#fef3c7', // amber-100
+  'color-primary-tint': '#dbeafe', // blue-100
 };
 
 console.log('\n— R0: โหมดสว่างต้องเท่าค่าเดิมเป๊ะ —');

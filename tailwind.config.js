@@ -33,21 +33,25 @@ export default {
         primary: {
           DEFAULT: 'rgb(var(--color-primary) / <alpha-value>)',
           light: 'rgb(var(--color-primary-light) / <alpha-value>)',
+          tint: 'rgb(var(--color-primary-tint) / <alpha-value>)',
           dark: 'rgb(var(--color-primary-dark) / <alpha-value>)',
         },
         income: {
           DEFAULT: 'rgb(var(--color-income) / <alpha-value>)',
           light: 'rgb(var(--color-income-light) / <alpha-value>)',
+          tint: 'rgb(var(--color-income-tint) / <alpha-value>)',
           bar: 'rgb(var(--color-income-bar) / <alpha-value>)',
         },
         expense: {
           DEFAULT: 'rgb(var(--color-expense) / <alpha-value>)',
           light: 'rgb(var(--color-expense-light) / <alpha-value>)',
+          tint: 'rgb(var(--color-expense-tint) / <alpha-value>)',
           bar: 'rgb(var(--color-expense-bar) / <alpha-value>)',
         },
         warning: {
           DEFAULT: 'rgb(var(--color-warning) / <alpha-value>)',
           light: 'rgb(var(--color-warning-light) / <alpha-value>)',
+          tint: 'rgb(var(--color-warning-tint) / <alpha-value>)',
         },
         net: 'rgb(var(--color-net) / <alpha-value>)',
         savings: 'rgb(var(--color-savings) / <alpha-value>)',
