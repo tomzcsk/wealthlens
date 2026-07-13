@@ -6,7 +6,7 @@
  * อย่างอื่นไม่มีความหมาย — "PWA" ที่เปิดไม่ได้ตอนไม่มีเน็ตคือเว็บธรรมดา
  * ที่มีไอคอนสวย
  */
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { extname, join } from 'node:path';
 
@@ -258,6 +258,68 @@ console.log('\n— P4: ออฟไลน์แล้วเขียนข้อ
 }
 
 await ctx.setOffline(false);
+
+// ─── P7: vercel.json ต้องไม่กลืนไฟล์ของ PWA ───────────────────────────────
+//
+// ประตูนี้เสิร์ฟ dist/ ด้วย static server ที่เขียนเองข้างบน — มัน **ไม่เคยแตะ
+// vercel.json เลย** แปลว่า P1–P6 เขียวได้ทั้งที่ production พังสนิท:
+// vercel.json มี catch-all rewrite ที่ส่งทุก path ไป /index.html (สำหรับ SPA)
+// ถ้า regex นั้นแมตช์ /sw.js เบราว์เซอร์จะได้ HTML แทน JavaScript →
+// ลงทะเบียน service worker ไม่ได้ (MIME ผิด) → ไม่มี PWA เลย
+//
+// เอา regex ตัวจริงจากไฟล์มายิงใส่ path ที่ PWA ขาดไม่ได้ — ถ้ามันแมตช์ = แดง
+console.log('\n— P7: vercel.json ไม่กลืนไฟล์ของ PWA —');
+{
+  const vercel = JSON.parse(readFileSync('vercel.json', 'utf8')) as {
+    rewrites: Array<{ source: string; destination: string }>;
+  };
+  const spaRewrite = vercel.rewrites.find((r) => r.destination === '/index.html');
+  assert('vercel.json มี SPA rewrite', spaRewrite !== undefined);
+
+  if (spaRewrite) {
+    const pattern = new RegExp(`^${spaRewrite.source}$`);
+    const MUST_NOT_BE_REWRITTEN = [
+      '/sw.js',
+      '/manifest.webmanifest',
+      '/registerSW.js',
+      '/icons/icon-192.png',
+      '/icons/icon-512.png',
+      '/icons/icon-maskable-512.png',
+      '/icons/apple-touch-icon.png',
+      '/favicon.svg',
+      '/banks/BAY.png',
+    ];
+    for (const path of MUST_NOT_BE_REWRITTEN) {
+      assert(
+        `${path} ไม่ถูก rewrite ไป index.html`,
+        !pattern.test(path),
+        'จะได้ HTML แทนไฟล์จริง',
+      );
+    }
+    // workbox chunk มี hash ในชื่อ — ทดสอบด้วยชื่อจริงจาก dist/
+    const workbox = readdirSync('dist').find((f) => /^workbox-.*\.js$/.test(f));
+    assert('มี workbox chunk ใน dist/', workbox !== undefined);
+    if (workbox) {
+      assert(
+        `/${workbox} ไม่ถูก rewrite`,
+        !pattern.test(`/${workbox}`),
+        'SW จะโหลด workbox ไม่ได้',
+      );
+    }
+  }
+
+  const headers = (JSON.parse(readFileSync('vercel.json', 'utf8')) as {
+    headers?: Array<{ source: string; headers: Array<{ key: string; value: string }> }>;
+  }).headers;
+  const swHeader = headers?.find((h) => h.source === '/sw.js');
+  assert(
+    'sw.js ถูกสั่งไม่ให้ cache',
+    swHeader?.headers.some(
+      (h) => h.key === 'Cache-Control' && h.value.includes('must-revalidate'),
+    ) === true,
+    'SW เก่าถูกแช่ = ผู้ใช้ติดอยู่กับเวอร์ชันเก่าถาวร',
+  );
+}
 
 // ─── P6: มี SW ใหม่รออยู่ → prompt ต้องเด้ง ───────────────────────────────
 console.log('\n— P6: prompt อัปเดต —');
