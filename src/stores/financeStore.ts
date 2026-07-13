@@ -24,6 +24,7 @@ import {
   KRUNGSRI_ACCOUNT_ID,
   migrateKeptToBankAccounts,
 } from '@/utils/bankAccounts';
+import { pruneEmptyBalanceKeys } from '@/utils/balancePrune';
 import {
   applyBankMovement,
   reconcileBankMovements,
@@ -403,13 +404,29 @@ const addRawBalance = (
 const withLedger = (
   data: WealthLensData,
   mutate: (ledger: BankLedger) => BankLedger,
-): Pick<WealthLensData, 'bankAccounts' | 'bankTransactions'> => {
-  const next = mutate({
-    accounts: data.bankAccounts ?? [],
-    transactions: data.bankTransactions ?? [],
-  });
-  return { bankAccounts: next.accounts, bankTransactions: next.transactions };
-};
+): Pick<WealthLensData, 'bankAccounts' | 'bankTransactions'> =>
+  ledgerPatch(
+    mutate({
+      accounts: data.bankAccounts ?? [],
+      transactions: data.bankTransactions ?? [],
+    }),
+  );
+
+/**
+ * แปลง ledger → คู่ค่าที่ spread กลับเข้า `data` **พร้อมเก็บกวาดเซลล์ยอด 0 ที่
+ * ไม่มีรายการรองรับ** (F49). วางไว้ที่นี่จุดเดียวเพราะทุกเส้นทางที่เขียน
+ * bankAccounts จากสมุดรายการวิ่งผ่าน `withLedger` (หรือเรียก `ledgerPatch` ตรง
+ * เมื่อประกอบ ledger เอง — แผนผ่อน) — ไล่แปะทีละ action = ลืมสักอันแล้วคีย์
+ * กำพร้าโผล่กลับมาเงียบ ๆ
+ */
+function ledgerPatch(
+  ledger: BankLedger,
+): Pick<WealthLensData, 'bankAccounts' | 'bankTransactions'> {
+  return {
+    bankAccounts: pruneEmptyBalanceKeys(ledger.accounts, ledger.transactions),
+    bankTransactions: ledger.transactions,
+  };
+}
 
 /**
  * เขียนยอดสัมบูรณ์ลงเซลล์ (บัญชี, ปี, เดือน) — โค้ดเดิมของ `setBankBalance`
@@ -1099,12 +1116,9 @@ export const useFinanceStore = create<FinanceState>()(
               ...state.data,
               lastUpdated: stamp,
               years,
-              ...(ledger
-                ? {
-                    bankAccounts: ledger.accounts,
-                    bankTransactions: ledger.transactions,
-                  }
-                : {}),
+              // ประกอบ ledger เอง (ไม่ผ่าน withLedger) → เรียก ledgerPatch ให้
+              // prune ทำงานเหมือนกัน (F49)
+              ...(ledger ? ledgerPatch(ledger) : {}),
             },
             lastUpdated: stamp,
           };
@@ -1166,12 +1180,9 @@ export const useFinanceStore = create<FinanceState>()(
               ...state.data,
               lastUpdated: stamp,
               years: nextYears,
-              ...(ledger
-                ? {
-                    bankAccounts: ledger.accounts,
-                    bankTransactions: ledger.transactions,
-                  }
-                : {}),
+              // เช่นเดียวกับ addInstallmentPlan — revoke งวดจนยอดเซลล์เหลือ 0
+              // แล้วไม่มีรายการรองรับ คือแหล่งกำเนิดคีย์กำพร้าโดยตรง (F49)
+              ...(ledger ? ledgerPatch(ledger) : {}),
             },
             lastUpdated: stamp,
           };
@@ -1392,12 +1403,17 @@ export const useFinanceStore = create<FinanceState>()(
               } else {
                 const accounts = state.data.bankAccounts ?? [];
                 if (accounts.some((a) => a.id === accountId)) {
-                  nextBankAccounts = addRawBalance(
-                    accounts,
-                    accountId,
-                    se.keptYear,
-                    se.keptMonth,
-                    se.keptAmount,
+                  // คืนยอดนอกสมุด → เซลล์อาจกลับมาเป็น 0 โดยไม่มีรายการรองรับ
+                  // (เส้นทางนี้ไม่ผ่าน withLedger จึงต้อง prune เอง — F49)
+                  nextBankAccounts = pruneEmptyBalanceKeys(
+                    addRawBalance(
+                      accounts,
+                      accountId,
+                      se.keptYear,
+                      se.keptMonth,
+                      se.keptAmount,
+                    ),
+                    nextBankTransactions ?? state.data.bankTransactions ?? [],
                   );
                 }
                 // If the target account no longer exists, skip silently.
@@ -2019,7 +2035,12 @@ export const useFinanceStore = create<FinanceState>()(
               return {
                 data: {
                   ...state.data,
-                  bankAccounts: setRawBalance(accounts, id, year, month, amount),
+                  // เขียนยอดดิบนอกสมุด → กรอก 0 ลงเซลล์ที่ไม่มีรายการ =
+                  // คีย์กำพร้าใหม่. เส้นทางนี้ไม่ผ่าน withLedger จึง prune เอง (F49)
+                  bankAccounts: pruneEmptyBalanceKeys(
+                    setRawBalance(accounts, id, year, month, amount),
+                    txs,
+                  ),
                   lastUpdated: stamp,
                 },
                 lastUpdated: stamp,
