@@ -13,7 +13,16 @@ export const LoginPage = (): ReactNode => {
   const { signIn, isReady } = useGoogleAuth();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center px-4 py-12">
+    /*
+     * F46 — พื้นหลังไล่สีเป็น token ครบทั้งสามจุด จึงพลิกโหมดมืดได้เอง
+     * (สว่าง: slate-50 → blue-50 · มืด: slate-900 → blue-900)
+     *
+     * จุดแรกกับจุดกลางตรงค่าเดิมเป๊ะ (surface = #f8fafc, primary-50 = #eff6ff)
+     * จุดปลายเดิมเป็น indigo-50 (#eef2ff) — ยุบเข้า primary-50 ต่างสูงสุด 4/255
+     * ต่อช่อง มองไม่ออกด้วยตาเปล่า และไม่คุ้มจะตั้งตระกูลสีใหม่ทั้งชุดเพื่อ
+     * gradient จุดเดียวของหน้าเดียว (แบบเดียวกับที่ rose ถูกยุบเข้า expense)
+     */
+    <div className="min-h-screen bg-gradient-to-br from-surface via-primary-50 to-primary-50 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         {/* Brand */}
         <div className="text-center mb-8">

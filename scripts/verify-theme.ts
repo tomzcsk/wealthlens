@@ -91,6 +91,8 @@ const LIGHT_MUST_EQUAL: Record<string, string> = {
   'bg-hover': '#f8fafc', // slate-50 (hover บนการ์ดขาว)
   'bg-raised': '#f1f5f9', // slate-100
   'bg-track': '#e2e8f0', // slate-200
+  'bg-overlay': '#0f172a', // slate-900 (ฉากหลัง modal)
+  'bg-logo': '#ffffff', // white (กระเบื้องโลโก้ธนาคาร — เดิมคือ bg-white)
   'bg-inverse': '#0f172a', // slate-900 (พื้น hero)
   'inverse-fg': '#ffffff', // white
   'inverse-muted': '#cbd5e1', // slate-300
@@ -311,6 +313,22 @@ for (const token of ['inverse-fg', 'inverse-muted', 'inverse-dim']) {
 for (const f of FAMILIES) {
   const r = contrast(hexOf(LIGHT[`c-${f}-on-fill`]), hexOf(LIGHT['bg-inverse']));
   assert(`c-${f}-on-fill บน bg-inverse = ${r.toFixed(2)}`, r >= 4.5);
+}
+
+// ---------- R5g: พื้นที่ต้อง "ไม่รู้จักโหมด" — ค่าเดียวกันเป๊ะสองโหมด ----------
+// bg-overlay: ฉากหลัง modal ต้องมืดทั้งสองโหมด (ถ้าพลิกเป็นสว่าง ฉากหลังจะขาวโพลน)
+// bg-logo   : กระเบื้องรองโลโก้ธนาคารจริง (PNG หมึกเข้ม) ต้องขาวเหมือนกระดาษเสมอ
+console.log('\n— R5g: พื้นที่ค่าไม่ขยับข้ามโหมด (overlay / logo) —');
+for (const token of ['bg-overlay', 'bg-logo']) {
+  assert(
+    `${token}: สว่าง = มืด`,
+    LIGHT[token] === DARK[token],
+    `สว่าง ${LIGHT[token]} · มืด ${DARK[token]}`,
+  );
+}
+{
+  const r = contrast(hexOf(LIGHT['bg-logo']), hexOf(DARK['bg-card']));
+  assert(`bg-logo บนการ์ดมืด = ${r.toFixed(2)} (โลโก้หมึกเข้มต้องไม่จม)`, r >= 4.5);
 }
 
 // ---------- R6: จานสีกราฟ (Recharts รับ hex เท่านั้น ใช้ var() ไม่ได้) ----------

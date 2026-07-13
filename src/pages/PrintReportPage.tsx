@@ -114,6 +114,18 @@ const PrintReportPage = (): ReactNode => {
   const expenseByCategory = useExpenseByCategory(undefined, safeYear);
   const subscriptions = useSubscriptions(safeYear);
 
+  // F46 — หน้ารายงานขาวเสมอ แม้แอปอยู่โหมดมืด: พิมพ์ลงกระดาษขาว พื้นดำ
+  // กินหมึกและอ่านไม่ออก. ถอด class ที่ <html> ไม่ใช่แค่เว้นไฟล์นี้จาก codemod —
+  // token จะ resolve เป็นค่าโหมดสว่างเองทั้งหน้า
+  useEffect(() => {
+    const root = document.documentElement;
+    const wasDark = root.classList.contains('dark');
+    root.classList.remove('dark');
+    return () => {
+      if (wasDark) root.classList.add('dark');
+    };
+  }, []);
+
   // Toast on bad URL — fire once, then redirect via <Navigate />.
   useEffect(() => {
     if (!isValidYear) {

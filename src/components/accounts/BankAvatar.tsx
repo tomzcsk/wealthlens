@@ -45,9 +45,13 @@ export const BankAvatar = ({
     );
   }
 
+  // bg-logo = ขาวทั้งสองโหมดโดยตั้งใจ ไม่ใช่เศษที่ codemod ลืมแปลง:
+  // ในนี้คือโลโก้จริงของธนาคาร (PNG) หลายอันหมึกเข้ม (CITI, BBL) — ถ้าพื้น
+  // มืดตามโหมด โลโก้จะจมหายไปเลย. คิดเสียว่าเป็นโลโก้ที่พิมพ์บนกระดาษขาว
+  // แล้วแปะลงการ์ด. ขอบยังเป็น token ปกติ (border-ink-200) ให้กลืนกับธีม
   return (
     <span
-      className={`inline-flex shrink-0 items-center justify-center rounded-lg bg-card border border-ink-200 overflow-hidden ${box}`}
+      className={`inline-flex shrink-0 items-center justify-center rounded-lg bg-logo border border-ink-200 overflow-hidden ${box}`}
       title={bank.label}
     >
       <img

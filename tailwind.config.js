@@ -48,6 +48,8 @@ export default {
         raised: 'rgb(var(--bg-raised) / <alpha-value>)',
         track: 'rgb(var(--bg-track) / <alpha-value>)',
         overlay: 'rgb(var(--bg-overlay) / <alpha-value>)',
+        // กระเบื้องรองโลโก้ธนาคาร — ขาวทั้งสองโหมด (ดู src/index.css)
+        logo: 'rgb(var(--bg-logo) / <alpha-value>)',
         // hero กลับด้าน (มืดทั้งสองโหมด)
         inverse: {
           DEFAULT: 'rgb(var(--bg-inverse) / <alpha-value>)',
