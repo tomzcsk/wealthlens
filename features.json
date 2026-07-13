@@ -2,7 +2,7 @@
   "project": {
     "name": "WealthLens",
     "description": "Personal Finance Dashboard สำหรับติดตามรายรับ-รายจ่ายส่วนตัว",
-    "version": "1.5.0",
+    "version": "1.6.0",
     "created": "2026-05-06",
     "lastUpdated": "2026-07-13",
     "owner": "Tom",
@@ -1461,8 +1461,8 @@
     {
       "id": "phase_5",
       "name": "Phase 5 — Polish",
-      "status": "in_progress",
-      "completionPercent": 67,
+      "status": "completed",
+      "completionPercent": 100,
       "features": [
         {
           "id": "F46",
@@ -1534,6 +1534,42 @@
             "completed": true,
             "completedAt": "2026-07-13",
             "notes": "Spec: docs/superpowers/specs/2026-07-13-mobile-ux-design.md | Plan: docs/superpowers/plans/2026-07-13-mobile-ux.md | Commits: a3b2e8a (ทะเบียนเมนู pure + verify), 343e75d (ประตู verify:mobile — แดง 41 ข้อ = 'ก่อนแก้' ที่วัดได้), 4f7df7f (Sidebar อ่านทะเบียน + ลบ drawer/แฮมเบอร์เกอร์), 9e24377 (แถบล่าง + sheet), 82ec1cf (ปุ่มลอย), f0d94ef (header), 3b6b1be (ซ่อม overflow /monthly), fb46f39 (44px), 65fcf6a (ตรึงคอลัมน์), 42e9d11 (KPI 2 คอลัมน์ + กราฟเตี้ยลง) | Files ใหม่: src/lib/nav.ts, src/components/layout/{BottomNav,AddFab}.tsx, src/utils/chartSizing.ts, scripts/{verify-nav,verify-mobile}.ts, .env.verify | Files แก้: src/components/layout/{Sidebar,Layout,Header}.tsx, src/pages/{MonthlyPage,TaxCalculatorPage}.tsx, src/components/forms/{ExpenseList,SavingsList,TaxAllowanceForm}.tsx, src/components/dashboard/{KpiCardGrid,KpiCard,MonthlySummaryTable}.tsx + 5 ไฟล์ตาราง + กราฟทุกตัว, package.json (devDep playwright + script verify:mobile) | เพิ่ม dependency: playwright (devDep — mobile พิสูจน์ได้จากจอที่ render แล้วเท่านั้น) | ไม่ทำโดยตั้งใจ: ไม่แตกตารางเป็นการ์ด, ไม่แตะ /report/:year (มันคือกระดาษ A4), ไม่ทำ PWA/offline/swipe gesture, ไม่รื้อ layout เดสก์ท็อป"
+          }
+        },
+        {
+          "id": "F48",
+          "name": "หน้าเติบโต (Net Worth ย้อนหลัง + อัตราการออม)",
+          "description": "สองคำถามที่แอปยังตอบไม่ได้ — 'รวยขึ้นหรือเปล่า' (ความมั่งคั่งสุทธิรายเดือน; /wealth บอกได้แค่ตัวเลข ณ วันนี้ สเปกของมันเองเขียนว่ากราฟย้อนหลัง = นอก scope) และ 'เก็บได้กี่ % ของที่หาได้' (รายได้ของ Tom ~45% มาจากคอมมิชชั่น เดือนคอมเยอะกับเดือนคอมน้อยเทียบกันด้วยยอดบาทไม่ได้ ต้องเทียบด้วย %) — ตอบโดยไม่โกหกแม้แต่จุดเดียว",
+          "status": "completed",
+          "priority": "P2",
+          "phase": "phase_5",
+          "uxRef": "UXUI.md#13-หน้าเติบโต-f48--shipped-2026-07-13",
+          "acceptanceCriteria": [
+            "ความจริงที่ทั้งฟีเจอร์ตั้งอยู่บนมัน: BankAccount.balances[ปี][เดือน] คือ **กระแสเงินของเดือนนั้น ไม่ใช่ยอดคงเหลือสิ้นเดือน** (accountAllTimeTotal() บวกทุกเดือนเข้าด้วยกัน, การ์ดบัญชีเขียนว่า 'ยอดสะสมทุกปี', invariant F40: Σ tx ในเดือน === ค่าในช่อง) → ยอด ณ เดือน M = ผลรวมสะสมทุกเดือน ≤ M; ดราฟต์แรกของ design เข้าใจว่าเป็นยอดคงเหลือแล้วออกกฎ carry-forward — ถ้าปล่อยไว้กราฟจะแบนราบผิดทั้งเส้น",
+            "โมดูล pure ใหม่ 3 ตัว (ไม่เขียน store ไม่แตะ schema อ่านอย่างเดียว): src/utils/monthRange.ts (ไล่เดือน, toYm/parseYm/monthsIn/endOfMonth/ymLte), src/utils/savingsRate.ts (buildSavingsRateSeries + rollingAverage), src/utils/netWorthHistory.ts (buildNetWorthHistory + growthBetween) — ไม่ import React/Zustand จึงทดสอบใน node ล้วน",
+            "กฎ 1 — การเปลี่ยนวิธีนับไม่ใช่ความรวย: Tom เพิ่งเริ่มบันทึก 5 จาก 6 บัญชีใน ก.ค. 2026 (เงินสดก้อนเดียว ฿150,000) เส้นจึงกระโดด ทั้งที่เงินนั้นมีอยู่มาตลอด → NetWorthPoint.isTrackingJump + newAccounts, <ReferenceDot> บอกชื่อบัญชีที่เริ่มติดตาม, แถบพื้นหลังคลุมช่วงที่ครอบคลุมไม่ครบทุกบัญชี, และ growthBetween() คืน **null** เมื่อคร่อมจุดกระโดด → hero พิมพ์ 'เทียบไม่ได้ (เริ่มติดตามบัญชีใหม่)' แทนตัวเลข (โชว์ +% ทั้งที่แค่เริ่มนับเพิ่ม = โกหกด้วยตัวเลขจริง)",
+            "กฎ 2 — 'ไม่มีข้อมูล' ≠ 'เป็นศูนย์': ปี 2023 ของ Tom มีแต่รายได้ ไม่มีรายจ่ายรายการเลย → rate = null ไม่ใช่ 1.0; กราฟเว้นแท่งนั้นไว้ (ส่ง null เข้า Recharts ตรง ๆ ห้ามแทนที่ด้วย 0) + caption 'ช่องว่างในกราฟคือ ไม่รู้ ไม่ใช่ ศูนย์'. ถ้าคืน 1.0 ปีที่เรารู้น้อยที่สุดจะกลายเป็นปีที่ Tom 'ออมเก่งที่สุด'",
+            "กฎ 3 — ติดลบได้ ห้าม clamp: ทั้ง netWorth และ rate ติดลบได้ (กฎเดิม F38/F44); แท่งติดลบ (จ่ายเกินรายได้) ใช้สี expense",
+            "กฎ 4 — ไม่มี insight ปลอม: ไม่มีเส้นทำนายอนาคต ไม่เทียบกับใคร — เราไม่มีข้อมูลนั้น",
+            "G1 (กฎที่ทำให้มันน่าเชื่อถือ): จุดสุดท้ายของ history ต้องเท่ากับ computeNetWorth() ที่หน้า /wealth ใช้อยู่ **เป๊ะ** — เครื่องคำนวณสองตัวไม่ตรงกัน = ผู้ใช้เห็นตัวเลขความมั่งคั่งสองค่าในแอปเดียว. ยืนยันกับข้อมูลจริงของ Tom แล้ว: ทั้งสองหน้าอ่านได้ ฿-1,699,043",
+            "rollingAverage ข้ามเดือนที่ rate เป็น null (ไม่นับเป็น 0 — นับเป็น 0 = ลากค่าเฉลี่ยลงด้วยข้อมูลที่ไม่มีอยู่จริง) และคืน null เมื่อทั้งหน้าต่างไม่มีค่าจริงเลย",
+            "UI: src/pages/GrowthPage.tsx (ประกอบอย่างเดียว ไม่คำนวณ) + src/components/growth/{NetWorthHistoryChart,SavingsRateChart}.tsx; เมนู 📉 เติบโต (/growth, group 3, mobilePrimary: false → อยู่ใน sheet 'อื่นๆ') ผ่านทะเบียน src/lib/nav.ts (F47); กราฟรับสีผ่าน useChartTheme() (F46) และความสูงผ่าน chartSizing (F47)",
+            "บั๊กที่จับได้จากการขับข้อมูลจริง ไม่ใช่จาก unit assertion (1): /growth กับ /wealth ไม่ตรงกัน ฿213,498 — history นับงวดผ่อนจาก plan.instances (แถวรายจ่ายที่ถูกติดป้ายจริง: รถของ Tom มี 60 งวดในตาราง แต่มีแถวจริงแค่ 31 ตาม F30) ขณะที่ /wealth นับจาก plan.schedule → แก้ให้นับจาก schedule แหล่งเดียวกัน; fixture ของ G1 ส่ง plans ว่างจึงไม่เคยแตะเส้นทางนี้ (เพิ่ม G1b ปิดช่อง)",
+            "บั๊กจากข้อมูลจริง (2): ปี 2023 ขึ้นแท่งอัตราการออม 100% — ปีนั้นมี *แถว* รายจ่ายครบ 12 เดือนแต่ทุกแถว items ว่างเปล่า จึงต้องเช็ค 'ไม่มีข้อมูล' ที่ระดับ **รายการ** ไม่ใช่ระดับแถว (expenseRow !== undefined เป็นจริง)",
+            "บั๊กจากข้อมูลจริง (3): กราฟอ่านไม่ออก — คำเตือน 'ครอบคลุมไม่ครบทุกบัญชี' เดิมวาดเป็นเส้นประ opacity 0.5 แต่ครอบคลุมไม่ครบ 42 จาก 43 เดือน คำเตือนจึงกลืนกราฟทั้งใบจนดูเหมือนไม่มีข้อมูล → แก้เป็นเส้นทึบเต็ม opacity เส้นเดียว (มันคือข้อมูลจริง) แล้วย้ายคำเตือนไปเป็นแถบพื้นหลัง + caption. **ข้อมูลต้องดังกว่าคำเตือนเสมอ**",
+            "Verified: scripts/verify-growth.ts (41 assertions — monthRange, G1 + G1b, G2 ยอดสะสมไม่ร่วงเป็น 0 เมื่อเว้นเดือน, G3 จุดกระโดด, G4 null ไม่ใช่ 1.0, G5 ติดลบไม่ clamp, G6 ทองไม่มีราคาตลาด → ราคาทุน + goldIsCostBasis, G7 บัญชีก่อนเริ่มติดตามไม่ถูกนับ, ทองที่ขายแล้วหลุดจากสินทรัพย์) + verify เดิมทั้ง 30 ตัวไม่ regress + verify-nav + verify-no-hardcoded-colors + npm run verify:mobile (เพิ่ม '/growth' เข้ารายการ route ไม่งั้นหน้าใหม่ไม่มีใครตรวจ) + typecheck + lint + build + ขับเบราว์เซอร์จริงกับข้อมูลจริงของ Tom ทั้งสองโหมดสี"
+          ],
+          "estimatedHours": 6,
+          "dependencies": [
+            "F38",
+            "F40",
+            "F46",
+            "F47"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-07-13",
+            "notes": "Spec: docs/superpowers/specs/2026-07-13-growth-analytics-design.md | Plan: docs/superpowers/plans/2026-07-13-growth-analytics.md | Commits: 67e6757 (monthRange pure + verify), 22fe691 (savingsRate — ไม่มีข้อมูล ≠ ศูนย์), 3abe1e2 (netWorthHistory + ธงจุดเริ่มติดตาม), d4f769c (G1 ผูกกับ /wealth), 8548047 (หน้า /growth + กราฟสองตัว), 4338c16 (เส้นข้อมูลต้องดังกว่าคำเตือน) | Files ใหม่: src/utils/{monthRange,savingsRate,netWorthHistory}.ts, src/pages/GrowthPage.tsx, src/components/growth/{NetWorthHistoryChart,SavingsRateChart}.tsx, scripts/verify-growth.ts | Files แก้: src/lib/nav.ts, src/App.tsx, scripts/verify-mobile.ts | ไม่ทำโดยตั้งใจ: ไม่พยากรณ์ net worth อนาคต (เดาที่ดูน่าเชื่อถือเกินจริง), ไม่เทียบกับใคร, ไม่แตะ /wealth (มันตอบ 'วันนี้เท่าไร' ได้ดีแล้ว หน้าใหม่ตอบ 'มาถึงตรงนี้ได้ยังไง'), ไม่ทำ cashflow เข้า-ออกบัญชี"
           }
         }
       ]
@@ -1624,12 +1660,12 @@
     }
   },
   "progressSummary": {
-    "totalFeatures": 55,
-    "completed": 55,
+    "totalFeatures": 56,
+    "completed": 56,
     "inProgress": 0,
     "pending": 0,
     "overallProgress": "100%",
-    "currentPhase": "phase_5",
-    "nextMilestone": "Phase 5 ที่เหลือ (ยังไม่เริ่ม): additional analytics — dark mode (F46) ✅ · mobile UX (F47) ✅"
+    "currentPhase": "shipped",
+    "nextMilestone": "ไม่มี — Phase 5 จบครบทั้งสามงาน (dark mode F46 ✅ · mobile UX F47 ✅ · growth analytics F48 ✅) และยังไม่มี phase ถัดไปที่วางแผนไว้"
   }
 }
