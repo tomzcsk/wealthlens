@@ -14,20 +14,15 @@ import { extname, join } from 'node:path';
 import { chromium, type Page } from 'playwright';
 
 import seedData from '../src/data/seedData';
+import { NAV_ITEMS } from '../src/lib/nav';
 
 const PORT = 4178;
-const ROUTES = [
-  '/',
-  '/monthly',
-  '/analytics',
-  '/growth',
-  '/accounts',
-  '/wealth',
-  '/loans',
-  '/gold',
-  '/tax',
-  '/settings',
-];
+/**
+ * ทุกหน้าในทะเบียนเมนู (F49) — เดิมเป็นรายการพิมพ์มือ เพิ่มหน้าใหม่แล้วมันหลุด
+ * การตรวจเงียบ ๆ (F48 รอดมาได้เพราะมีคนจำได้ว่าต้องมาเติม '/growth' เอง).
+ * `/report/:year` ไม่อยู่ในทะเบียนโดยตั้งใจ — มันคือกระดาษ A4 ไม่ใช่หน้าจอ (F47 spec)
+ */
+const ROUTES = NAV_ITEMS.map((item) => item.path);
 
 let failures = 0;
 const assert = (label: string, ok: boolean, detail = ''): void => {
