@@ -2,7 +2,7 @@
   "project": {
     "name": "WealthLens",
     "description": "Personal Finance Dashboard สำหรับติดตามรายรับ-รายจ่ายส่วนตัว",
-    "version": "1.8.0",
+    "version": "1.9.0",
     "created": "2026-05-06",
     "lastUpdated": "2026-07-13",
     "owner": "Tom",
@@ -1580,9 +1580,9 @@
     {
       "id": "phase_6",
       "name": "Phase 6 — Debt & Polish",
-      "description": "เก็บหนี้เทคนิค (F49 ✅) → รื้อหน้าวิเคราะห์ (F50 ✅ — 6,584px/7.8 จอ เหลือ ≤2,000px ต่อแท็บ) → PWA (ยังไม่เริ่ม)",
-      "status": "in_progress",
-      "completionPercent": 67,
+      "description": "เก็บหนี้เทคนิค (F49 ✅) → รื้อหน้าวิเคราะห์ (F50 ✅ — 6,584px/7.8 จอ เหลือ ≤2,000px ต่อแท็บ) → PWA (F51 ✅)",
+      "status": "completed",
+      "completionPercent": 100,
       "features": [
         {
           "id": "F49",
@@ -1645,6 +1645,34 @@
             "completed": true,
             "completedAt": "2026-07-13",
             "notes": "Spec: docs/superpowers/specs/2026-07-13-analytics-restructure-design.md | Plan: docs/superpowers/plans/2026-07-13-analytics-restructure.md | Files ใหม่: src/lib/analyticsTabs.ts, src/pages/analytics/{YearsTab,TrendsTab,SubscriptionsTab}.tsx, scripts/verify-analytics.ts | Files แก้: src/pages/AnalyticsPage.tsx (แถบแท็บ + lazy + Suspense key={active}), package.json (verify:analytics) | Files ลบ: components/analytics/{BudgetForecast,AnomalyAlerts}.tsx, hooks/useForecast.ts, utils/forecast.ts, stores/anomalyStore.ts | ไม่ทำโดยตั้งใจ: ไม่แยกเป็นหลายหน้าในเมนู (เมนูมี 9 รายการแล้ว) · ไม่ลบ LocalStorage key 'wealthlens_anomaly_dismissals' ที่กลายเป็นขยะกำพร้า · ไม่แตะสูตรคำนวณของแผงที่เหลือ"
+          }
+        },
+        {
+          "id": "F51",
+          "name": "PWA (ติดจอโฮม + เปิดได้ไม่มีเน็ต)",
+          "description": "ครึ่งหนึ่งของ 'ออฟไลน์' ทำไว้แล้ว (ข้อมูล LocalStorage-first + useDriveSyncCoordinator ดันขึ้น Drive ใหม่ตอนกลับมาออนไลน์) — ที่ขาดคือ **ตัวแอปเองเปิดไม่ได้ถ้าไม่มีเน็ต** และติดจอโฮมไม่ได้. งานนี้เพิ่มแค่เปลือก: manifest + ไอคอน + service worker (precache app shell) + แถบแจ้งเวอร์ชันใหม่ — ไม่แตะชั้นข้อมูล/ซิงค์เลย",
+          "status": "completed",
+          "priority": "P1",
+          "phase": "phase_6",
+          "acceptanceCriteria": [
+            "ไอคอน 192/512/maskable/apple สร้างจาก public/favicon.svg ด้วย Playwright ที่มีอยู่แล้ว (ไม่เพิ่ม sharp/canvas) — maskable วางโลโก้ใน safe zone 60% บนพื้นทึบ ไม่งั้น Android ครอบมุมทิ้ง",
+            "manifest ผ่าน vite-plugin-pwa: name WealthLens · display standalone · start_url / · ไอคอนครบสามแบบ",
+            "index.html: title 'wealthlens' → 'WealthLens' · theme-color สองค่า (light/dark — ไม่มีค่ามืด = แถบสถานะขาวโพลนคาดบนหัวแอปโหมดมืด) · meta iOS (iOS ไม่อ่าน manifest ครบ) · inline script กันแฟลชขาวของ F46 คงไว้ทั้งดุ้น",
+            "registerType: 'prompt' ไม่ใช่ autoUpdate — reload เงียบ ๆ กลางคันตอนกรอกฟอร์ม = สิ่งที่พิมพ์ค้างหาย · devOptions.enabled: false — SW ใน dev = แก้โค้ดแล้วไม่เห็นผล แล้วไล่หาบั๊กที่ไม่มีอยู่จริง",
+            "เส้นที่ห้ามข้าม (runtimeCaching NetworkOnly): /api/gold-price (ราคาทองสดถูกแช่ = net worth คิดจากราคาเมื่อวานโดยไม่มีใครรู้) และ googleapis/accounts.google/oauth2 (token ค้างใน cache = บั๊ก + ความเสี่ยง) — P5 พิสูจน์ว่า cache สะอาดจริงหลังมี SW แล้ว",
+            "UpdatePrompt.tsx (ไม่ใช้ toast: Toast ไม่มีปุ่มกดและหายเองใน 4 วินาที — 'toasts are transient by design') เป็นแถบที่อยู่จนกว่าจะกด, mount ใน Layout นอก requireSignIn, วางเหนือแถบล่าง (F47) **และเหนือปุ่มลอย** ไม่งั้นมันบังปุ่ม 'เพิ่มรายจ่าย' ค้างไว้",
+            "ทดสอบเส้นทางอัปเดตของจริงด้วยมือ (P6 ตรวจได้แค่ว่าทางเดินครบ): build → เสิร์ฟ → SW ลงทะเบียน → แก้ข้อความ → build ใหม่ → refresh หน้าเดิม → แถบ 'มีเวอร์ชันใหม่' เด้งจริง → กด 'อัปเดต' → reload → เห็นข้อความใหม่",
+            "Verified: scripts/verify-pwa.ts (P1-P6, 17 ข้อ — แดง 15 ก่อนแก้) + verify เดิม 31 ตัว + verify:mobile + verify:analytics ไม่ regress + typecheck + lint + build + ขับจริง 390×844 (ออฟไลน์เปิดได้ทั้งโหมดสว่างและมืด · ออฟไลน์เพิ่มรายจ่ายได้และรอดหลัง reload · แถบอัปเดตไม่ทับแถบล่าง/ปุ่มลอย)"
+          ],
+          "estimatedHours": 6,
+          "dependencies": [
+            "F46",
+            "F47"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-07-13",
+            "notes": "Spec: docs/superpowers/specs/2026-07-13-pwa-design.md | Plan: docs/superpowers/plans/2026-07-13-pwa.md | Files: scripts/generate-icons.mts (ใหม่), public/icons/*.png (ใหม่), scripts/verify-pwa.ts (ใหม่), src/components/pwa/UpdatePrompt.tsx (ใหม่), vite.config.ts (VitePWA), index.html, src/components/layout/Layout.tsx, src/vite-env.d.ts, package.json | เพิ่ม devDependency: vite-plugin-pwa (workbox) — ไม่เขียน SW เอง เพราะ cache invalidation พลาดแล้วผู้ใช้ติดอยู่กับแอปเวอร์ชันเก่าถาวรและ debug ยากมาก (จุดยืนเดียวกับ F42 ที่รับ framer-motion เข้ามา) | ไม่ทำโดยตั้งใจ: push notification (ต้องมี server = ชนหลักการไม่มี backend) · Background Sync API (ซิงค์ตอนกลับมาออนไลน์มีอยู่แล้ว) · ไม่ cache ข้อมูลจาก Drive (LocalStorage เป็นแหล่งความจริงอยู่แล้ว — cache ชั้นสอง = สองแหล่งความจริงที่จะไม่ตรงกันวันหนึ่ง)"
           }
         }
       ]
@@ -1735,14 +1763,14 @@
     }
   },
   "progressSummary": {
-    "totalFeatures": 58,
-    "completed": 57,
+    "totalFeatures": 59,
+    "completed": 58,
     "removed": 1,
     "inProgress": 0,
     "pending": 0,
     "overallProgress": "100%",
-    "countingNote": "58 = 57 ที่เคยมี + F50 (ตัวที่ 58). F16 (ประมาณการเดือนหน้า) ถูกถอดออกใน F50 จึงนับเป็น removed ไม่ใช่ completed → completed 57 + removed 1 = 58. รายการ F15/F16 ยังอยู่ในไฟล์โดยตั้งใจ: ประวัติต้องบอกว่ามันเคยมีแล้วถอดออก ไม่ใช่แกล้งทำเป็นไม่เคยมี",
-    "currentPhase": "phase_6",
-    "nextMilestone": "Phase 6 เหลืองานเดียว (ยังไม่เริ่ม): PWA"
+    "countingNote": "59 = 58 ที่เคยมี + F51 (ตัวที่ 59). F16 (ประมาณการเดือนหน้า) ถูกถอดออกใน F50 จึงนับเป็น removed ไม่ใช่ completed → completed 58 + removed 1 = 59. รายการ F15/F16 ยังอยู่ในไฟล์โดยตั้งใจ: ประวัติต้องบอกว่ามันเคยมีแล้วถอดออก ไม่ใช่แกล้งทำเป็นไม่เคยมี",
+    "currentPhase": "shipped",
+    "nextMilestone": "Phase 6 จบครบทั้งสามงาน (F49 หนี้เทคนิค · F50 รื้อหน้าวิเคราะห์ · F51 PWA) — ไม่มีงานค้างในโรดแมป"
   }
 }
