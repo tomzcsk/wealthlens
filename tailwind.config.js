@@ -1,6 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  darkMode: 'class',
   theme: {
     extend: {
       fontFamily: {
@@ -9,42 +10,59 @@ export default {
         mono: ['Inter', 'ui-monospace', 'monospace'],
       },
       colors: {
-        // Brand
+        // ramp กลาง (text + border) — F46
+        ink: {
+          900: 'rgb(var(--ink-900) / <alpha-value>)',
+          800: 'rgb(var(--ink-800) / <alpha-value>)',
+          700: 'rgb(var(--ink-700) / <alpha-value>)',
+          600: 'rgb(var(--ink-600) / <alpha-value>)',
+          500: 'rgb(var(--ink-500) / <alpha-value>)',
+          400: 'rgb(var(--ink-400) / <alpha-value>)',
+          300: 'rgb(var(--ink-300) / <alpha-value>)',
+          200: 'rgb(var(--ink-200) / <alpha-value>)',
+          100: 'rgb(var(--ink-100) / <alpha-value>)',
+        },
+        // พื้น
+        card: 'rgb(var(--bg-card) / <alpha-value>)',
+        surface: 'rgb(var(--bg-surface) / <alpha-value>)',
+        hover: 'rgb(var(--bg-hover) / <alpha-value>)',
+        raised: 'rgb(var(--bg-raised) / <alpha-value>)',
+        track: 'rgb(var(--bg-track) / <alpha-value>)',
+        overlay: 'rgb(var(--bg-overlay) / <alpha-value>)',
+        // accent
         primary: {
-          DEFAULT: '#2563EB',
-          light: '#EFF6FF',
-          dark: '#1D4ED8',
+          DEFAULT: 'rgb(var(--color-primary) / <alpha-value>)',
+          light: 'rgb(var(--color-primary-light) / <alpha-value>)',
+          dark: 'rgb(var(--color-primary-dark) / <alpha-value>)',
         },
-        // Income (positive)
         income: {
-          DEFAULT: '#059669',
-          light: '#ECFDF5',
-          bar: '#34D399',
+          DEFAULT: 'rgb(var(--color-income) / <alpha-value>)',
+          light: 'rgb(var(--color-income-light) / <alpha-value>)',
+          bar: 'rgb(var(--color-income-bar) / <alpha-value>)',
         },
-        // Expense (negative)
         expense: {
-          DEFAULT: '#DC2626',
-          light: '#FEF2F2',
-          bar: '#F87171',
+          DEFAULT: 'rgb(var(--color-expense) / <alpha-value>)',
+          light: 'rgb(var(--color-expense-light) / <alpha-value>)',
+          bar: 'rgb(var(--color-expense-bar) / <alpha-value>)',
         },
-        // Net & Savings
-        net: '#7C3AED',
-        savings: '#D97706',
-        // Semantic
-        success: '#059669',
-        warning: '#D97706',
-        danger: '#DC2626',
-        info: '#2563EB',
-        // Expense category palette (Pie chart)
+        warning: {
+          DEFAULT: 'rgb(var(--color-warning) / <alpha-value>)',
+          light: 'rgb(var(--color-warning-light) / <alpha-value>)',
+        },
+        net: 'rgb(var(--color-net) / <alpha-value>)',
+        savings: 'rgb(var(--color-savings) / <alpha-value>)',
+        success: 'rgb(var(--color-success) / <alpha-value>)',
+        danger: 'rgb(var(--color-danger) / <alpha-value>)',
+        info: 'rgb(var(--color-info) / <alpha-value>)',
         cat: {
-          housing: '#6366F1',
-          vehicle: '#8B5CF6',
-          utilities: '#06B6D4',
-          subscription: '#F59E0B',
-          finance: '#EF4444',
-          entertainment: '#EC4899',
-          savings: '#10B981',
-          other: '#6B7280',
+          housing: 'rgb(var(--cat-housing) / <alpha-value>)',
+          vehicle: 'rgb(var(--cat-vehicle) / <alpha-value>)',
+          utilities: 'rgb(var(--cat-utilities) / <alpha-value>)',
+          subscription: 'rgb(var(--cat-subscription) / <alpha-value>)',
+          finance: 'rgb(var(--cat-finance) / <alpha-value>)',
+          entertainment: 'rgb(var(--cat-entertainment) / <alpha-value>)',
+          savings: 'rgb(var(--cat-savings) / <alpha-value>)',
+          other: 'rgb(var(--cat-other) / <alpha-value>)',
         },
       },
       fontSize: {

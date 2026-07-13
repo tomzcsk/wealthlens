@@ -9,50 +9,63 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * ชั้นสีของทั้งแอป (F46) — แหล่งความจริงเดียว
+ *
+ * เก็บเป็น "เลขช่องสี" ไม่ใช่ hex เพราะ Tailwind ต้องประกอบ alpha เอง:
+ *   rgb(var(--bg-card) / <alpha-value>)  →  bg-card/60 ถึงจะทำงาน
+ * ถ้าเก็บเป็น #ffffff แล้วเขียน bg-card/60 มันจะเงียบและไม่ทำงาน
+ *
+ * โหมดสว่าง = ค่า Tailwind เดิมเป๊ะทุกตัว (scripts/verify-theme.ts บังคับไว้)
+ * โหมดมืดเลือกค่าแล้ววัด contrast จริง ไม่ใช่กลับด้านตรง ๆ
+ */
 :root {
-  /* Brand */
-  --color-primary: #2563eb;
-  --color-primary-light: #eff6ff;
-  --color-primary-dark: #1d4ed8;
+  /* ramp กลาง — ใช้ทั้ง text และ border (ค่าสว่าง = slate เดิม) */
+  --ink-900: 15 23 42;
+  --ink-800: 30 41 59;
+  --ink-700: 51 65 85;
+  --ink-600: 71 85 105;
+  --ink-500: 100 116 139;
+  --ink-400: 148 163 184;
+  --ink-300: 203 213 225;
+  --ink-200: 226 232 240;
+  --ink-100: 241 245 249;
 
-  /* Income (positive) */
-  --color-income: #059669;
-  --color-income-light: #ecfdf5;
-  --color-income-bar: #34d399;
+  /* พื้น */
+  --bg-card: 255 255 255;
+  --bg-surface: 248 250 252;
+  --bg-hover: 248 250 252;
+  --bg-raised: 241 245 249;
+  --bg-track: 226 232 240;
+  --bg-overlay: 15 23 42; /* ฉากหลัง Modal — มืดทั้งสองโหมดโดยตั้งใจ */
 
-  /* Expense (negative) */
-  --color-expense: #dc2626;
-  --color-expense-light: #fef2f2;
-  --color-expense-bar: #f87171;
+  /* accent */
+  --color-primary: 37 99 235;
+  --color-primary-light: 239 246 255;
+  --color-primary-dark: 29 78 216;
+  --color-income: 5 150 105;
+  --color-income-light: 236 253 245;
+  --color-income-bar: 52 211 153;
+  --color-expense: 220 38 38;
+  --color-expense-light: 254 242 242;
+  --color-expense-bar: 248 113 113;
+  --color-warning: 217 119 6;
+  --color-warning-light: 255 251 235;
+  --color-net: 124 58 237;
+  --color-savings: 217 119 6;
+  --color-success: 5 150 105;
+  --color-danger: 220 38 38;
+  --color-info: 37 99 235;
 
-  /* Neutral roles */
-  --color-net: #7c3aed;
-  --color-savings: #d97706;
-
-  /* Semantic */
-  --color-success: #059669;
-  --color-warning: #d97706;
-  --color-danger: #dc2626;
-  --color-info: #2563eb;
-
-  /* Surfaces (light mode) */
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8fafc;
-  --bg-card: #ffffff;
-  --border: #e2e8f0;
-  --text-primary: #0f172a;
-  --text-secondary: #64748b;
-  --text-muted: #94a3b8;
-
-  /* Expense category palette */
-  --cat-housing: #6366f1;
-  --cat-vehicle: #8b5cf6;
-  --cat-utilities: #06b6d4;
-  --cat-subscription: #f59e0b;
-  --cat-finance: #ef4444;
-  --cat-entertainment: #ec4899;
-  --cat-savings: #10b981;
-  --cat-other: #6b7280;
+  /* สีหมวดกราฟ — ค่าเดียวสองโหมด (สดพอจะอ่านออกทั้งสองพื้น) */
+  --cat-housing: 99 102 241;
+  --cat-vehicle: 139 92 246;
+  --cat-utilities: 6 182 212;
+  --cat-subscription: 245 158 11;
+  --cat-finance: 239 68 68;
+  --cat-entertainment: 236 72 153;
+  --cat-savings: 16 185 129;
+  --cat-other: 107 114 128;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -60,16 +73,41 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Future-ready: dark surfaces (UXUI.md section 11) */
-@media (prefers-color-scheme: dark) {
-  :root.dark {
-    --bg-primary: #0f172a;
-    --bg-secondary: #1e293b;
-    --bg-card: #1e293b;
-    --border: #334155;
-    --text-primary: #f1f5f9;
-    --text-secondary: #94a3b8;
-  }
+.dark {
+  --ink-900: 248 250 252;
+  --ink-800: 241 245 249;
+  --ink-700: 226 232 240;
+  --ink-600: 203 213 225;
+  --ink-500: 148 163 184;
+  --ink-400: 100 116 139;
+  --ink-300: 71 85 105;
+  --ink-200: 51 65 85;
+  --ink-100: 40 53 74; /* ไม่ใช่ 30 41 59 — นั่นเท่าสีการ์ดพอดี เส้นจะหายสนิท */
+
+  --bg-card: 30 41 59;
+  --bg-surface: 15 23 42;
+  --bg-hover: 51 65 85; /* hover บนการ์ดต้องสว่างขึ้น ไม่ใช่มืดลง */
+  --bg-raised: 51 65 85;
+  --bg-track: 71 85 105;
+  --bg-overlay: 15 23 42;
+
+  /* accent สว่างขึ้นให้ contrast ผ่านบนพื้นมืด */
+  --color-primary: 96 165 250;
+  --color-primary-light: 30 58 138;
+  --color-primary-dark: 147 197 253;
+  --color-income: 52 211 153;
+  --color-income-light: 6 78 59;
+  --color-income-bar: 52 211 153;
+  --color-expense: 248 113 113;
+  --color-expense-light: 127 29 29;
+  --color-expense-bar: 248 113 113;
+  --color-warning: 251 191 36;
+  --color-warning-light: 120 53 15;
+  --color-net: 167 139 250;
+  --color-savings: 251 191 36;
+  --color-success: 52 211 153;
+  --color-danger: 248 113 113;
+  --color-info: 96 165 250;
 }
 
 html,
@@ -82,8 +120,8 @@ body,
 
 body {
   font-family: 'Inter', 'Noto Sans Thai', system-ui, sans-serif;
-  background: var(--bg-secondary);
-  color: var(--text-primary);
+  background: rgb(var(--bg-surface));
+  color: rgb(var(--ink-900));
   font-size: 0.875rem;
   line-height: 1.5;
 }
