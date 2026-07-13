@@ -107,7 +107,7 @@ export const MonthlyPage = (): ReactNode => {
           <button
             type="button"
             onClick={() => setEditingIncome(true)}
-            className="text-sm bg-primary text-white px-3 py-1.5 rounded-lg hover:bg-primary-dark"
+            className="inline-flex items-center min-h-11 md:min-h-0 text-sm bg-primary text-white px-3 py-1.5 rounded-lg hover:bg-primary-dark"
           >
             {income ? 'แก้ไขรายได้' : '+ เพิ่มรายได้'}
           </button>

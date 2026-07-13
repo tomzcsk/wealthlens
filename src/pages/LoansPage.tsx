@@ -72,7 +72,7 @@ export const LoansPage = (): ReactNode => {
         <button
           type="button"
           onClick={() => setForm('create')}
-          className="shrink-0 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark transition"
+          className="inline-flex shrink-0 items-center min-h-11 md:min-h-0 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark transition"
         >
           + เพิ่มหนี้
         </button>

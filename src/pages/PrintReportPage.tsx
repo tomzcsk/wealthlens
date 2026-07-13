@@ -241,7 +241,7 @@ const PrintReportPage = (): ReactNode => {
             <button
               type="button"
               onClick={() => window.print()}
-              className="inline-flex items-center gap-1.5 bg-primary hover:bg-primary-dark text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-sm transition-colors"
+              className="inline-flex items-center gap-1.5 bg-primary hover:bg-primary-dark text-white text-sm font-semibold px-4 py-2 min-h-11 md:min-h-0 rounded-lg shadow-sm transition-colors"
             >
               <span aria-hidden="true">🖨️</span>
               พิมพ์

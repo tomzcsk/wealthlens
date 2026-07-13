@@ -49,7 +49,7 @@ export const NetWorthColumn = ({
                       type="button"
                       onClick={() => setOpenKey(open ? null : r.key)}
                       aria-expanded={open}
-                      className="text-sm text-ink-700 hover:text-primary-ink transition"
+                      className="inline-flex items-center min-h-11 md:min-h-0 text-sm text-ink-700 hover:text-primary-ink transition"
                     >
                       {open ? '▾' : '▸'} {r.label}
                     </button>

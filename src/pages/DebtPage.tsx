@@ -63,7 +63,7 @@ export const DebtPage = (): ReactNode => {
                 if (!isActive) navigate(tab.path);
               }}
               className={[
-                'rounded-full border px-4 py-1.5 text-sm font-medium transition',
+                'inline-flex items-center rounded-full border px-4 py-1.5 min-h-11 md:min-h-0 text-sm font-medium transition',
                 isActive
                   ? 'border-transparent bg-primary text-white shadow-sm'
                   : 'border-ink-200 bg-card text-ink-600 hover:border-ink-300 hover:bg-hover',

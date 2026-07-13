@@ -176,7 +176,7 @@ const ExpenseRow = ({
           type="button"
           onClick={() => onEdit(item)}
           aria-label={`แก้ไข ${item.name}`}
-          className="p-1 text-ink-400 hover:text-primary-ink transition"
+          className="p-1 inline-flex items-center justify-center min-h-11 min-w-11 md:min-h-0 md:min-w-0 text-ink-400 hover:text-primary-ink transition"
         >
           ✏️
         </button>
@@ -184,7 +184,7 @@ const ExpenseRow = ({
           type="button"
           onClick={() => onDelete(item)}
           aria-label={`ลบ ${item.name}`}
-          className="p-1 text-ink-400 hover:text-expense-ink transition"
+          className="p-1 inline-flex items-center justify-center min-h-11 min-w-11 md:min-h-0 md:min-w-0 text-ink-400 hover:text-expense-ink transition"
         >
           🗑️
         </button>
@@ -513,7 +513,7 @@ export const ExpenseList = ({
             type="button"
             onClick={handleFillRecurring}
             title="เติมรายการประจำจากเดือนล่าสุดที่มี (ข้ามรายการที่มีแล้ว)"
-            className="px-3 py-1.5 text-sm font-medium text-ink-600 border border-ink-200 rounded-md hover:bg-hover transition"
+            className="inline-flex items-center min-h-11 md:min-h-0 px-3 py-1.5 text-sm font-medium text-ink-600 border border-ink-200 rounded-md hover:bg-hover transition"
           >
             📋 เติมรายการประจำ
           </button>
@@ -521,14 +521,14 @@ export const ExpenseList = ({
             type="button"
             onClick={() => setInstallmentModalOpen(true)}
             title="ผ่อน 0% หรือผ่อนหลายงวด — ระบบจะกระจายงวดให้ในเดือนต่อๆ ไปอัตโนมัติ"
-            className="px-3 py-1.5 text-sm font-medium text-ink-700 border border-ink-300 rounded-md hover:bg-hover transition"
+            className="inline-flex items-center min-h-11 md:min-h-0 px-3 py-1.5 text-sm font-medium text-ink-700 border border-ink-300 rounded-md hover:bg-hover transition"
           >
             💳 ผ่อนของ
           </button>
           <button
             type="button"
             onClick={() => openAdd()}
-            className="px-3 py-1.5 text-sm font-medium text-primary-ink bg-primary-50 rounded-md hover:bg-primary hover:text-white transition"
+            className="inline-flex items-center min-h-11 md:min-h-0 px-3 py-1.5 text-sm font-medium text-primary-ink bg-primary-50 rounded-md hover:bg-primary hover:text-white transition"
           >
             + เพิ่มค่าใช้จ่าย
           </button>

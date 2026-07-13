@@ -115,7 +115,7 @@ export const PaymentLogTable = ({
                           type="button"
                           onClick={() => onDeleteExtra(row.extraId!)}
                           aria-label="ลบโปะนี้"
-                          className="p-1 text-ink-400 hover:text-expense-ink transition"
+                          className="p-1 inline-flex items-center justify-center min-h-11 min-w-11 md:min-h-0 md:min-w-0 text-ink-400 hover:text-expense-ink transition"
                         >
                           🗑️
                         </button>
@@ -131,7 +131,7 @@ export const PaymentLogTable = ({
               <button
                 type="button"
                 onClick={() => setExpanded((v) => !v)}
-                className="text-xs font-medium text-primary-ink hover:text-primary-700"
+                className="inline-flex items-center min-h-11 md:min-h-0 text-xs font-medium text-primary-ink hover:text-primary-700"
               >
                 {expanded
                   ? '▴ แสดง 20 รายการล่าสุด'

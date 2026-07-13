@@ -381,7 +381,7 @@ export const MultiYearComparison = ({
                 disabled={isLast}
                 aria-pressed={isOn}
                 className={[
-                  'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium transition',
+                  'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 min-h-11 md:min-h-0 text-sm font-medium transition',
                   isOn
                     ? 'border-transparent text-white shadow-sm'
                     : 'border-ink-200 bg-card text-ink-600 hover:border-ink-300 hover:bg-hover',

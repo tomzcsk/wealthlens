@@ -70,7 +70,7 @@ export const ReportsSection = (): ReactNode => {
           value={year}
           onChange={(e) => setYear(Number(e.target.value))}
           disabled={!hasYears}
-          className="text-sm font-medium text-ink-700 bg-card border border-ink-300 rounded-lg px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-ink disabled:opacity-50 disabled:cursor-not-allowed"
+          className="text-sm font-medium text-ink-700 bg-card border border-ink-300 rounded-lg px-3 py-2 min-h-11 md:min-h-0 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-ink disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {hasYears ? (
             availableYears.map((y) => (
@@ -87,7 +87,7 @@ export const ReportsSection = (): ReactNode => {
           type="button"
           onClick={() => openReport(year, false)}
           disabled={!hasYears}
-          className="inline-flex items-center gap-1.5 bg-card hover:bg-hover border border-ink-300 disabled:opacity-50 disabled:cursor-not-allowed text-ink-700 text-sm font-semibold px-4 py-2 rounded-lg shadow-sm transition-colors"
+          className="inline-flex items-center gap-1.5 bg-card hover:bg-hover border border-ink-300 disabled:opacity-50 disabled:cursor-not-allowed text-ink-700 text-sm font-semibold px-4 py-2 min-h-11 md:min-h-0 rounded-lg shadow-sm transition-colors"
         >
           <span aria-hidden="true">👁</span>
           พรีวิว
@@ -97,7 +97,7 @@ export const ReportsSection = (): ReactNode => {
           type="button"
           onClick={() => openReport(year, true)}
           disabled={!hasYears}
-          className="inline-flex items-center gap-1.5 bg-primary hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-sm transition-colors"
+          className="inline-flex items-center gap-1.5 bg-primary hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold px-4 py-2 min-h-11 md:min-h-0 rounded-lg shadow-sm transition-colors"
         >
           <span aria-hidden="true">📄</span>
           สร้าง PDF

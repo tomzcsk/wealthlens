@@ -146,7 +146,7 @@ export const TravelSavingsCard = (): ReactNode => {
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="text-xs font-medium text-primary-ink hover:text-primary-700"
+          className="inline-flex items-center min-h-11 md:min-h-0 text-xs font-medium text-primary-ink hover:text-primary-700"
         >
           {hasGoal ? 'แก้ไข ✏️' : 'ตั้งเป้า ✏️'}
         </button>

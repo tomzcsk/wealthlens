@@ -97,7 +97,7 @@ export const SubscriptionManager = (): ReactNode => {
           <select
             value={filter}
             onChange={handleFilterChange}
-            className="rounded-md border border-ink-200 bg-card px-3 py-1.5 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-primary-ink"
+            className="rounded-md border border-ink-200 bg-card px-3 py-1.5 min-h-11 md:min-h-0 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-primary-ink"
           >
             {FILTER_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>

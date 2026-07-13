@@ -89,7 +89,7 @@ const SpotEntry = ({ purity, value }: SpotEntryProps): ReactNode => {
               setDraft(value != null ? formatNumber(value) : '');
               setEditing(true);
             }}
-            className="text-xs text-primary-ink hover:text-primary-700"
+            className="inline-flex items-center min-h-11 md:min-h-0 text-xs text-primary-ink hover:text-primary-700"
           >
             แก้ไข
           </button>
@@ -253,7 +253,7 @@ const HoldingRow = ({
           type="button"
           onClick={() => onEdit(holding)}
           aria-label={`แก้ไข ${holding.brand}`}
-          className="p-1 text-ink-400 hover:text-primary-ink transition"
+          className="p-1 inline-flex items-center justify-center min-h-11 min-w-11 md:min-h-0 md:min-w-0 text-ink-400 hover:text-primary-ink transition"
         >
           ✏️
         </button>
@@ -261,7 +261,7 @@ const HoldingRow = ({
           type="button"
           onClick={() => onDelete(holding)}
           aria-label={`ลบ ${holding.brand}`}
-          className="p-1 text-ink-400 hover:text-expense-ink transition"
+          className="p-1 inline-flex items-center justify-center min-h-11 min-w-11 md:min-h-0 md:min-w-0 text-ink-400 hover:text-expense-ink transition"
         >
           🗑️
         </button>
@@ -383,7 +383,7 @@ export const GoldPage = (): ReactNode => {
         <button
           type="button"
           onClick={() => setCreateOpen(true)}
-          className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark transition"
+          className="inline-flex items-center min-h-11 md:min-h-0 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark transition"
         >
           + บันทึกการซื้อ
         </button>
@@ -445,7 +445,7 @@ export const GoldPage = (): ReactNode => {
               type="button"
               onClick={() => void handleFetchSpot()}
               disabled={fetchingSpot}
-              className="px-2.5 py-1 text-xs font-medium text-primary-ink bg-primary-50 border border-primary-ink/20 rounded hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="inline-flex items-center min-h-11 md:min-h-0 px-2.5 py-1 text-xs font-medium text-primary-ink bg-primary-50 border border-primary-ink/20 rounded hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
               {fetchingSpot ? '⏳ กำลังดึง...' : '🔄 ดึงจาก สมาคมค้าทองคำ'}
             </button>
@@ -488,7 +488,7 @@ export const GoldPage = (): ReactNode => {
             <button
               type="button"
               onClick={() => setCreateOpen(true)}
-              className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark transition"
+              className="inline-flex items-center min-h-11 md:min-h-0 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark transition"
             >
               + บันทึกการซื้อ
             </button>

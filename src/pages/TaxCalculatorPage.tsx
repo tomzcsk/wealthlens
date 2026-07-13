@@ -109,7 +109,7 @@ export const TaxCalculatorPage = (): ReactNode => {
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="rounded-lg border border-ink-300 px-3 py-2 text-sm focus:border-primary-ink focus:outline-none focus:ring-2 focus:ring-primary-ink/30"
+              className="rounded-lg border border-ink-300 px-3 py-2 min-h-11 md:min-h-0 text-sm focus:border-primary-ink focus:outline-none focus:ring-2 focus:ring-primary-ink/30"
             >
               {availableYears.map((y) => (
                 <option key={y} value={y}>
@@ -119,12 +119,14 @@ export const TaxCalculatorPage = (): ReactNode => {
             </select>
           </label>
 
-          <label className="flex items-center gap-2">
+          <label className="flex items-center gap-2 min-h-11 md:min-h-0">
+            {/* กล่องติ๊ก native ขยายเป็น 44px ไม่ได้โดยไม่บวม — <label> ทั้งแถบคือพื้นที่กดจริง (F47/M2) */}
             <input
+              data-tap-exempt
               type="checkbox"
               checked={includeBonus}
               onChange={(e) => setIncludeBonus(e.target.checked)}
-              className="h-4 w-4 rounded border-ink-300 text-primary-ink focus:ring-primary-ink"
+              className="h-5 w-5 md:h-4 md:w-4 rounded border-ink-300 text-primary-ink focus:ring-primary-ink"
             />
             <span className="text-sm text-ink-700">
               รวมโบนัส{' '}
@@ -134,12 +136,14 @@ export const TaxCalculatorPage = (): ReactNode => {
             </span>
           </label>
 
-          <label className="flex items-center gap-2">
+          <label className="flex items-center gap-2 min-h-11 md:min-h-0">
+            {/* กล่องติ๊ก native ขยายเป็น 44px ไม่ได้โดยไม่บวม — <label> ทั้งแถบคือพื้นที่กดจริง (F47/M2) */}
             <input
+              data-tap-exempt
               type="checkbox"
               checked={includeCommission}
               onChange={(e) => setIncludeCommission(e.target.checked)}
-              className="h-4 w-4 rounded border-ink-300 text-primary-ink focus:ring-primary-ink"
+              className="h-5 w-5 md:h-4 md:w-4 rounded border-ink-300 text-primary-ink focus:ring-primary-ink"
             />
             <span className="text-sm text-ink-700">
               รวมคอม{' '}
@@ -149,12 +153,14 @@ export const TaxCalculatorPage = (): ReactNode => {
             </span>
           </label>
 
-          <label className="flex items-center gap-2">
+          <label className="flex items-center gap-2 min-h-11 md:min-h-0">
+            {/* กล่องติ๊ก native ขยายเป็น 44px ไม่ได้โดยไม่บวม — <label> ทั้งแถบคือพื้นที่กดจริง (F47/M2) */}
             <input
+              data-tap-exempt
               type="checkbox"
               checked={includeOtherIncome}
               onChange={(e) => setIncludeOtherIncome(e.target.checked)}
-              className="h-4 w-4 rounded border-ink-300 text-primary-ink focus:ring-primary-ink"
+              className="h-5 w-5 md:h-4 md:w-4 rounded border-ink-300 text-primary-ink focus:ring-primary-ink"
             />
             <span className="text-sm text-ink-700">
               รายได้อื่นๆ{' '}

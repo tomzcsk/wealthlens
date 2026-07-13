@@ -114,7 +114,7 @@ export const JournalBackfillSection = (): ReactNode => {
           <button
             type="button"
             onClick={handleApply}
-            className="inline-flex items-center gap-1.5 bg-primary hover:bg-primary-dark text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-sm transition-colors"
+            className="inline-flex items-center gap-1.5 bg-primary hover:bg-primary-dark text-white text-sm font-semibold px-4 py-2 min-h-11 md:min-h-0 rounded-lg shadow-sm transition-colors"
           >
             <span aria-hidden="true">🧾</span>
             แปลงยอดเก่าเป็นรายการ
@@ -158,7 +158,7 @@ export const JournalBackfillSection = (): ReactNode => {
             <button
               type="button"
               onClick={() => setConfirmingUndo(true)}
-              className="inline-flex items-center gap-1.5 bg-card hover:bg-hover border border-ink-300 text-ink-700 text-sm font-semibold px-4 py-2 rounded-lg shadow-sm transition-colors"
+              className="inline-flex items-center gap-1.5 bg-card hover:bg-hover border border-ink-300 text-ink-700 text-sm font-semibold px-4 py-2 min-h-11 md:min-h-0 rounded-lg shadow-sm transition-colors"
             >
               <span aria-hidden="true">↩︎</span>
               ย้อนกลับ
@@ -174,7 +174,7 @@ export const JournalBackfillSection = (): ReactNode => {
           <button
             type="button"
             disabled
-            className="inline-flex items-center gap-1.5 bg-raised border border-ink-200 text-ink-400 text-sm font-semibold px-4 py-2 rounded-lg cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 bg-raised border border-ink-200 text-ink-400 text-sm font-semibold px-4 py-2 min-h-11 md:min-h-0 rounded-lg cursor-not-allowed"
           >
             แปลงยอดเก่าเป็นรายการ
           </button>

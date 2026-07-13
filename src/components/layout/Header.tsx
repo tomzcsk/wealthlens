@@ -63,7 +63,7 @@ export const Header = (): ReactNode => {
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="appearance-none bg-card border border-ink-200 rounded-lg px-3 py-2 pr-8 text-sm font-medium text-ink-900 hover:border-ink-300 focus:outline-none focus:ring-2 focus:ring-primary-ink focus:border-primary-ink cursor-pointer"
+              className="appearance-none bg-card border border-ink-200 rounded-lg px-3 py-2 pr-8 min-h-11 md:min-h-0 text-sm font-medium text-ink-900 hover:border-ink-300 focus:outline-none focus:ring-2 focus:ring-primary-ink focus:border-primary-ink cursor-pointer"
               aria-label="เลือกปี"
             >
               {yearOptions.map((y) => (

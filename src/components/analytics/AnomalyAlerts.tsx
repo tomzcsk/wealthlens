@@ -94,7 +94,7 @@ export const AnomalyAlerts = (): ReactNode => {
           <select
             value={filter}
             onChange={handleFilterChange}
-            className="rounded-md border border-ink-200 bg-card px-3 py-1.5 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-primary-ink"
+            className="rounded-md border border-ink-200 bg-card px-3 py-1.5 min-h-11 md:min-h-0 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-primary-ink"
           >
             {FILTER_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -280,7 +280,7 @@ const AnomalyRow = ({ anomaly, onDismiss }: AnomalyRowProps): ReactNode => {
       <button
         type="button"
         onClick={() => onDismiss(fingerprint)}
-        className="rounded-md border border-ink-200 px-3 py-1 text-xs font-medium text-ink-600 hover:border-ink-300 hover:bg-hover"
+        className="inline-flex items-center min-h-11 md:min-h-0 rounded-md border border-ink-200 px-3 py-1 text-xs font-medium text-ink-600 hover:border-ink-300 hover:bg-hover"
       >
         ปิด
       </button>

@@ -29,7 +29,8 @@ export const ThemeToggle = (): ReactNode => {
       onClick={toggle}
       title={`โหมด: ${face.label}`}
       aria-label={`โหมดสี: ${face.label} — กดเพื่อเปลี่ยน`}
-      className="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-ink-200 bg-card text-base hover:bg-hover transition motion-safe:active:scale-[0.98]"
+      /* มือถือ 44px ตามนิ้วโป้ง (F47/M2) — เดสก์ท็อปคงขนาดเดิม 36px */
+      className="inline-flex items-center justify-center h-11 w-11 md:h-9 md:w-9 rounded-lg border border-ink-200 bg-card text-base hover:bg-hover transition motion-safe:active:scale-[0.98]"
     >
       <span aria-hidden="true">{face.icon}</span>
     </button>

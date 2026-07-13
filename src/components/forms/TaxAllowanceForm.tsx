@@ -98,14 +98,16 @@ export const TaxAllowanceForm = ({
     <section className="bg-card rounded-2xl border border-ink-200 shadow-sm p-6 space-y-5">
       <header className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-ink-900">ลดหย่อน</h2>
-        <label className="flex items-center gap-2">
+        <label className="flex items-center gap-2 min-h-11 md:min-h-0">
+          {/* กล่องติ๊ก native ขยายเป็น 44px ไม่ได้โดยไม่บวม — <label> ทั้งแถบคือพื้นที่กดจริง (F47/M2) */}
           <input
+            data-tap-exempt
             type="checkbox"
             checked={value.spouseNoIncome}
             onChange={(e) =>
               onChange({ ...value, spouseNoIncome: e.target.checked })
             }
-            className="h-4 w-4 rounded border-ink-300 text-primary-ink focus:ring-primary-ink"
+            className="h-5 w-5 md:h-4 md:w-4 rounded border-ink-300 text-primary-ink focus:ring-primary-ink"
           />
           <span className="text-sm text-ink-700">
             คู่สมรสไม่มีเงินได้ <span className="text-ink-400">(60,000)</span>

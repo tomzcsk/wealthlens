@@ -136,7 +136,7 @@ export const IncomeDefaultsSection = (): ReactNode => {
           <button
             type="button"
             onClick={handleSave}
-            className="px-4 py-1.5 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary-dark"
+            className="inline-flex items-center min-h-11 md:min-h-0 px-4 py-1.5 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary-dark"
           >
             บันทึก
           </button>

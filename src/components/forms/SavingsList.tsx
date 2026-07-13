@@ -95,7 +95,7 @@ const SavingsRow = ({
           type="button"
           onClick={() => onEdit(item)}
           aria-label={`แก้ไข ${item.name}`}
-          className="p-1 text-ink-400 hover:text-primary-ink transition"
+          className="p-1 inline-flex items-center justify-center min-h-11 min-w-11 md:min-h-0 md:min-w-0 text-ink-400 hover:text-primary-ink transition"
         >
           ✏️
         </button>
@@ -103,7 +103,7 @@ const SavingsRow = ({
           type="button"
           onClick={() => onDelete(item)}
           aria-label={`ลบ ${item.name}`}
-          className="p-1 text-ink-400 hover:text-expense-ink transition"
+          className="p-1 inline-flex items-center justify-center min-h-11 min-w-11 md:min-h-0 md:min-w-0 text-ink-400 hover:text-expense-ink transition"
         >
           🗑️
         </button>
@@ -170,7 +170,7 @@ const BankBalanceRow = ({
       </span>
       <span
         aria-hidden="true"
-        className="p-1 text-ink-400 group-hover:text-primary-ink transition"
+        className="p-1 inline-flex items-center justify-center min-h-11 min-w-11 md:min-h-0 md:min-w-0 text-ink-400 group-hover:text-primary-ink transition"
       >
         ✏️
       </span>
@@ -305,14 +305,14 @@ export const SavingsList = ({
             type="button"
             onClick={handleFillRecurring}
             title="เติมรายการออมประจำจากเดือนล่าสุดที่มี (ข้ามรายการที่มีแล้ว)"
-            className="px-3 py-1.5 text-sm font-medium text-ink-600 border border-ink-200 rounded-md hover:bg-hover transition"
+            className="inline-flex items-center min-h-11 md:min-h-0 px-3 py-1.5 text-sm font-medium text-ink-600 border border-ink-200 rounded-md hover:bg-hover transition"
           >
             📋 เติมรายการประจำ
           </button>
           <button
             type="button"
             onClick={() => openAdd()}
-            className="px-3 py-1.5 text-sm font-medium text-primary-ink bg-primary-50 rounded-md hover:bg-primary hover:text-white transition"
+            className="inline-flex items-center min-h-11 md:min-h-0 px-3 py-1.5 text-sm font-medium text-primary-ink bg-primary-50 rounded-md hover:bg-primary hover:text-white transition"
           >
             + เพิ่มรายการออม
           </button>

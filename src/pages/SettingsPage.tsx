@@ -156,7 +156,7 @@ export const SettingsPage = (): ReactNode => {
                 type="button"
                 onClick={onSync}
                 disabled={busy !== null}
-                className="inline-flex items-center gap-1.5 bg-primary hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-sm transition motion-safe:active:scale-[0.98]"
+                className="inline-flex items-center gap-1.5 bg-primary hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold px-4 py-2 min-h-11 md:min-h-0 rounded-lg shadow-sm transition motion-safe:active:scale-[0.98]"
               >
                 {busy === 'sync' ? 'กำลังซิงค์...' : 'ซิงค์ตอนนี้'}
               </button>
@@ -164,7 +164,7 @@ export const SettingsPage = (): ReactNode => {
                 type="button"
                 onClick={onReload}
                 disabled={busy !== null}
-                className="inline-flex items-center gap-1.5 bg-card hover:bg-hover border border-ink-300 disabled:opacity-50 disabled:cursor-not-allowed text-ink-700 text-sm font-semibold px-4 py-2 rounded-lg shadow-sm transition-colors"
+                className="inline-flex items-center gap-1.5 bg-card hover:bg-hover border border-ink-300 disabled:opacity-50 disabled:cursor-not-allowed text-ink-700 text-sm font-semibold px-4 py-2 min-h-11 md:min-h-0 rounded-lg shadow-sm transition-colors"
               >
                 {busy === 'reload' ? 'กำลังคืนค่า...' : 'คืนค่าจาก Drive'}
               </button>

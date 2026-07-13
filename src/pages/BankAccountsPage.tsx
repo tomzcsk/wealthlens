@@ -121,7 +121,7 @@ export const BankAccountsPage = (): ReactNode => {
           <button
             type="button"
             onClick={() => setForm('create')}
-            className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark transition"
+            className="inline-flex items-center min-h-11 md:min-h-0 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark transition"
           >
             + เพิ่มบัญชี
           </button>
