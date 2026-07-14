@@ -15,30 +15,19 @@ Single-page app, no backend, all data in browser LocalStorage
 
 ## Quick Reference Map
 
+> **อ่านเมื่อต้องใช้ — ห้ามใส่ `@` หน้าชื่อไฟล์**
+> `@path` ไม่ได้แปลว่า "ชี้ไปที่" แต่แปลว่า **"โหลดทั้งไฟล์เข้า context ทุกเซสชัน"**
+> ครั้งหนึ่งสี่ไฟล์นี้เคยมี `@` นำหน้า = ยัด ~61,000 tokens เข้า context ก่อนใครจะพิมพ์อะไรสักตัว
+> (`features.json` ไฟล์เดียว ~40,800 tokens และมันโตขึ้นทุกครั้งที่เพิ่มฟีเจอร์)
+
 | Need to know about... | Read this file |
 |----------------------|----------------|
-| Product goals, features, user stories | @docs/prd.md |
-| Tech stack, architecture, data schema | @docs/techstack.md |
-| UI design, colors, layout, components | @docs/UXUI.md |
-| Feature list + build checkpoint status | @features.json |
+| Product goals, features, user stories | `docs/prd.md` |
+| Tech stack, architecture, data schema | `docs/techstack.md` |
+| UI design, colors, layout, components | `docs/UXUI.md` |
+| Feature list + build checkpoint status | `features.json` |
 
----
-
-## Architecture in One Glance
-
-```
-src/
-├── components/     → UI components (layout/, dashboard/, forms/, ui/, motion/)
-├── stores/         → Zustand store (financeStore.js)
-├── data/           → seedData.js (historical 2023-2026)
-├── lib/            → motion.ts (animation tokens + pure helpers)
-├── utils/          → calculations.js, formatters.js, exportImport.js
-├── hooks/          → useFinanceData.js
-├── App.jsx
-└── main.jsx
-```
-
-**Stack:** React 18 + Vite | Tailwind CSS | shadcn/ui | Recharts | Zustand | TypeScript
+โครง `src/` และ dependency ดูจาก `ls src` กับ `package.json` เอา — ไม่จดซ้ำไว้ที่นี่ให้มันเน่า
 
 ---
 
@@ -66,11 +55,9 @@ src/
 
 ### Dev Commands
 ```bash
-npm run dev        # Start dev server (Vite HMR)
-npm run build      # Production build → dist/
-npm run preview    # Preview production build
-npm run typecheck  # TypeScript check
-npm run lint       # ESLint check
+# มาตรฐาน (dev / build / preview / typecheck / lint) ดูใน package.json
+
+# ประตูตรวจที่เดาไม่ได้ — ต้องรู้ว่ามีอยู่
 npm run verify:mobile  # build + Playwright วัดจอจริง 390×844 (M1–M6) และ 1280px
 npm run verify:analytics  # build + Playwright: หน้าวิเคราะห์ 3 แท็บ lazy จริง (A1–A5) + กันซากของที่ลบ
 npm run verify:pwa     # build + Playwright: manifest/SW/ตัดเน็ตแล้วเปิดได้จริง (P1–P6)
@@ -80,7 +67,7 @@ npm run verify:pwa     # build + Playwright: manifest/SW/ตัดเน็ต�
 
 ## Current Build Status
 
-> **Check @features.json `progressSummary` block ก่อนเริ่ม session ใหม่**
+> **Check `features.json` → `progressSummary` block ก่อนเริ่ม session ใหม่**
 
 | Phase | Status | Milestone |
 |-------|--------|-----------|
@@ -116,7 +103,7 @@ npm run verify:pwa     # build + Playwright: manifest/SW/ตัดเน็ต�
 
 ## Data Quirks ที่ต้องรู้
 
-- **ปี 2023:** มีแค่ income data ไม่มี itemized expenses (ดู @docs/prd.md#7-data-inventory)
+- **ปี 2023:** มีแค่ income data ไม่มี itemized expenses (ดู `docs/prd.md` §7 data-inventory)
 - **ปี 2026 เพิ่ม `ลงทุน Dime`** ใน deductions — field นี้ optional ในปีอื่น
 - **`Net.`** = take-home เฉพาะเงินเดือน หลังหักทุกอย่าง
 - **`Net. All`** = Net. + Commission + รายได้อื่นๆ (F32) (ตัวเลข KPI หลัก)
@@ -130,10 +117,10 @@ npm run verify:pwa     # build + Playwright: manifest/SW/ตัดเน็ต�
 ## Reference Files (โหลดเมื่อต้องการ)
 
 ```
-@docs/prd.md           # Features scope, user stories, success metrics
-@docs/techstack.md     # Stack details, data schema TypeScript types
-@docs/UXUI.md          # Colors, components, screen layouts, animations
-@features.json    # Build checklist with acceptance criteria
+docs/prd.md        # Features scope, user stories, success metrics
+docs/techstack.md  # Stack details, data schema TypeScript types
+docs/UXUI.md       # Colors, components, screen layouts, animations
+features.json      # Build checklist with acceptance criteria
 ```
 
 > ไม่ต้องโหลดทุกไฟล์ทุก session — โหลดเฉพาะที่ต้องการ เพื่อรักษา context window
