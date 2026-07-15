@@ -47,6 +47,7 @@ import type {
   BankAccount,
   BankAccountType,
   BankTransaction,
+  BankTxSource,
   ExpenseCategory,
   ExpenseItem,
   ExpenseSideEffectRefs,
@@ -67,6 +68,7 @@ import type {
   MonthlySavings,
   Reimbursement,
   SavingsItem,
+  SavingsSideEffectRefs,
   TaxAllowanceInputs,
   UserPreferences,
   WealthLensData,
@@ -268,6 +270,21 @@ const expenseDeductionOf = (
       }
     : undefined;
 
+/** The deduction a savings item SHOULD have (none when no payment account is set). */
+const savingsDeductionOf = (
+  item: Pick<SavingsItem, 'paymentAccountId' | 'amount'>,
+  year: number,
+  month: number,
+): SavingsSideEffectRefs | undefined =>
+  item.paymentAccountId
+    ? {
+        accountId: item.paymentAccountId,
+        deductYear: year,
+        deductMonth: month,
+        deductAmount: item.amount,
+      }
+    : undefined;
+
 /** ป้ายกำกับรายการฝากตามช่องรายได้ — โชว์ในสมุดรายการเดินบัญชี (F40). */
 const INCOME_FIELD_LABEL: Record<IncomeDepositRef['source'], string> = {
   salary: 'เงินเดือน (หลังหัก)',
@@ -308,28 +325,40 @@ const reconcileIncomeLedger = (
   );
 
 /**
- * จดรายการหักรายจ่าย/งวดผ่อนผ่านประตูเดียว (F34/F35/F40) — reconcile คีย์ตาม
- * `expenseId` เดียว: แก้ยอด/ย้ายบัญชี → บรรทัดเดิมของรายการนั้นถูกแทนที่; ลบ
- * (deduction ว่าง) → บรรทัดหาย. amount ติดลบเพราะเงินออกจากบัญชี.
- *
- * WHY revert ด้วย tx.amount ที่เก็บไว้ ไม่ recompute: เหมือน income — ยอดที่หัก
- * ไปจริงคือความจริงเดียวที่คืนได้ถูก (spec §7).
+ * Refs ของการหักหนึ่งรายการ — โครงร่วมของ `ExpenseSideEffectRefs` และ
+ * `SavingsSideEffectRefs` (structural type เดียวกัน).
  */
-const reconcileExpenseLedger = (
+interface ItemDeductionRefs {
+  accountId: string;
+  deductYear: number;
+  deductMonth: number;
+  deductAmount: number;
+}
+
+/**
+ * จดรายการหักของ item หนึ่งผ่านประตูเดียว (F34/F35/F40/F53) — reconcile คีย์
+ * ตาม `match`: แก้ยอด/ย้ายบัญชี → บรรทัดเดิมของ item ถูกแทนที่; ลบ (deduction
+ * ว่าง) → บรรทัดหาย. amount ติดลบเพราะเงินออกจากบัญชี. ใช้ร่วมทั้งรายจ่าย
+ * และรายการออม — logic เดียวกัน ต่างแค่คีย์/ที่มาของบรรทัด.
+ *
+ * WHY revert ด้วย tx.amount ที่เก็บไว้ ไม่ recompute: ยอดที่หักไปจริงคือ
+ * ความจริงเดียวที่คืนได้ถูก (บทเรียน F34/F39, spec §7).
+ */
+const reconcileItemDeduction = (
   ledger: BankLedger,
-  expenseId: string,
-  oldDeduction: ExpenseSideEffectRefs | undefined,
-  newDeduction: ExpenseSideEffectRefs | undefined,
+  match: (tx: BankTransaction) => boolean,
+  source: BankTxSource,
+  oldDeduction: ItemDeductionRefs | undefined,
+  newDeduction: ItemDeductionRefs | undefined,
   label: string,
   date?: string,
 ): BankLedger => {
-  // รายจ่ายรุ่นเก่า (F34→F40): หักยอดนอกสมุดไปแล้ว (มี sideEffects) แต่ไม่มี
+  // รายการรุ่นเก่า (F34→F40): หักยอดนอกสมุดไปแล้ว (มี sideEffects) แต่ไม่มี
   // บรรทัดให้ revoke → คืนยอดนอกสมุดก่อน (mirror gold addRawBalance). ถ้ามี
   // บรรทัดจริง เชื่อบรรทัด (revoke คืน tx.amount ที่ลงจริง) ไม่แตะ oldDeduction —
-  // บรรทัดคือ source of truth เมื่อมี (spec §7).
-  const hasLine = ledger.transactions.some(
-    (tx) => tx.source.type === 'expense' && tx.source.expenseId === expenseId,
-  );
+  // บรรทัดคือ source of truth เมื่อมี. savings ไม่มีรุ่นเก่า (เกิดหลัง F40)
+  // branch นี้จึงเป็น no-op สำหรับมัน.
+  const hasLine = ledger.transactions.some(match);
   const base: BankLedger =
     !hasLine && oldDeduction
       ? {
@@ -345,7 +374,7 @@ const reconcileExpenseLedger = (
       : ledger;
   return reconcileBankMovements(
     base,
-    (tx) => tx.source.type === 'expense' && tx.source.expenseId === expenseId,
+    match,
     newDeduction
       ? [
           {
@@ -354,13 +383,49 @@ const reconcileExpenseLedger = (
             month: newDeduction.deductMonth,
             amount: -newDeduction.deductAmount,
             label,
-            source: { type: 'expense' as const, expenseId },
+            source,
             ...(date ? { date } : {}),
           },
         ]
       : [],
   );
 };
+
+/** จดรายการหักรายจ่าย/งวดผ่อน — wrapper คีย์ตาม expenseId. */
+const reconcileExpenseLedger = (
+  ledger: BankLedger,
+  expenseId: string,
+  oldDeduction: ExpenseSideEffectRefs | undefined,
+  newDeduction: ExpenseSideEffectRefs | undefined,
+  label: string,
+  date?: string,
+): BankLedger =>
+  reconcileItemDeduction(
+    ledger,
+    (tx) => tx.source.type === 'expense' && tx.source.expenseId === expenseId,
+    { type: 'expense', expenseId },
+    oldDeduction,
+    newDeduction,
+    label,
+    date,
+  );
+
+/** จดรายการหักรายการออม (F53) — wrapper คีย์ตาม savingsId. ออมไม่มีวันจริง จึงไม่มี date. */
+const reconcileSavingsLedger = (
+  ledger: BankLedger,
+  savingsId: string,
+  oldDeduction: SavingsSideEffectRefs | undefined,
+  newDeduction: SavingsSideEffectRefs | undefined,
+  label: string,
+): BankLedger =>
+  reconcileItemDeduction(
+    ledger,
+    (tx) => tx.source.type === 'savings' && tx.source.savingsId === savingsId,
+    { type: 'savings', savingsId },
+    oldDeduction,
+    newDeduction,
+    label,
+  );
 
 /**
  * บวก `delta` เข้าเซลล์ (บัญชี, ปี, เดือน) แบบ inline โดย "ไม่จดรายการ".
@@ -2198,6 +2263,7 @@ export const useFinanceStore = create<FinanceState>()(
             !tx ||
             tx.source.type === 'income' ||
             tx.source.type === 'expense' ||
+            tx.source.type === 'savings' ||
             tx.source.type === 'gold' ||
             tx.source.type === 'backfill'
           ) {
@@ -2291,6 +2357,15 @@ export const useFinanceStore = create<FinanceState>()(
           const key = String(year);
           const current = normalizeYear(years[key]);
           const newItem: SavingsItem = { ...item, id: uuidv4() };
+          const newDed = savingsDeductionOf(newItem, year, month);
+          if (newDed) newItem.sideEffects = newDed;
+          // จ่ายผ่านบัญชี → จดรายการหักผ่านประตูเดียว (F40/F53). ไม่มีบัญชี
+          // จ่าย = ไม่แตะ ledger.
+          const ledgerPatch = newDed
+            ? withLedger(state.data, (l) =>
+                reconcileSavingsLedger(l, newItem.id, undefined, newDed, newItem.name),
+              )
+            : {};
           const monthRow = current.savings.find((s) => s.month === month);
           const nextSavings: MonthlySavings[] = monthRow
             ? current.savings.map((s) =>
@@ -2306,6 +2381,7 @@ export const useFinanceStore = create<FinanceState>()(
                 ...years,
                 [key]: { ...current, savings: nextSavings },
               },
+              ...ledgerPatch,
             },
             lastUpdated: stamp,
           };
@@ -2317,13 +2393,29 @@ export const useFinanceStore = create<FinanceState>()(
           const raw = state.data.years[key];
           if (!raw) return state;
           const current = normalizeYear(raw);
+          const monthRow = current.savings.find((s) => s.month === month);
+          const old = monthRow?.items.find((it) => it.id === itemId);
+          if (!old) return state;
+
+          const merged: SavingsItem = { ...old, ...patch, id: old.id };
+          const newDed = savingsDeductionOf(merged, year, month);
+          if (newDed) merged.sideEffects = newDed;
+          else delete merged.sideEffects;
+
+          // แก้ยอด/ย้ายบัญชี/ถอดบัญชี → บรรทัดเดิมของ itemId ถูกแทนที่ (หรือ
+          // หาย) ผ่านประตูเดียว (F40/F53); revoke คืนยอดด้วย tx.amount ที่ลงจริง.
+          const ledgerPatch =
+            state.data.bankAccounts !== undefined
+              ? withLedger(state.data, (l) =>
+                  reconcileSavingsLedger(l, itemId, old.sideEffects, newDed, merged.name),
+                )
+              : {};
+
           const nextSavings = current.savings.map((row) =>
             row.month === month
               ? {
                   ...row,
-                  items: row.items.map((it) =>
-                    it.id === itemId ? { ...it, ...patch, id: it.id } : it,
-                  ),
+                  items: row.items.map((it) => (it.id === itemId ? merged : it)),
                 }
               : row,
           );
@@ -2336,6 +2428,7 @@ export const useFinanceStore = create<FinanceState>()(
                 ...state.data.years,
                 [key]: { ...current, savings: nextSavings },
               },
+              ...ledgerPatch,
             },
             lastUpdated: stamp,
           };
@@ -2347,6 +2440,16 @@ export const useFinanceStore = create<FinanceState>()(
           const raw = state.data.years[key];
           if (!raw) return state;
           const current = normalizeYear(raw);
+          const monthRow = current.savings.find((s) => s.month === month);
+          const target = monthRow?.items.find((it) => it.id === itemId);
+          // ลบ = reconcile ด้วย movement ว่าง → revoke บรรทัดของ itemId ทิ้ง +
+          // คืนยอดด้วย tx.amount ที่เคยหักจริง (F53). ไม่มี target/บัญชี → ไม่แตะ.
+          const ledgerPatch =
+            target && state.data.bankAccounts !== undefined
+              ? withLedger(state.data, (l) =>
+                  reconcileSavingsLedger(l, itemId, target.sideEffects, undefined, target.name),
+                )
+              : {};
           // Mirror the expense-delete pattern: preserve the (possibly empty)
           // month row to retain the "this month was tracked" signal.
           const nextSavings = current.savings.map((row) =>
@@ -2363,6 +2466,7 @@ export const useFinanceStore = create<FinanceState>()(
                 ...state.data.years,
                 [key]: { ...current, savings: nextSavings },
               },
+              ...ledgerPatch,
             },
             lastUpdated: stamp,
           };
