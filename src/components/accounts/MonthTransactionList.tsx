@@ -22,6 +22,7 @@ const SOURCE_BADGE: Record<BankTransaction['source']['type'], string | null> = {
   transfer: '⇄ โอน',
   income: '💰 รายได้',
   expense: '🧾 รายจ่าย',
+  savings: '💎 ออม',
   gold: '🪙 ทอง',
   // ยอดที่กรอกไว้เดิม (F41): label บอกตัวเองอยู่แล้ว ไม่ต้องมี badge; และไม่อยู่
   // ใน DELETABLE จึงไม่มีปุ่มลบ — ลบเดี่ยวจะทำให้ Σรายการ ≠ ยอด (ใช้ปุ่มย้อนกลับ).

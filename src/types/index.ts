@@ -414,6 +414,23 @@ export interface SavingsItem {
   name: string;
   amount: number;
   isRecurring: boolean;
+  /** บัญชีที่จ่ายรายการออมนี้ (F53). ไม่ระบุ = ไม่หักบัญชี. */
+  paymentAccountId?: string;
+  /** Ref เพื่อ revert การหักยอดบัญชี — store เขียนเท่านั้น form ห้ามแตะ. */
+  sideEffects?: SavingsSideEffectRefs;
+}
+
+/**
+ * Mirror ของการหักบัญชีที่รายการออมนี้เขียนไว้ (F53) — โครงเดียวกับ
+ * `ExpenseSideEffectRefs` แต่ประกาศแยกเพื่อให้สอง flow วิวัฒน์อิสระ.
+ */
+export interface SavingsSideEffectRefs {
+  /** BankAccount.id ที่ถูกหัก. */
+  accountId: string;
+  deductYear: number;
+  deductMonth: number;
+  /** จำนวนที่หักไป (revert = บวกกลับ). */
+  deductAmount: number;
 }
 
 export interface MonthlySavings {
@@ -666,6 +683,8 @@ export type BankTxSource =
       field: 'salary' | 'bonus' | 'commission' | 'otherIncome';
     }
   | { type: 'expense'; expenseId: string }
+  /** รายการออมที่ระบุ "จ่ายผ่าน" บัญชี (F53) — คีย์ reconcile คือ savingsId. */
+  | { type: 'savings'; savingsId: string }
   | { type: 'gold'; holdingId: string }
   /**
    * บรรทัดที่สร้างจากยอดที่กรอกไว้ก่อนมีสมุดรายการ (F41). ตอนสร้าง **ไม่แตะ
