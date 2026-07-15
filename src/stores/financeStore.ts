@@ -1428,6 +1428,25 @@ export const useFinanceStore = create<FinanceState>()(
                   [yearKey]: { ...normalized, savings: nextSavings },
                 };
               }
+
+              // F53: item ออมที่ทองสร้างอาจถูกแก้ให้ผูกบัญชีทีหลัง — การลบ
+              // inline ตรงนี้ไม่ผ่าน deleteSavings จึงต้อง revoke บรรทัดหัก
+              // ของมันเองด้วย ไม่งั้นยอดหักค้างโดยไม่เหลือต้นทางให้ตามลบ.
+              // (savings เกิดหลัง F40 — มี sideEffects เมื่อไหร่มีบรรทัดเสมอ)
+              const savingsId = se.savingsItemId;
+              const hasSavingsLine = (state.data.bankTransactions ?? []).some(
+                (tx) => tx.source.type === 'savings' && tx.source.savingsId === savingsId,
+              );
+              if (hasSavingsLine) {
+                const patch = withLedger(state.data, (l) =>
+                  revokeBankMovements(
+                    l,
+                    (tx) => tx.source.type === 'savings' && tx.source.savingsId === savingsId,
+                  ),
+                );
+                nextBankAccounts = patch.bankAccounts;
+                nextBankTransactions = patch.bankTransactions;
+              }
             } else if (
               se.keptYear != null &&
               se.keptMonth != null &&
