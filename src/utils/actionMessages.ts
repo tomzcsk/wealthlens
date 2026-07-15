@@ -83,6 +83,7 @@ export const bankTransactionDeletedMessage = ({ amount }: { amount: number }): s
 export interface BankAccountBlockedInput {
   incomeMonths: number;
   expenses: number;
+  savings: number;
   goldHoldings: number;
   transfers: number;
 }
@@ -95,12 +96,14 @@ export interface BankAccountBlockedInput {
 export const bankAccountBlockedReason = ({
   incomeMonths,
   expenses,
+  savings,
   goldHoldings,
   transfers,
 }: BankAccountBlockedInput): string =>
   [
     incomeMonths > 0 ? `รายได้ ${incomeMonths} เดือน` : null,
     expenses > 0 ? `รายจ่าย ${expenses} รายการ` : null,
+    savings > 0 ? `รายการออม ${savings} รายการ` : null,
     goldHoldings > 0 ? `ทองคำ ${goldHoldings} รายการ` : null,
     transfers > 0 ? `รายการโอน ${transfers} รายการ` : null,
   ]

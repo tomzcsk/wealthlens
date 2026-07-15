@@ -58,6 +58,7 @@ export const BankAccountsPage = (): ReactNode => {
     ? bankAccountBlockedReason({
         incomeMonths: pendingUsage.incomeMonths.length,
         expenses: pendingUsage.expenses.length,
+        savings: pendingUsage.savings.length,
         goldHoldings: pendingUsage.goldHoldings.length,
         transfers: pendingUsage.transfers,
       })

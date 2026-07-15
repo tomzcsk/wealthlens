@@ -66,13 +66,18 @@ eq('ลบรายการเดินบัญชี ฝั่งเข้า
 // --- บัญชีธนาคารที่ลบไม่ได้ ------------------------------------------------
 // บอกเฉพาะหมวดที่ผูกอยู่จริง — หมวดที่เป็น 0 ต้องไม่โผล่ในประโยค
 eq('ผูกอย่างเดียว',
-  bankAccountBlockedReason({ incomeMonths: 3, expenses: 0, goldHoldings: 0, transfers: 0 }),
+  bankAccountBlockedReason({ incomeMonths: 3, expenses: 0, savings: 0, goldHoldings: 0, transfers: 0 }),
   'รายได้ 3 เดือน');
 eq('ผูกหลายอย่าง เรียงตามลำดับคงที่',
-  bankAccountBlockedReason({ incomeMonths: 3, expenses: 5, goldHoldings: 1, transfers: 2 }),
+  bankAccountBlockedReason({ incomeMonths: 3, expenses: 5, savings: 0, goldHoldings: 1, transfers: 2 }),
   'รายได้ 3 เดือน, รายจ่าย 5 รายการ, ทองคำ 1 รายการ, รายการโอน 2 รายการ');
 eq('ไม่มีอะไรผูก → ประโยคว่าง (ผู้เรียกไม่ควรแสดง modal นี้)',
-  bankAccountBlockedReason({ incomeMonths: 0, expenses: 0, goldHoldings: 0, transfers: 0 }), '');
+  bankAccountBlockedReason({ incomeMonths: 0, expenses: 0, savings: 0, goldHoldings: 0, transfers: 0 }), '');
+eq(
+  'blocked มีออม',
+  bankAccountBlockedReason({ incomeMonths: 0, expenses: 0, savings: 2, goldHoldings: 0, transfers: 0 }),
+  'รายการออม 2 รายการ',
+);
 
 console.log(failures === 0 ? '\n✅ ALL PASS' : `\n❌ ${failures} FAIL`);
 process.exit(failures === 0 ? 0 : 1);

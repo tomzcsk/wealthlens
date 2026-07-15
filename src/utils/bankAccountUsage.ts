@@ -3,7 +3,7 @@ import type { WealthLensData } from '../types';
 /**
  * ทุกสิ่งที่ชี้มายังบัญชีหนึ่ง — แยกเป็นสองพวกโดยเจตนา:
  *
- *  - **ต้นทางนอกบัญชี** (`incomeMonths` / `expenses` / `goldHoldings` / `transfers`)
+ *  - **ต้นทางนอกบัญชี** (`incomeMonths` / `expenses` / `savings` / `goldHoldings` / `transfers`)
  *    ลบบัญชีทิ้งแล้ว pointer เหล่านี้ค้างชี้ id ที่ไม่มีอยู่. `applyBankDelta`
  *    หาบัญชีไม่เจอก็เงียบ (คืน array เดิม) → แก้รายได้ทีหลังเงินหายไปโดยไม่มี error.
  *    จึงต้อง **ปฏิเสธการลบ** แล้วให้ผู้ใช้ไปถอดการผูกเองก่อน
@@ -19,6 +19,8 @@ export interface BankAccountUsage {
   incomeMonths: readonly { year: number; month: number }[];
   /** id ของรายจ่ายที่จ่ายผ่านบัญชีนี้. */
   expenses: readonly string[];
+  /** id ของรายการออมที่จ่ายผ่านบัญชีนี้ (F53). */
+  savings: readonly string[];
   /** id ของ gold holding ที่ตัดยอดบัญชีนี้. */
   goldHoldings: readonly string[];
   /** จำนวนขาโอนที่คู่กับบัญชีอื่น. */
@@ -35,6 +37,7 @@ export const findBankAccountUsage = (
 ): BankAccountUsage => {
   const incomeMonths: { year: number; month: number }[] = [];
   const expenses: string[] = [];
+  const savings: string[] = [];
   const goldHoldings: string[] = [];
   let transfers = 0;
   let ownTransactions = 0;
@@ -54,6 +57,14 @@ export const findBankAccountUsage = (
         }
       }
     }
+    // savings อาจไม่มีบน year scaffold รุ่นเก่า — treat as empty.
+    for (const month of year.savings ?? []) {
+      for (const item of month.items) {
+        if (item.paymentAccountId === accountId || item.sideEffects?.accountId === accountId) {
+          savings.push(item.id);
+        }
+      }
+    }
   }
 
   for (const holding of data.goldHoldings ?? []) {
@@ -66,7 +77,7 @@ export const findBankAccountUsage = (
     else ownTransactions += 1;
   }
 
-  return { incomeMonths, expenses, goldHoldings, transfers, ownTransactions };
+  return { incomeMonths, expenses, savings, goldHoldings, transfers, ownTransactions };
 };
 
 /** ลบได้ก็ต่อเมื่อไม่มีต้นทางนอกบัญชีชี้มาเลย. */
@@ -75,6 +86,7 @@ export const isBankAccountDeletable = (data: WealthLensData, accountId: string):
   return (
     usage.incomeMonths.length === 0 &&
     usage.expenses.length === 0 &&
+    usage.savings.length === 0 &&
     usage.goldHoldings.length === 0 &&
     usage.transfers === 0
   );
