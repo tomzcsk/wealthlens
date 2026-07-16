@@ -402,13 +402,23 @@ const validateSavingsItem = (
     ok = false;
   }
   if (!ok) return null;
-  return {
+  const item: SavingsItem = {
     id: raw.id as string,
     category: raw.category as SavingsCategory,
     name: raw.name as string,
     amount: raw.amount as number,
     isRecurring: raw.isRecurring as boolean,
   };
+  // F53 payment-source: keep the account link AND its revert-ref, else a
+  // restore would orphan the deduction (balance drifts on later edit/delete).
+  // Same reasoning as F34's paymentAccountId/sideEffects on ExpenseItem.
+  if (isString(raw.paymentAccountId)) {
+    item.paymentAccountId = raw.paymentAccountId;
+  }
+  if (isObject(raw.sideEffects)) {
+    item.sideEffects = raw.sideEffects as unknown as SavingsItem['sideEffects'];
+  }
+  return item;
 };
 
 const validateSavingsRow = (
@@ -624,6 +634,13 @@ export const validateBackup = (parsed: unknown): ValidationResult => {
         if (isString(item.loanId) && !knownLoans.has(item.loanId)) {
           fail(ctx, `${base}.loanId`, `references unknown loan '${item.loanId}'`);
         }
+      });
+    });
+    yr.savings.forEach((month, mi) => {
+      month.items.forEach((item, ii) => {
+        const base = `years.${yk}.savings[${mi}].items[${ii}]`;
+        refAccount(item.paymentAccountId, `${base}.paymentAccountId`);
+        refAccount(item.sideEffects?.accountId, `${base}.sideEffects.accountId`);
       });
     });
   }

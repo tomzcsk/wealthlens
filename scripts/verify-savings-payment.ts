@@ -172,6 +172,50 @@ const run = async (): Promise<void> => {
   eq('10. เซลล์ = 0', bal(acctB, 2026, 11), 0);
   eq('10. เซลล์ 0 ที่มีรายการต้องอยู่ต่อ', cell(acctB, 2026, 11), 0);
 
+  // --- 11) backup restore ต้องคง paymentAccountId + sideEffects ของรายการออม ---
+  const { validateBackup } = await import('../src/utils/exportImport');
+  const backup = {
+    version: '1.0.0',
+    lastUpdated: 'x',
+    // บัญชี A ต้องมีจริง — paymentAccountId + sideEffects ชี้มา (referential integrity)
+    bankAccounts: [{ id: 'A', name: 'A', balances: { '2026': { '7': -5000 } } }],
+    years: {
+      '2026': {
+        income: [],
+        expenses: [],
+        savings: [
+          {
+            month: 7,
+            items: [
+              {
+                id: 's1',
+                category: 'travel',
+                name: 'ออมเที่ยว',
+                amount: 5000,
+                isRecurring: false,
+                paymentAccountId: 'A',
+                sideEffects: {
+                  accountId: 'A',
+                  deductYear: 2026,
+                  deductMonth: 7,
+                  deductAmount: 5000,
+                },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  } as unknown;
+  const res11 = validateBackup(backup);
+  eq('11. validateBackup ok', res11.ok, true);
+  const restored11 = res11.ok
+    ? (res11.data as import('../src/types').WealthLensData).years['2026'].savings[0]
+        .items[0]
+    : undefined;
+  eq('11. restore เก็บ paymentAccountId', restored11?.paymentAccountId, 'A');
+  eq('11. restore เก็บ sideEffects.deductAmount', restored11?.sideEffects?.deductAmount, 5000);
+
   console.log(failures === 0 ? '\n✅ ALL PASS' : `\n❌ ${failures} FAIL`);
   process.exit(failures === 0 ? 0 : 1);
 };
