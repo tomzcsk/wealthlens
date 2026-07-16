@@ -22,6 +22,7 @@ import {
 } from 'react';
 
 import { useFinanceStore } from '@/stores/financeStore';
+import { EMPTY_BANK_ACCOUNTS } from '@/stores/emptyRefs';
 import {
   SAVINGS_CATEGORIES,
   SAVINGS_CATEGORY_ORDER,
@@ -100,6 +101,7 @@ export const SavingsForm = ({
 }: SavingsFormProps): ReactNode => {
   const addSavings = useFinanceStore((s) => s.addSavings);
   const updateSavings = useFinanceStore((s) => s.updateSavings);
+  const accounts = useFinanceStore((s) => s.data.bankAccounts ?? EMPTY_BANK_ACCOUNTS);
 
   const isEdit = initialValues != null;
 
@@ -112,6 +114,9 @@ export const SavingsForm = ({
   );
   const [isRecurring, setIsRecurring] = useState<boolean>(
     initialValues?.isRecurring ?? false,
+  );
+  const [paymentAccountId, setPaymentAccountId] = useState<string>(
+    initialValues?.paymentAccountId ?? '',
   );
   const [touched, setTouched] = useState<FormTouched>({});
   const [showFlash, setShowFlash] = useState(false);
@@ -128,6 +133,7 @@ export const SavingsForm = ({
   const nameId = useId();
   const amountId = useId();
   const recurringId = useId();
+  const paymentAccountFieldId = useId();
 
   useEffect(() => {
     nameInputRef.current?.focus();
@@ -162,6 +168,7 @@ export const SavingsForm = ({
         name: trimmedName,
         amount,
         isRecurring,
+        paymentAccountId: paymentAccountId || undefined,
       });
       onSaved?.(
         {
@@ -181,6 +188,7 @@ export const SavingsForm = ({
       name: trimmedName,
       amount,
       isRecurring,
+      paymentAccountId: paymentAccountId || undefined,
     });
 
     onSaved?.(
@@ -325,6 +333,30 @@ export const SavingsForm = ({
           </p>
         )}
       </div>
+
+      {/* Payment account (F53) — mirror ExpenseForm's "จ่ายผ่าน" */}
+      {accounts.length > 0 && (
+        <div>
+          <label htmlFor={paymentAccountFieldId} className={labelClass}>
+            จ่ายผ่าน
+          </label>
+          <select
+            id={paymentAccountFieldId}
+            value={paymentAccountId}
+            onChange={(e: ChangeEvent<HTMLSelectElement>) =>
+              setPaymentAccountId(e.target.value)
+            }
+            className={inputBaseClass}
+          >
+            <option value="">ไม่ระบุ (ไม่หักบัญชี)</option>
+            {accounts.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Recurring toggle */}
       <div className="flex items-center gap-2">
