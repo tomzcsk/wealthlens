@@ -1674,6 +1674,33 @@
             "completedAt": "2026-07-13",
             "notes": "Spec: docs/superpowers/specs/2026-07-13-pwa-design.md | Plan: docs/superpowers/plans/2026-07-13-pwa.md | Files: scripts/generate-icons.mts (ใหม่), public/icons/*.png (ใหม่), scripts/verify-pwa.ts (ใหม่), src/components/pwa/UpdatePrompt.tsx (ใหม่), vite.config.ts (VitePWA), index.html, src/components/layout/Layout.tsx, src/vite-env.d.ts, package.json | เพิ่ม devDependency: vite-plugin-pwa (workbox) — ไม่เขียน SW เอง เพราะ cache invalidation พลาดแล้วผู้ใช้ติดอยู่กับแอปเวอร์ชันเก่าถาวรและ debug ยากมาก (จุดยืนเดียวกับ F42 ที่รับ framer-motion เข้ามา) | ไม่ทำโดยตั้งใจ: push notification (ต้องมี server = ชนหลักการไม่มี backend) · Background Sync API (ซิงค์ตอนกลับมาออนไลน์มีอยู่แล้ว) · ไม่ cache ข้อมูลจาก Drive (LocalStorage เป็นแหล่งความจริงอยู่แล้ว — cache ชั้นสอง = สองแหล่งความจริงที่จะไม่ตรงกันวันหนึ่ง)"
           }
+        },
+        {
+          "id": "F53",
+          "name": "รายการออมระบุ \"จ่ายผ่าน\" บัญชี — หักยอดจริงเหมือนรายจ่าย",
+          "description": "รายการออม (savings) เดิมเป็นแค่บันทึกความตั้งใจ ไม่แตะยอดบัญชีธนาคารเลย ทั้งที่เงินออมจริง ๆ ไหลออกจากบัญชีเหมือนรายจ่าย — เพิ่ม dropdown 'จ่ายผ่าน' ในฟอร์มออม แล้วหัก/คืนยอดผ่าน ledger ประตูเดียวแบบเดียวกับรายจ่าย (F40/F49)",
+          "status": "completed",
+          "priority": "P2",
+          "phase": "phase_6",
+          "acceptanceCriteria": [
+            "SavingsForm มี dropdown 'จ่ายผ่าน' (ซ่อนเมื่อยังไม่มีบัญชี, ตัวเลือกแรก 'ไม่ระบุ (ไม่หักบัญชี)' — ออมแบบเดิมยังทำได้ ไม่บังคับผูกบัญชี)",
+            "add/update/delete รายการออมหัก-คืนยอดผ่าน withLedger → ledgerPatch (F49) เท่านั้น — revoke ด้วย tx.amount ที่ลงจริง ไม่ใช้ยอดฟอร์มปัจจุบันซึ่งอาจถูกแก้ไปแล้ว",
+            "บรรทัด {type:'savings'} ในสมุดรายการลบตรงไม่ได้ (badge 💎 ออม, ไม่มีปุ่มลบ) — ลบได้ทางเดียวคือลบรายการออมต้นทางเท่านั้น เหมือนกฎเดิมของรายจ่าย",
+            "บัญชีที่มีรายการออมผูกอยู่ลบไม่ได้ (F44) — เหตุผลบล็อกนับรวม 'รายการออม N รายการ' แยกจากรายรับ/รายจ่าย/ทอง/ขาโอนเดิม",
+            "deleteGoldHolding revoke บรรทัดหักของ item ออมที่มันสร้าง inline ด้วย (ทองที่ 'เก็บ' เป็นออมแล้วผูกบัญชี ลบทองแล้วต้องคืนยอดบัญชีของบรรทัดออมนั้นด้วย ไม่ใช่แค่บรรทัดทอง)",
+            "Verified: scripts/verify-savings-payment.ts เขียวครบ 10 เคส + verify suite เดิมทั้งหมด (verify-expense-payment, verify-installment-deduction, verify-legacy-expense-deduction, verify-bank-transactions, verify-delete-bank-account, verify-action-messages, verify-journal-backfill) ไม่ regress + typecheck + lint + build"
+          ],
+          "estimatedHours": 4,
+          "dependencies": [
+            "F40",
+            "F44",
+            "F49"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-07-16",
+            "notes": "Commits: c27d01d (ประตูตรวจ F53 แดงก่อน implement), 64afbab (SavingsItem.paymentAccountId + BankTxSource 'savings'), 1d440e7 (จ่ายผ่านบัญชี — หัก/คืนยอดผ่าน ledger ประตูเดียว), 1d2c5fe (บัญชีที่มีรายการออมผูกลบไม่ได้), 746163d (deleteGoldHolding revoke บรรทัดหักของ item ออมที่มันสร้าง), 2b97a38 (SavingsForm dropdown จ่ายผ่าน) | Files ใหม่: scripts/verify-savings-payment.ts | Files แก้: src/types (SavingsItem, BankTxSource), src/stores/financeStore.ts (addSavingsItem/updateSavingsItem/deleteSavingsItem, deleteGoldHolding, deleteBankAccount), src/components/savings/SavingsForm.tsx | ไม่ทำโดยตั้งใจ: ไม่บังคับผูกบัญชีย้อนหลังกับรายการออมเดิม (migration เงียบจะเปลี่ยนยอดบัญชีของ Tom โดยไม่มีใครขอ) · ไม่เปิดให้ลบบรรทัด savings ตรงจากสมุดรายการ (คงกฎเดียวกับรายจ่าย)"
+          }
         }
       ]
     }
@@ -1763,14 +1790,14 @@
     }
   },
   "progressSummary": {
-    "totalFeatures": 59,
-    "completed": 58,
+    "totalFeatures": 60,
+    "completed": 59,
     "removed": 1,
     "inProgress": 0,
     "pending": 0,
     "overallProgress": "100%",
-    "countingNote": "59 = 58 ที่เคยมี + F51 (ตัวที่ 59). F16 (ประมาณการเดือนหน้า) ถูกถอดออกใน F50 จึงนับเป็น removed ไม่ใช่ completed → completed 58 + removed 1 = 59. รายการ F15/F16 ยังอยู่ในไฟล์โดยตั้งใจ: ประวัติต้องบอกว่ามันเคยมีแล้วถอดออก ไม่ใช่แกล้งทำเป็นไม่เคยมี",
+    "countingNote": "60 = 59 ที่เคยมี + F53 (ตัวที่ 60). F16 (ประมาณการเดือนหน้า) ถูกถอดออกใน F50 จึงนับเป็น removed ไม่ใช่ completed → completed 59 + removed 1 = 60. รายการ F15/F16 ยังอยู่ในไฟล์โดยตั้งใจ: ประวัติต้องบอกว่ามันเคยมีแล้วถอดออก ไม่ใช่แกล้งทำเป็นไม่เคยมี. F52 (fix การ์ดทองมือถือ) เป็น bugfix commit ไม่มี entry แยกในไฟล์นี้ — ตามแบบที่ fix เล็กในอดีตไม่ได้ขึ้นทะเบียนเป็น feature",
     "currentPhase": "shipped",
-    "nextMilestone": "Phase 6 จบครบทั้งสามงาน (F49 หนี้เทคนิค · F50 รื้อหน้าวิเคราะห์ · F51 PWA) — ไม่มีงานค้างในโรดแมป"
+    "nextMilestone": "F53 (รายการออมระบุจ่ายผ่านบัญชี) เสร็จ — ไม่มีงานค้างในโรดแมป"
   }
 }
