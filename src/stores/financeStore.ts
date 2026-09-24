@@ -24,6 +24,7 @@ import {
   KRUNGSRI_ACCOUNT_ID,
   applyBankDelta,
   migrateKeptToBankAccounts,
+  planSetTotal,
 } from '@/utils/bankAccounts';
 import { pruneEmptyBalanceKeys } from '@/utils/balancePrune';
 import {
@@ -675,6 +676,18 @@ export interface FinanceState {
     month: number,
     amount: number,
     label?: string,
+  ) => void;
+  /**
+   * ตั้งยอด *สะสม* ของบัญชีให้เท่ากับ `target` โดยลงส่วนต่างจริงเป็นรายการ
+   * ฝาก/ถอน (`manual`) ที่ `(year, month)` — ประวัติจึงอ่านเหมือน ฝาก/ถอน ปกติ
+   * (เดิม 2,000 → ตั้ง 1,500 = "ถอนเงิน 500"), และลบทีหลังได้ = ย้อนได้.
+   * ยอดเท่าเดิม / บัญชีไม่มีจริง = no-op. `target` ติดลบ/ศูนย์ได้ (F44 ไม่ clamp).
+   */
+  setBankTotal: (
+    id: string,
+    year: number,
+    month: number,
+    target: number,
   ) => void;
   /**
    * Move `amount` from one account to another within the same (year, month):
@@ -2071,6 +2084,34 @@ export const useFinanceStore = create<FinanceState>()(
                   month,
                   amount: -amount,
                   label,
+                  source: { type: 'manual' },
+                }),
+              ),
+              lastUpdated: stamp,
+            },
+            lastUpdated: stamp,
+          };
+        }),
+
+      setBankTotal: (id, year, month, target) =>
+        set((state) => {
+          const account = (state.data.bankAccounts ?? []).find(
+            (a) => a.id === id,
+          );
+          if (!account) return state;
+          const plan = planSetTotal(account, target);
+          if (!plan) return state; // ยอดเท่าเดิม — ไม่ต้องขยับ
+          const stamp = nowIso();
+          return {
+            data: {
+              ...state.data,
+              ...withLedger(state.data, (l) =>
+                applyBankMovement(l, {
+                  accountId: id,
+                  year,
+                  month,
+                  amount: plan.amount,
+                  label: plan.label,
                   source: { type: 'manual' },
                 }),
               ),

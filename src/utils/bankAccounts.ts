@@ -109,6 +109,31 @@ export const accountAllTimeTotal = (account: BankAccount): number => {
 export const sumBankAllTime = (accounts: readonly BankAccount[]): number =>
   accounts.reduce((s, a) => s + accountAllTimeTotal(a), 0);
 
+/** The single ฝาก/ถอน movement that makes an account's total equal a target. */
+export interface SetTotalPlan {
+  /** Signed satang-rounded delta: + ฝาก, − ถอน. Never 0. */
+  amount: number;
+  /** 'ฝากเงิน' เมื่อฝาก, 'ถอนเงิน' เมื่อถอน — จดให้อ่านเหมือน ฝาก/ถอน ปกติ. */
+  label: string;
+}
+
+/**
+ * วางแผน "ตั้งยอด": ให้ยอด *สะสม* ของบัญชี (accountAllTimeTotal) เท่ากับ
+ * `target` พอดี ด้วยรายการ ฝาก/ถอน (`manual`) ก้อนเดียวเท่ากับส่วนต่างจริง
+ * (เดิม 2,000 → ตั้ง 1,500 = ถอน 500). คืน `null` เมื่อยอดเท่าเดิมอยู่แล้ว
+ * (ไม่ต้องขยับ). `target` ติดลบ/ศูนย์ได้ — ยอดติดลบเป็นค่าจริง (F44 ไม่ clamp).
+ * ปัดส่วนต่างเป็นสตางค์ก่อน เพื่อให้เศษ float จากผลรวมหลายเดือนไม่กลายเป็น
+ * รายการจิ๋ว ๆ ที่ไม่มีความหมาย.
+ */
+export const planSetTotal = (
+  account: BankAccount,
+  target: number,
+): SetTotalPlan | null => {
+  const delta = Math.round((target - accountAllTimeTotal(account)) * 100) / 100;
+  if (delta === 0) return null;
+  return { amount: delta, label: delta > 0 ? 'ฝากเงิน' : 'ถอนเงิน' };
+};
+
 // ---------------------------------------------------------------------------
 // Expense payment-source deduction (F34)
 // ---------------------------------------------------------------------------

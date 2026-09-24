@@ -9,7 +9,7 @@ import {
   revokeBankMovements,
   type BankLedger,
 } from '../src/utils/bankMovements';
-import { KRUNGSRI_ACCOUNT_ID } from '../src/utils/bankAccounts';
+import { KRUNGSRI_ACCOUNT_ID, accountAllTimeTotal } from '../src/utils/bankAccounts';
 import type { BankAccount, MonthlyIncome } from '../src/types';
 
 let failures = 0;
@@ -208,6 +208,64 @@ const runStore = async (): Promise<void> => {
     (store.getState().data.bankTransactions ?? []).filter((t) => t.accountId === 'acc-1' && t.year === 2026 && t.month === 7).length, 0);
   eq('clear → ยอดหาย', balOf('acc-1', 2026, 7), 0);
   eq('clear → invariant', findLedgerMismatches(ledgerOf()).length, 0);
+
+  // ════════════════════════════════════════════════════════════════════════
+  // setBankTotal (F54) — ตั้งยอดสะสม → ลงส่วนต่างจริงเป็น ฝาก/ถอน (manual)
+  // ในเดือนปัจจุบัน; ประวัติอ่านเหมือน ฝาก/ถอน ปกติ, ย้อนได้, ไม่ clamp
+  // ════════════════════════════════════════════════════════════════════════
+  store.setState((s) => ({
+    data: {
+      ...s.data,
+      years: {},
+      bankTransactions: [],
+      // ยอดค้าง 2,000 ในเดือนเก่า (ม.ค.); การตั้งยอดทำในเดือนปัจจุบัน (ก.ย.)
+      bankAccounts: [{ id: 'acc-1', name: 'หนึ่ง', balances: { '2026': { '1': 2000 } } }],
+    },
+  }));
+  const allTimeOf = (id: string): number =>
+    accountAllTimeTotal(store.getState().data.bankAccounts!.find((a) => a.id === id)!);
+  const stTx = () =>
+    (store.getState().data.bankTransactions ?? []).filter((t) => t.accountId === 'acc-1');
+
+  // ตั้งลง: 2,000 → 1,500 = ถอนเงิน 500 (ตัวอย่างของ Tom)
+  store.getState().setBankTotal('acc-1', 2026, 9, 1500);
+  eq('ตั้งยอดลง → ยอดสะสม 1,500', allTimeOf('acc-1'), 1500);
+  eq('ตั้งยอดลง → 1 บรรทัด', stTx().length, 1);
+  eq('ตั้งยอดลง → amount −500', stTx()[0].amount, -500);
+  eq('ตั้งยอดลง → label ถอนเงิน', stTx()[0].label, 'ถอนเงิน');
+  eq('ตั้งยอดลง → source manual', stTx()[0].source.type, 'manual');
+  eq('ตั้งยอดลง → ลงเดือนปัจจุบัน ก.ย.', stTx()[0].month, 9);
+  eq('ตั้งยอดลง → เดือนเก่าไม่ขยับ', balOf('acc-1', 2026, 1), 2000);
+  eq('ตั้งยอดลง → invariant', findLedgerMismatches(ledgerOf()).length, 0);
+
+  // ตั้งเท่าเดิม → ไม่เพิ่มบรรทัด
+  const sameBefore = stTx().length;
+  store.getState().setBankTotal('acc-1', 2026, 9, 1500);
+  eq('ตั้งยอดเท่าเดิม → ไม่เพิ่มบรรทัด', stTx().length, sameBefore);
+
+  // ตั้งขึ้น: 1,500 → 5,000 = ฝากเงิน 3,500
+  store.getState().setBankTotal('acc-1', 2026, 9, 5000);
+  eq('ตั้งยอดขึ้น → ยอดสะสม 5,000', allTimeOf('acc-1'), 5000);
+  eq('ตั้งยอดขึ้น → บรรทัดล่าสุด +3,500', stTx()[stTx().length - 1].amount, 3500);
+  eq('ตั้งยอดขึ้น → label ฝากเงิน', stTx()[stTx().length - 1].label, 'ฝากเงิน');
+  eq('ตั้งยอดขึ้น → invariant', findLedgerMismatches(ledgerOf()).length, 0);
+
+  // ย้อนได้: ลบบรรทัดตั้งยอดล่าสุด → ยอดกลับ 1,500
+  store.getState().deleteBankTransaction(stTx()[stTx().length - 1].id);
+  eq('ลบบรรทัดตั้งยอด → ยอดกลับ 1,500', allTimeOf('acc-1'), 1500);
+  eq('ลบบรรทัดตั้งยอด → invariant', findLedgerMismatches(ledgerOf()).length, 0);
+
+  // ตั้งเป็น 0 แล้วติดลบ — ยอดติดลบเป็นค่าจริง ไม่ clamp (F44)
+  store.getState().setBankTotal('acc-1', 2026, 9, 0);
+  eq('ตั้งยอด 0 → ยอดสะสม 0', allTimeOf('acc-1'), 0);
+  store.getState().setBankTotal('acc-1', 2026, 9, -50);
+  eq('ตั้งยอดติดลบ → ยอดสะสม −50 (ไม่ clamp)', allTimeOf('acc-1'), -50);
+  eq('ตั้งยอดติดลบ → invariant', findLedgerMismatches(ledgerOf()).length, 0);
+
+  // บัญชีไม่มีจริง → no-op
+  const txBefore = txCount();
+  store.getState().setBankTotal('acc-ไม่มี', 2026, 9, 999);
+  eq('ตั้งยอดบัญชีไม่มี → no-op', txCount(), txBefore);
 
   // ════════════════════════════════════════════════════════════════════════
   // Task 3 — รายได้/รายจ่าย/ทอง จดรายการผ่านประตูเดียว

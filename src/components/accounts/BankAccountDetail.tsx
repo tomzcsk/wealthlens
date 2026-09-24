@@ -20,6 +20,7 @@ import BankActionForm, { type BankActionMode } from './BankActionForm';
 import BankAvatar from './BankAvatar';
 import BankBalanceEditForm from './BankBalanceEditForm';
 import MonthTransactionList from './MonthTransactionList';
+import SetBankTotalForm from './SetBankTotalForm';
 
 interface MonthRowProps {
   month: number;
@@ -116,6 +117,7 @@ export const BankAccountDetail = ({
   const [openMonth, setOpenMonth] = useState<number | null>(null);
   const [editMonth, setEditMonth] = useState<number | null>(null);
   const [action, setAction] = useState<BankActionMode | null>(null);
+  const [setTotalOpen, setSetTotalOpen] = useState(false);
 
   const yearTotal = useMemo(
     () => accountYearTotal(account, year),
@@ -189,6 +191,14 @@ export const BankAccountDetail = ({
             className="rounded-lg border border-primary-ink px-4 py-2 text-sm font-semibold text-primary-ink hover:bg-primary-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
           >
             ⇄ โอน
+          </button>
+          <button
+            type="button"
+            onClick={() => setSetTotalOpen(true)}
+            title="ตั้งยอดสะสมเป็นเลขที่กรอก (ลงส่วนต่างเป็น ฝาก/ถอน)"
+            className="rounded-lg border border-primary-ink px-4 py-2 text-sm font-semibold text-primary-ink hover:bg-primary-50 transition"
+          >
+            = ตั้งยอด
           </button>
         </div>
       </section>
@@ -268,6 +278,23 @@ export const BankAccountDetail = ({
               mode={action}
               onSaved={() => setAction(null)}
               onCancel={() => setAction(null)}
+            />
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        open={setTotalOpen}
+        onClose={() => setSetTotalOpen(false)}
+        title="ตั้งยอด"
+        size="sm"
+      >
+        {setTotalOpen && (
+          <div className="px-6 py-5">
+            <SetBankTotalForm
+              account={account}
+              onSaved={() => setSetTotalOpen(false)}
+              onCancel={() => setSetTotalOpen(false)}
             />
           </div>
         )}
