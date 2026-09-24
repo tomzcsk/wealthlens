@@ -1701,6 +1701,35 @@
             "completedAt": "2026-07-16",
             "notes": "Commits: c27d01d (ประตูตรวจ F53 แดงก่อน implement), 64afbab (SavingsItem.paymentAccountId + BankTxSource 'savings'), 1d440e7 (จ่ายผ่านบัญชี — หัก/คืนยอดผ่าน ledger ประตูเดียว), 1d2c5fe (บัญชีที่มีรายการออมผูกลบไม่ได้), 746163d (deleteGoldHolding revoke บรรทัดหักของ item ออมที่มันสร้าง), 2b97a38 (SavingsForm dropdown จ่ายผ่าน) | Files ใหม่: scripts/verify-savings-payment.ts | Files แก้: src/types (SavingsItem, BankTxSource), src/stores/financeStore.ts (addSavings/updateSavings/deleteSavings, deleteGoldHolding), src/utils/bankAccountUsage.ts + src/pages/BankAccountsPage.tsx + src/utils/actionMessages.ts (F44 บล็อกลบบัญชีที่มีออมผูก), src/components/forms/SavingsForm.tsx | ไม่ทำโดยตั้งใจ: ไม่บังคับผูกบัญชีย้อนหลังกับรายการออมเดิม (migration เงียบจะเปลี่ยนยอดบัญชีของ Tom โดยไม่มีใครขอ) · ไม่เปิดให้ลบบรรทัด savings ตรงจากสมุดรายการ (คงกฎเดียวกับรายจ่าย) | Fix ภายหลัง: validateSavingsItem ใน exportImport.ts เดิม restore แล้วทิ้ง paymentAccountId/sideEffects เงียบๆ (บรรทัด savings ที่หักบัญชีไว้กลายเป็นกำพร้าหลัง restore) — แก้ให้ preserve เหมือน validateExpenseItem พร้อมเพิ่ม referential-integrity check และเคส round-trip ที่ 11 ใน verify-savings-payment.ts"
           }
+        },
+        {
+          "id": "F54",
+          "name": "ปุ่ม \"ตั้งยอด\" — reset ยอดบัญชีเป็นเลขที่กรอก",
+          "description": "Tom ดูการ์ดบัญชี (เช่น CLICX ยอดสะสม ฿3,965) แล้วอยากพิมพ์ยอดที่ควรจะเป็นจริง ๆ เข้าไปตรง ๆ แทนที่จะต้องคิดเองว่าต้องฝาก/ถอนเท่าไหร่ — เพิ่มปุ่มที่ 4 'ตั้งยอด' ข้าง ฝาก/ถอน/โอน ที่คิดส่วนต่างจากยอดสะสม (accountAllTimeTotal) แล้วลงเป็นรายการ ฝาก/ถอน (manual) ในเดือนปัจจุบัน. ยอดบนการ์ด = ผลรวมทุกเดือน ไม่ใช่ค่าช่องเดียว จึงต้องลงส่วนต่าง ไม่ใช่เขียนทับ field",
+          "status": "completed",
+          "priority": "P2",
+          "phase": "phase_6",
+          "acceptanceCriteria": [
+            "planSetTotal (pure/total ใน utils/bankAccounts, ตาม contract เดิมของไฟล์): delta = target − accountAllTimeTotal ปัดเป็นสตางค์, คืน null เมื่อยอดเท่าเดิม (float dust จากผลรวมหลายเดือนไม่กลายเป็นรายการจิ๋ว), label ฝากเงิน/ถอนเงิน ตามทิศ",
+            "setBankTotal action: หา account จาก state สด → planSetTotal → applyBankMovement (manual) ผ่าน withLedger/ledgerPatch (F49) เท่านั้น. no-op เมื่อบัญชีไม่มีจริง/ยอดเท่าเดิม. ประวัติอ่านเหมือน ฝาก/ถอน ปกติ (เดิม 2,000 → ตั้ง 1,500 = 'ถอนเงิน 500') และลบได้ = ย้อนได้",
+            "target ติดลบ/ศูนย์ได้ — ยอดสะสมติดลบเป็นค่าจริง ไม่ clamp (F44/F8)",
+            "ลงเดือนปัจจุบันจากนาฬิกาเครื่อง (เหมือน BankActionForm) — ไม่มีตัวเลือกเดือน; UI ส่ง (year, month) เข้า action เพื่อให้เทสต์ deterministic",
+            "SetBankTotalForm (component แยก < 150 บรรทัด, สีจาก token เท่านั้น F46): โชว์ยอดสะสมตอนนี้ + ช่องกรอกเป้าหมาย (รับติดลบ) + พรีวิวสดที่ใช้ planSetTotal ตัวเดียวกับ action จึงไม่มีทางโกหกว่าจะลงอะไร; ยอดเท่าเดิม/ช่องว่าง → ปุ่มยืนยัน disabled",
+            "ไม่เพิ่ม field ที่ persist (เขียนแค่ bankTransactions manual + balances เดิม) → export/import validator และ Drive backup ไม่ต้องแตะ",
+            "Verified: verify-bank-transactions.ts +19 assertion (ยอดสะสม=เป้า, label ฝาก/ถอน, ลงเดือนปัจจุบัน, เดือนเก่าไม่ขยับ, invariant F40, ย้อนได้, ตั้ง 0/ติดลบ, no-op บัญชีไม่มี) + verify-no-hardcoded-colors/theme/nav/motion/bank-accounts ไม่ regress + typecheck + lint + verify:mobile + ขับจริงในเบราว์เซอร์ (3,965→1,500 ลง 'ถอนเงิน −2,465' ก.ย. 2026 เป็นบรรทัดลบได้; 1,500→5,000 พรีวิว 'ฝากเงิน 3,500')"
+          ],
+          "estimatedHours": 2,
+          "dependencies": [
+            "F33",
+            "F40",
+            "F44",
+            "F49"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-09-24",
+            "notes": "Spec: docs/superpowers/specs/2026-09-24-bank-set-total-design.md | Commit: ba658d5 (feat) | Files ใหม่: src/components/accounts/SetBankTotalForm.tsx | Files แก้: src/utils/bankAccounts.ts (planSetTotal + SetTotalPlan), src/stores/financeStore.ts (setBankTotal action + interface), src/components/accounts/BankAccountDetail.tsx (ปุ่มที่ 4 + modal), scripts/verify-bank-transactions.ts (+19 assertion) | ตัดสินใจตาม Tom: ประวัติลงเป็นส่วนต่างจริง (ถอน/ฝาก) ไม่ใช่บรรทัดพิเศษ 'reset' — reuse source manual เพื่อให้อ่านและลบได้เหมือน ฝาก/ถอน ปกติ | ไม่ทำโดยตั้งใจ: ไม่มีตัวเลือกเดือน (ลงเดือนปัจจุบัน) · ไม่ล้าง/เขียนทับประวัติรายเดือน (นั่นคือทำลายข้อมูลจริง — เก็บทุกเดือนไว้ แล้วเติมบรรทัดแก้ต่างเดียว) | หมายเหตุ: โปรเจกต์ไม่มี unit runner จึงเทสต์ผ่านสคริปต์ verify แบบเดิมของโปรเจกต์ (tsx) — TDD ด้วยการเขียน planSetTotal-check แดงก่อน แล้วย้าย assertion เข้า verify-bank-transactions.ts ถาวร"
+          }
         }
       ]
     }
@@ -1790,14 +1819,14 @@
     }
   },
   "progressSummary": {
-    "totalFeatures": 60,
-    "completed": 59,
+    "totalFeatures": 61,
+    "completed": 60,
     "removed": 1,
     "inProgress": 0,
     "pending": 0,
     "overallProgress": "100%",
-    "countingNote": "60 = 59 ที่เคยมี + F53 (ตัวที่ 60). F16 (ประมาณการเดือนหน้า) ถูกถอดออกใน F50 จึงนับเป็น removed ไม่ใช่ completed → completed 59 + removed 1 = 60. รายการ F15/F16 ยังอยู่ในไฟล์โดยตั้งใจ: ประวัติต้องบอกว่ามันเคยมีแล้วถอดออก ไม่ใช่แกล้งทำเป็นไม่เคยมี. F52 (fix การ์ดทองมือถือ) เป็น bugfix commit ไม่มี entry แยกในไฟล์นี้ — ตามแบบที่ fix เล็กในอดีตไม่ได้ขึ้นทะเบียนเป็น feature",
+    "countingNote": "61 = 60 ที่เคยมี + F54 (ตัวที่ 61). F16 (ประมาณการเดือนหน้า) ถูกถอดออกใน F50 จึงนับเป็น removed ไม่ใช่ completed → completed 60 + removed 1 = 61. รายการ F15/F16 ยังอยู่ในไฟล์โดยตั้งใจ: ประวัติต้องบอกว่ามันเคยมีแล้วถอดออก ไม่ใช่แกล้งทำเป็นไม่เคยมี. F52 (fix การ์ดทองมือถือ) เป็น bugfix commit ไม่มี entry แยกในไฟล์นี้ — ตามแบบที่ fix เล็กในอดีตไม่ได้ขึ้นทะเบียนเป็น feature",
     "currentPhase": "shipped",
-    "nextMilestone": "F53 (รายการออมระบุจ่ายผ่านบัญชี) เสร็จ — ไม่มีงานค้างในโรดแมป"
+    "nextMilestone": "F54 (ปุ่มตั้งยอดบัญชี) เสร็จ — ไม่มีงานค้างในโรดแมป"
   }
 }
