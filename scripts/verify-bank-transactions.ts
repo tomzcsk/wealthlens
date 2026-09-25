@@ -91,6 +91,18 @@ eq('sanitize → รายการ NaN หาย', cleaned.transactions.length,
 // ข้อมูลสะอาดอยู่แล้ว → คืน identity เดิม (ไม่ re-render ฟรี)
 const already = sanitizeBankLedger(accounts, []);
 eq('sanitize → สะอาดอยู่แล้วคืน identity เดิม', already.accounts === accounts, true);
+// เซลล์ค่าเสียที่ยังมีรายการ *ดี* ปนอยู่ → ซ่อมเป็นผลรวมรายการดี ไม่ทิ้งทั้งเซลล์
+// (ไม่งั้นยอดจริงหาย + เหลือรายการกำพร้า พัง invariant F40) — Codex review P1
+const mixedSan = sanitizeBankLedger(
+  [{ id: 'a', name: 'A', balances: { '2026': { '9': NaN } } }],
+  [
+    { id: 'good', accountId: 'a', year: 2026, month: 9, amount: 2000, label: 'ดี', source: { type: 'manual' } },
+    { id: 'bad', accountId: 'a', year: 2026, month: 9, amount: NaN, label: 'เสีย', source: { type: 'manual' } },
+  ],
+);
+eq('sanitize mixed → เซลล์ซ่อมเป็น 2000 (ไม่ทิ้ง)', mixedSan.accounts[0].balances['2026']['9'], 2000);
+eq('sanitize mixed → รายการดีอยู่ต่อ เสียหาย', mixedSan.transactions.length, 1);
+eq('sanitize mixed → invariant F40 คงอยู่', findLedgerMismatches(mixedSan).length, 0);
 
 // --- revoke: ลบบรรทัด + คืนยอด ---
 const l2 = revokeBankMovements(l1, (tx) => tx.source.type === 'manual');

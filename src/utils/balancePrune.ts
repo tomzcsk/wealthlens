@@ -88,6 +88,18 @@ export const sanitizeBankLedger = (
   accounts: readonly BankAccount[],
   transactions: readonly BankTransaction[],
 ): { accounts: BankAccount[]; transactions: BankTransaction[] } => {
+  const cleanTx = transactions.filter((t) => Number.isFinite(t.amount));
+  const txTouched = cleanTx.length !== transactions.length;
+
+  // ผลรวมของรายการ *ที่ค่าดี* ต่อเซลล์ — ใช้ซ่อมเซลล์ค่าเสียที่ยังมีรายการดีรองรับ
+  // (เช่นเดือนที่ฝาก ฿2,000 จริง แล้วมีรายการ NaN ปนเข้ามา → เซลล์กลายเป็น NaN
+  // แต่ ฿2,000 ยังของจริง: ทิ้งทั้งเซลล์ = ยอดหาย + เหลือรายการกำพร้า พัง invariant F40).
+  const goodSums = new Map<string, number>();
+  for (const t of cleanTx) {
+    const key = `${t.accountId}|${t.year}|${t.month}`;
+    goodSums.set(key, (goodSums.get(key) ?? 0) + t.amount);
+  }
+
   let accountsTouched = false;
   const nextAccounts = accounts.map((account) => {
     const years: BankAccount['balances'] = {};
@@ -95,8 +107,15 @@ export const sanitizeBankLedger = (
     for (const [year, months] of Object.entries(account.balances ?? {})) {
       const kept: Record<string, number> = {};
       for (const [month, amount] of Object.entries(months)) {
-        if (Number.isFinite(amount)) kept[month] = amount;
-        else touched = true;
+        if (Number.isFinite(amount)) {
+          kept[month] = amount; // เซลล์ปกติ (รวม legacy ที่ไม่มีรายการ) — ไม่แตะ
+          continue;
+        }
+        // เซลล์ค่าเสีย: มีรายการดีรองรับ → ซ่อมเป็นผลรวมของรายการดี (คง invariant
+        // + ไม่ทิ้งยอดจริง); ไม่มีรายการดีเลย → ทิ้ง (คือของเสียล้วน)
+        const sum = goodSums.get(`${account.id}|${year}|${month}`);
+        if (sum !== undefined) kept[month] = sum;
+        touched = true;
       }
       if (Object.keys(kept).length > 0) years[year] = kept;
       else if (Object.keys(months).length > 0) touched = true;
@@ -105,9 +124,6 @@ export const sanitizeBankLedger = (
     accountsTouched = true;
     return { ...account, balances: years };
   });
-
-  const cleanTx = transactions.filter((t) => Number.isFinite(t.amount));
-  const txTouched = cleanTx.length !== transactions.length;
 
   return {
     accounts: accountsTouched ? nextAccounts : (accounts as BankAccount[]),
