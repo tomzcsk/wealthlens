@@ -347,8 +347,11 @@ export const useDriveSyncCoordinator = (): UseDriveSyncCoordinatorResult => {
     try {
       const result = await loadFromDrive(accessToken);
       if (result.kind === 'empty') {
-        setBlocked(null);
-        setStatus('synced');
+        // ไม่มีไฟล์บน Drive. **ถ้ากำลัง block อยู่ (เจอไฟล์เสียมาก่อน) → คงไว้**: การที่
+        // ตอนนี้ไฟล์หาย (ถูกลบ) ไม่ใช่การกู้สำเร็จ; เคลียร์เงียบ ๆ = เตือนหายทั้งที่ข้อมูล
+        // บน Drive ที่พยายามปกป้องหายไป. ให้ผู้ใช้กด "เขียนทับ" (สร้างไฟล์ใหม่จาก local)
+        // เพื่อเลิก block เอง. ถ้าไม่ได้ block อยู่แล้ว = ผู้ใช้ใหม่ ยังไม่มีข้อมูล → synced.
+        if (!useSyncStore.getState().blocked) setStatus('synced');
         toast('ยังไม่มีข้อมูลใน Google Drive', 'info');
         return;
       }
