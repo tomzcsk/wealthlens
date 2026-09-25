@@ -11,6 +11,7 @@ import type { ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 
 import { desktopGroups, isNavActive } from '@/lib/nav';
+import { useUiStore } from '@/stores/uiStore';
 
 import BuildInfo from './BuildInfo';
 
@@ -21,17 +22,49 @@ const linkActive = 'bg-primary-50 text-primary-ink font-semibold';
 
 export const Sidebar = (): ReactNode => {
   const { pathname } = useLocation();
+  const collapsed = useUiStore((s) => s.sidebarCollapsed);
+  const toggle = useUiStore((s) => s.toggleSidebar);
 
   return (
     <aside
-      className="hidden md:flex md:flex-col w-[240px] h-screen sticky top-0 bg-card border-r border-ink-200"
+      className={`hidden md:flex md:flex-col h-screen sticky top-0 bg-card border-r border-ink-200 transition-[width] duration-200 ${
+        collapsed ? 'w-[64px]' : 'w-[240px]'
+      }`}
       aria-label="เมนู"
     >
-      <div className="px-4 pt-6 pb-8">
-        <div className="text-2xl font-bold text-primary-ink leading-none">
-          WealthLens
-        </div>
-        <div className="mt-1 text-xs text-ink-500">บัญชีส่วนตัว</div>
+      <div
+        className={`pt-6 pb-8 ${
+          collapsed
+            ? 'flex flex-col items-center gap-3 px-2'
+            : 'flex items-start justify-between px-4'
+        }`}
+      >
+        {collapsed ? (
+          <div
+            className="text-2xl font-bold text-primary-ink leading-none"
+            aria-hidden="true"
+          >
+            W
+          </div>
+        ) : (
+          <div className="min-w-0">
+            <div className="text-2xl font-bold text-primary-ink leading-none">
+              WealthLens
+            </div>
+            <div className="mt-1 text-xs text-ink-500">บัญชีส่วนตัว</div>
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={toggle}
+          aria-label={collapsed ? 'เปิดเมนู' : 'หุบเมนู'}
+          aria-expanded={!collapsed}
+          className="shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-lg text-ink-500 transition-colors hover:bg-raised hover:text-ink-900"
+        >
+          <span aria-hidden="true" className="text-base leading-none">
+            {collapsed ? '»' : '«'}
+          </span>
+        </button>
       </div>
 
       <nav className="px-2" aria-label="เมนูหลัก">
@@ -49,21 +82,23 @@ export const Sidebar = (): ReactNode => {
                 key={item.path}
                 to={item.path}
                 end={item.end}
-                className={`${linkBase} ${
+                title={collapsed ? item.label : undefined}
+                aria-label={collapsed ? item.label : undefined}
+                className={`${linkBase} ${collapsed ? 'justify-center' : ''} ${
                   isNavActive(item, pathname) ? linkActive : linkInactive
                 }`}
               >
                 <span aria-hidden="true" className="text-base leading-none">
                   {item.icon}
                 </span>
-                <span>{item.label}</span>
+                {!collapsed && <span>{item.label}</span>}
               </NavLink>
             ))}
           </div>
         ))}
       </nav>
 
-      <BuildInfo />
+      {!collapsed && <BuildInfo />}
     </aside>
   );
 };

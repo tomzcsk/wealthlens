@@ -55,7 +55,8 @@ export const Layout = (): ReactNode => {
       {requireSignIn ? (
         <LoginPage />
       ) : (
-        <div className="min-h-screen bg-surface md:grid md:grid-cols-[240px_1fr]">
+        <div className="min-h-screen bg-surface md:grid md:grid-cols-[auto_1fr]">
+          {/* คอลัมน์ซ้าย = auto → กว้างตาม Sidebar เอง (หุบ/เปิดได้โดย Layout ไม่ต้องรู้ state) */}
           <Sidebar />
           <div className="flex flex-col min-w-0">
             <Header />
