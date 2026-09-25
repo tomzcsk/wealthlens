@@ -8,6 +8,13 @@ import type { BankAccount, ExpenseSideEffectRefs, WealthLensData } from '@/types
 /** Stable id for the account migrated from Tom's Kept (กรุงศรี). */
 export const KRUNGSRI_ACCOUNT_ID = 'acct-krungsri';
 
+/**
+ * ปัดผลรวมเงินเป็นสตางค์ — การบวก/ลบ float สะสมเศษจิ๋ว (เช่น 2584.1−1799−785.1
+ * = -1.1e-13 ที่ควรเป็น 0). เศษนี้ทำให้ `total < 0` เป็นจริงผิด (การ์ดขึ้นสีแดง)
+ * และ numeral คืน "฿NaN". เงินละเอียดสุด 2 ตำแหน่ง ผลรวมจึงควรเป็นสตางค์เสมอ.
+ */
+const satang = (n: number): number => Math.round(n * 100) / 100;
+
 /** Deep-copy a year→month→number map. */
 const cloneBalances = (
   src: { [year: string]: { [month: string]: number } } | undefined,
@@ -40,9 +47,11 @@ export const sumBankMonth = (
   year: number,
   month: number,
 ): number =>
-  accounts.reduce(
-    (acc, a) => acc + (a.balances[String(year)]?.[String(month)] ?? 0),
-    0,
+  satang(
+    accounts.reduce(
+      (acc, a) => acc + (a.balances[String(year)]?.[String(month)] ?? 0),
+      0,
+    ),
   );
 
 /** Sum a whole year (all 12 months) across every account. */
@@ -50,15 +59,17 @@ export const sumBankYear = (
   accounts: readonly BankAccount[],
   year: number,
 ): number =>
-  accounts.reduce((acc, a) => {
-    const yr = a.balances[String(year)] ?? {};
-    return acc + Object.values(yr).reduce((s, v) => s + v, 0);
-  }, 0);
+  satang(
+    accounts.reduce((acc, a) => {
+      const yr = a.balances[String(year)] ?? {};
+      return acc + Object.values(yr).reduce((s, v) => s + v, 0);
+    }, 0),
+  );
 
 /** Sum a single account's year (for its card / detail totals). */
 export const accountYearTotal = (account: BankAccount, year: number): number => {
   const yr = account.balances[String(year)] ?? {};
-  return Object.values(yr).reduce((s, v) => s + v, 0);
+  return satang(Object.values(yr).reduce((s, v) => s + v, 0));
 };
 
 /** Latest month (1-12) in `year` that has a value, or null. */
@@ -94,7 +105,7 @@ export const accountLatestBalance = (
 export const sumBankLatest = (
   accounts: readonly BankAccount[],
   year: number,
-): number => accounts.reduce((s, a) => s + accountLatestBalance(a, year), 0);
+): number => satang(accounts.reduce((s, a) => s + accountLatestBalance(a, year), 0));
 
 /** Accumulated balance across EVERY year+month of one account. */
 export const accountAllTimeTotal = (account: BankAccount): number => {
@@ -102,12 +113,12 @@ export const accountAllTimeTotal = (account: BankAccount): number => {
   for (const yr of Object.values(account.balances)) {
     for (const v of Object.values(yr)) sum += v;
   }
-  return sum;
+  return satang(sum);
 };
 
 /** Accumulated balance across every account, all years (grand total). */
 export const sumBankAllTime = (accounts: readonly BankAccount[]): number =>
-  accounts.reduce((s, a) => s + accountAllTimeTotal(a), 0);
+  satang(accounts.reduce((s, a) => s + accountAllTimeTotal(a), 0));
 
 /** The single ฝาก/ถอน movement that makes an account's total equal a target. */
 export interface SetTotalPlan {

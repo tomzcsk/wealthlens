@@ -112,11 +112,15 @@ export const formatTHB = (
     return `${value < 0 ? '-' : ''}฿${polished}`;
   }
 
-  // decimals ไม่ระบุ → auto: สตางค์เฉพาะเมื่อยอดมีเศษ (value ผ่าน safeNumber แล้ว)
-  const places = decimals ?? (Number.isInteger(value) ? 0 : 2);
+  // ปัดเป็นสตางค์ก่อนตัดสินใจ/ส่ง numeral: ผลลบของ float ได้เศษจิ๋วแบบ exponential
+  // (เช่น 2584.1−1799−785.1 = -1.1e-13 ที่ควรเป็น 0) — numeral คืน "NaN" กับเลขแบบนี้
+  // ทำการ์ดโชว์ "฿NaN". ปัดก่อน → -0 → "฿0". เงินละเอียดสุด 2 ตำแหน่งอยู่แล้ว.
+  const money = Math.round(value * 100) / 100;
+  // decimals ไม่ระบุ → auto: สตางค์เฉพาะเมื่อ *ยอดที่ปัดแล้ว* มีเศษ
+  const places = decimals ?? (Number.isInteger(money) ? 0 : 2);
   const fmt = places === 2 ? '0,0.00' : '0,0';
   // numeral handles negatives correctly: '-1,234' (no extra logic needed).
-  return `฿${numeral(value).format(fmt)}`;
+  return `฿${numeral(money).format(fmt)}`;
 };
 
 /**
@@ -141,18 +145,24 @@ export const formatNumber = (
 ): string => {
   const { decimals = 0 } = opts;
   const value = safeNumber(amount);
+  // ปัดตามจำนวนตำแหน่งที่จะแสดงก่อน — กัน float dust แบบ exponential ที่ numeral
+  // คืน "NaN" (ดู formatTHB). ปัดที่ระดับ decimals จึงไม่เสียความละเอียดที่จะโชว์.
+  const factor = 10 ** decimals;
+  const clean = Math.round(value * factor) / factor;
   const fractional = decimals > 0 ? `.${'0'.repeat(decimals)}` : '';
-  return numeral(value).format(`0,0${fractional}`);
+  return numeral(clean).format(`0,0${fractional}`);
 };
 
 /**
  * เหมือน formatNumber แต่ auto: โชว์สตางค์เฉพาะเมื่อยอดมีเศษ — คู่ขนานกับ
  * formatTHBAuto สำหรับตัวเลขเงินที่ไม่มีสัญลักษณ์ ฿ (ตารางรายเดือน/รายงานพิมพ์).
  */
-export const formatNumberAuto = (value: number): string =>
-  formatNumber(value, {
-    decimals: Number.isFinite(value) && !Number.isInteger(value) ? 2 : 0,
-  });
+export const formatNumberAuto = (value: number): string => {
+  // ตัดสินใจสตางค์จาก *ยอดที่ปัดแล้ว* — เศษ float จิ๋ว (เช่น -1.1e-13) จึงได้ "0"
+  // ไม่ใช่ "0.00" และไม่หลุดไปโดน numeral คืน "NaN"
+  const money = Math.round(safeNumber(value) * 100) / 100;
+  return formatNumber(money, { decimals: Number.isInteger(money) ? 0 : 2 });
+};
 
 // ---------------------------------------------------------------------------
 // Percent / delta

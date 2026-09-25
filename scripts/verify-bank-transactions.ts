@@ -104,6 +104,14 @@ eq('sanitize mixed → เซลล์ซ่อมเป็น 2000 (ไม่�
 eq('sanitize mixed → รายการดีอยู่ต่อ เสียหาย', mixedSan.transactions.length, 1);
 eq('sanitize mixed → invariant F40 คงอยู่', findLedgerMismatches(mixedSan).length, 0);
 
+// ยอดสะสมที่ผลลบ float ได้เศษจิ๋ว (2584.1−1799−785.1 ควรเป็น 0 พอดี) ต้องปัดเป็น 0
+// ไม่ใช่ -1.1e-13 — เศษติดลบจิ๋วทำการ์ดขึ้นสีแดง + numeral คืน "฿NaN" (บั๊กจริงของ Tom)
+const dustAcct: BankAccount = {
+  id: 'dust', name: 'D', balances: { '2026': { '7': 2584.1, '8': -1799, '9': -785.1 } },
+};
+eq('ยอดสะสม float dust → 0', accountAllTimeTotal(dustAcct), 0);
+eq('ยอดสะสม float dust → ไม่ติดลบจิ๋ว (การ์ดไม่แดง)', accountAllTimeTotal(dustAcct) < 0, false);
+
 // --- revoke: ลบบรรทัด + คืนยอด ---
 const l2 = revokeBankMovements(l1, (tx) => tx.source.type === 'manual');
 eq('revoke ลบบรรทัด', l2.transactions.length, 0);

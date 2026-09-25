@@ -39,5 +39,16 @@ eq('formatNumberAuto เต็ม → ไม่มีสตางค์', format
 eq('formatNumberAuto มีเศษ → โชว์สตางค์', formatNumberAuto(1234.5), '1,234.50');
 eq('formatNumberAuto NaN → 0', formatNumberAuto(NaN), '0');
 
+// float dust: ผลลบเงินได้เศษจิ๋วแบบ exponential (2584.1−1799−785.1 = -1.1e-13 ที่ควร
+// เป็น 0). numeral คืน "NaN" กับเลขแบบนี้ → การ์ดโชว์ "฿NaN". ต้องปัดเป็น ฿0.
+const dust = 2584.1 - 1799 - 785.1; // ≈ -1.1368683772161603e-13
+eq('float dust → finite (safeNumber ปล่อยผ่าน)', Number.isFinite(dust), true);
+eq('float dust bare → ฿0 (เคยเป็น ฿NaN)', formatTHB(dust), '฿0');
+eq('float dust decimals:0 → ฿0', formatTHB(dust, { decimals: 0 }), '฿0');
+eq('float dust decimals:2 → ฿0.00', formatTHB(dust, { decimals: 2 }), '฿0.00');
+eq('เศษ 0.004 ปัดลง → ฿0', formatTHB(0.004), '฿0');
+eq('formatNumberAuto float dust → 0 (เคย NaN)', formatNumberAuto(dust), '0');
+eq('formatNumber(dust, decimals:2) → 0.00', formatNumber(dust, { decimals: 2 }), '0.00');
+
 console.log(failures === 0 ? '\n✅ ALL PASS' : `\n❌ ${failures} FAILED`);
 process.exit(failures === 0 ? 0 : 1);
