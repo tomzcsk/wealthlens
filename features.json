@@ -1730,6 +1730,32 @@
             "completedAt": "2026-09-24",
             "notes": "Spec: docs/superpowers/specs/2026-09-24-bank-set-total-design.md | Commit: ba658d5 (feat) | Files ใหม่: src/components/accounts/SetBankTotalForm.tsx | Files แก้: src/utils/bankAccounts.ts (planSetTotal + SetTotalPlan), src/stores/financeStore.ts (setBankTotal action + interface), src/components/accounts/BankAccountDetail.tsx (ปุ่มที่ 4 + modal), scripts/verify-bank-transactions.ts (+19 assertion) | ตัดสินใจตาม Tom: ประวัติลงเป็นส่วนต่างจริง (ถอน/ฝาก) ไม่ใช่บรรทัดพิเศษ 'reset' — reuse source manual เพื่อให้อ่านและลบได้เหมือน ฝาก/ถอน ปกติ | ไม่ทำโดยตั้งใจ: ไม่มีตัวเลือกเดือน (ลงเดือนปัจจุบัน) · ไม่ล้าง/เขียนทับประวัติรายเดือน (นั่นคือทำลายข้อมูลจริง — เก็บทุกเดือนไว้ แล้วเติมบรรทัดแก้ต่างเดียว) | หมายเหตุ: โปรเจกต์ไม่มี unit runner จึงเทสต์ผ่านสคริปต์ verify แบบเดิมของโปรเจกต์ (tsx) — TDD ด้วยการเขียน planSetTotal-check แดงก่อน แล้วย้าย assertion เข้า verify-bank-transactions.ts ถาวร"
           }
+        },
+        {
+          "id": "F55",
+          "name": "เลขเงินโชว์สตางค์เมื่อมีเศษ (ทั้งแอป)",
+          "description": "ยอดเงินทั้งแอปแสดงทศนิยม (สตางค์) เฉพาะเมื่อยอดมีเศษจริง — ฿3,965 อยู่สะอาด, ฿3,965.50 โชว์สตางค์ — แทนการปัดทิ้งเป็นเลขเต็มเสมอ. ช่องกรอก ฝาก/ถอน/ตั้งยอด รับจุดทศนิยมอยู่แล้ว แต่ยอดที่แสดงเคยปัดสตางค์ทิ้ง (ฝาก ฿1,500.50 → แสดง ฿1,501)",
+          "status": "completed",
+          "priority": "P3",
+          "phase": "phase_6",
+          "acceptanceCriteria": [
+            "formatTHB แบบ bare (ไม่ระบุ decimals) = auto: สตางค์เมื่อยอดมีเศษ (Number.isInteger); ค่าตั้งต้นทั้งแอปเปลี่ยนจาก 0 → auto ครอบ 115 จุดที่เรียก bare อัตโนมัติ; formatTHBAuto กลายเป็น alias ของ bare",
+            "explicit ยังบังคับได้: decimals:0 (เลขวิ่ง KPI/hero — กันสตางค์กระพริบทีละเฟรมระหว่าง tween ของ AnimatedNumber), decimals:2 (ตารางผ่อนที่ยอดต้องเรียงจุดตรงกัน), compact ไม่แตะ (แกนกราฟ ฿1.23M)",
+            "KpiCard.formatAmount บังคับ decimals:0 เมื่อไม่ compact — เพราะ format ถูกเรียกกับค่าเศษระหว่าง tween ทุกเฟรม ถ้า auto จะกระพริบ",
+            "เพิ่ม formatNumberAuto (ไม่มี ฿) สำหรับตารางรายเดือน (MonthlySummaryTable) และรายงานพิมพ์ (PrintReportPage) ที่โชว์เงินแบบไม่มีสัญลักษณ์",
+            "hero รวมเดือน 3 ช่อง (/monthly SummaryStat, text-2xl เรียงบนมือถือ) คงเลขเต็ม — satang ทำเลขกว้างเกินช่อง 147px บนจอ 390 (M7); สตางค์ไปโชว์ในตารางรายละเอียดด้านล่างที่มีที่พอ",
+            "ไม่แตะ: แกนกราฟ compact, format ของ AnimatedNumber (net worth/growth hero คงเลขเต็ม), formatNumber ที่เป็นน้ำหนัก/จำนวนบรรทัด/ขอบเขตภาษี (ไม่ใช่เงิน), input mask ที่ format ข้อความระหว่างพิมพ์",
+            "Verified: scripts/verify-money-format.ts (ใหม่, 14 เคส) + verify-action-messages ไม่ regress + typecheck + lint + verify:mobile (ไม่ล้นช่องหลังเลขกว้างขึ้น) + verify:analytics + ขับจริง: บัญชี ฿3,965 (เต็ม) / ฿12,483.75 (สตางค์) / ยอดรวมมีเศษโชว์ .75"
+          ],
+          "estimatedHours": 2,
+          "dependencies": [
+            "F42"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-09-25",
+            "notes": "ตอบโจทย์ Tom: 'พวกยอดเงินต่างๆ แสดงเป็นจุดทศนิยมด้วย' → เลือก 'ทั้งแอป โชว์เมื่อมีเศษ' | Files แก้: src/utils/formatters.ts (formatTHB default → auto, formatTHBAuto = alias, + formatNumberAuto), src/components/dashboard/KpiCard.tsx (กัน flicker), src/pages/MonthlyPage.tsx (hero คงเลขเต็มกันล้น), + สลับ {decimals:0}→bare ที่จุดแสดงผลนิ่ง: BankAccountCard/BankAccountDetail/BankAccountsPage, NetWorthHero(static)/NetWorthColumn, LoanCard, IncomeDepositSummary, GoldForm/GoldPage, LoansPage + formatNumber→formatNumberAuto ที่ MonthlySummaryTable/PrintReportPage | Files ใหม่: scripts/verify-money-format.ts | ไม่ทำโดยตั้งใจ: ตารางผ่อนคง 2 ตำแหน่งเสมอ (ยอดต้องเรียงจุดตรง) · KPI/hero คงเลขเต็ม (เลขใหญ่ สตางค์ไม่สำคัญ + กันกระตุก)"
+          }
         }
       ]
     }
@@ -1819,14 +1845,14 @@
     }
   },
   "progressSummary": {
-    "totalFeatures": 61,
-    "completed": 60,
+    "totalFeatures": 62,
+    "completed": 61,
     "removed": 1,
     "inProgress": 0,
     "pending": 0,
     "overallProgress": "100%",
-    "countingNote": "61 = 60 ที่เคยมี + F54 (ตัวที่ 61). F16 (ประมาณการเดือนหน้า) ถูกถอดออกใน F50 จึงนับเป็น removed ไม่ใช่ completed → completed 60 + removed 1 = 61. รายการ F15/F16 ยังอยู่ในไฟล์โดยตั้งใจ: ประวัติต้องบอกว่ามันเคยมีแล้วถอดออก ไม่ใช่แกล้งทำเป็นไม่เคยมี. F52 (fix การ์ดทองมือถือ) เป็น bugfix commit ไม่มี entry แยกในไฟล์นี้ — ตามแบบที่ fix เล็กในอดีตไม่ได้ขึ้นทะเบียนเป็น feature",
+    "countingNote": "62 = 61 ที่เคยมี + F55 (ตัวที่ 62). F16 (ประมาณการเดือนหน้า) ถูกถอดออกใน F50 จึงนับเป็น removed ไม่ใช่ completed → completed 61 + removed 1 = 62. รายการ F15/F16 ยังอยู่ในไฟล์โดยตั้งใจ: ประวัติต้องบอกว่ามันเคยมีแล้วถอดออก ไม่ใช่แกล้งทำเป็นไม่เคยมี. F52 (fix การ์ดทองมือถือ) เป็น bugfix commit ไม่มี entry แยกในไฟล์นี้ — ตามแบบที่ fix เล็กในอดีตไม่ได้ขึ้นทะเบียนเป็น feature (฿NaN fix ก็เป็น bugfix ไม่มี entry เช่นกัน)",
     "currentPhase": "shipped",
-    "nextMilestone": "F54 (ปุ่มตั้งยอดบัญชี) เสร็จ — ไม่มีงานค้างในโรดแมป"
+    "nextMilestone": "F55 (เลขเงินโชว์สตางค์เมื่อมีเศษ) เสร็จ — ไม่มีงานค้างในโรดแมป"
   }
 }
