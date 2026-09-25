@@ -1782,6 +1782,30 @@
             "completedAt": "2026-09-25",
             "notes": "Spec: docs/superpowers/specs/2026-09-25-drive-sync-validation-design.md (ออกแบบ + implement คู่กับ Codex gpt-6-luna, review 5 รอบ) | Files ใหม่: src/utils/dataEmpty.ts, scripts/verify-drive-validation.ts | Files แก้: src/utils/driveSync.ts (interpretDrivePayload + DriveLoadResult + loadFromDrive), src/stores/syncStore.ts (blocked field), src/hooks/useDriveSyncCoordinator.ts (3-kind handling + guards + resolveWithLocal), src/pages/SettingsPage.tsx (แถบเตือน + ปุ่ม) | Codex จับได้ที่เทสต์ผมยังไม่ครอบ: manualReload เจอ empty เคลียร์ block เงียบ (P1), sign-out ปล่อย block ค้าง (P2), เลิก block ก่อน replace (P2 defense), isDataEmpty ไม่นับบัญชี (P1) — verify ทุกข้อก่อนแก้ (P1 บางข้อของ Codex ตรวจแล้วไม่จริง: handleOnline gate ด้วย hasInitialized อยู่แล้ว) | ไม่ทำโดยตั้งใจ (นอก scope, follow-up แยก): ทำ validator ส่วน optional (ทอง/หนี้/ภาษี/prefs) ให้เข้ม · conflict-merge หลายเครื่อง"
           }
+        },
+        {
+          "id": "F57",
+          "name": "Sidebar เดสก์ท็อปหุบ/เปิดได้ (icon rail)",
+          "description": "Sidebar เดสก์ท็อปเดิมกว้างตายตัว 240px — เพิ่มปุ่มหุบให้เหลือ icon rail ~64px (ได้พื้นที่เนื้อหามากขึ้น) แล้วเปิดกลับได้ จำสถานะข้ามการ reload. เดสก์ท็อปเท่านั้น (มือถือใช้ bottom nav)",
+          "status": "completed",
+          "priority": "P3",
+          "phase": "phase_6",
+          "acceptanceCriteria": [
+            "uiStore (ใหม่, zustand + persist localStorage key 'wealthlens_ui'): sidebarCollapsed + toggle/set — เป็น UI ของเครื่อง ไม่ sync Drive (เหมือนธีม), แยกจาก financeStore",
+            "Layout grid [240px_1fr] → [auto_1fr] — คอลัมน์ซ้ายวิ่งตามความกว้าง Sidebar เอง (Layout ไม่ต้องรู้ state)",
+            "Sidebar: w-240↔64 + transition-[width] (CSS ไม่ใช่ framer, ไม่ชน F42); หุบ = icon-only จัดกึ่งกลาง + title/aria-label = ชื่อเมนู (hover เห็นชื่อ + a11y), ย่อโลโก้เหลือ 'W', ซ่อน BuildInfo; ปุ่ม chevron «/» มี aria-label/aria-expanded",
+            "nav ยังอ่านจาก lib/nav.ts (F47) · สีจาก token (F46) · ไม่กระทบมือถือ (hidden md:flex)",
+            "Verified: verify-ui-store (ใหม่) + verify-nav + color gate + verify:mobile (M6 sidebar อยู่ครบที่ 1280) ไม่ regress + typecheck + lint + ขับจริง (หุบ→icon rail, เปิดกลับ, persist หลัง reload, กดเมนูตอนหุบ→นำทางได้)"
+          ],
+          "estimatedHours": 2,
+          "dependencies": [
+            "F47"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-09-25",
+            "notes": "Spec: docs/superpowers/specs/2026-09-25-sidebar-collapse-design.md (implement คู่ Codex, review ผ่านรอบเดียว) | Files ใหม่: src/stores/uiStore.ts, scripts/verify-ui-store.ts | Files แก้: src/components/layout/Layout.tsx (grid auto), src/components/layout/Sidebar.tsx (หุบ/เปิด + toggle) | ไม่ทำ (YAGNI): โหมดซ่อนทั้งแถบ/overlay · keyboard shortcut · ไม่ยุ่ง mobile"
+          }
         }
       ]
     }
@@ -1871,14 +1895,14 @@
     }
   },
   "progressSummary": {
-    "totalFeatures": 63,
-    "completed": 62,
+    "totalFeatures": 64,
+    "completed": 63,
     "removed": 1,
     "inProgress": 0,
     "pending": 0,
     "overallProgress": "100%",
-    "countingNote": "63 = 62 ที่เคยมี + F56 (ตัวที่ 63). F16 (ประมาณการเดือนหน้า) ถูกถอดออกใน F50 จึงนับเป็น removed ไม่ใช่ completed → completed 62 + removed 1 = 63. รายการ F15/F16 ยังอยู่ในไฟล์โดยตั้งใจ: ประวัติต้องบอกว่ามันเคยมีแล้วถอดออก ไม่ใช่แกล้งทำเป็นไม่เคยมี. F52 (fix การ์ดทองมือถือ) + ฿NaN fix (F55 float dust) เป็น bugfix ไม่มี entry แยก — ตามแบบที่ fix เล็กในอดีตไม่ขึ้นทะเบียนเป็น feature",
+    "countingNote": "64 = 63 ที่เคยมี + F57 (ตัวที่ 64). F16 (ประมาณการเดือนหน้า) ถูกถอดออกใน F50 จึงนับเป็น removed ไม่ใช่ completed → completed 63 + removed 1 = 64. รายการ F15/F16 ยังอยู่ในไฟล์โดยตั้งใจ: ประวัติต้องบอกว่ามันเคยมีแล้วถอดออก ไม่ใช่แกล้งทำเป็นไม่เคยมี. F52 (fix การ์ดทองมือถือ) + ฿NaN fix (F55 float dust) เป็น bugfix ไม่มี entry แยก — ตามแบบที่ fix เล็กในอดีตไม่ขึ้นทะเบียนเป็น feature",
     "currentPhase": "shipped",
-    "nextMilestone": "F56 (กัน Drive โหลดข้อมูลเสีย) เสร็จ — งาน data-safety ตัวถัดไป: validator ส่วน optional เข้มขึ้น / conflict-merge หลายเครื่อง (ยังไม่เริ่ม)"
+    "nextMilestone": "F57 (sidebar หุบ/เปิด) เสร็จ — งาน data-safety ที่ยังค้าง: validator ส่วน optional เข้มขึ้น / conflict-merge หลายเครื่อง (ยังไม่เริ่ม)"
   }
 }
