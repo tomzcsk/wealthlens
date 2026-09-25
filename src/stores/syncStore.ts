@@ -27,9 +27,16 @@ export interface SyncState {
   lastSyncedAt: string | null;
   /** Human-readable error message when `status === 'error'`, else null. */
   errorMessage: string | null;
+  /**
+   * ตั้งเมื่อไฟล์บน Drive validate ไม่ผ่านตอนดึงลงมา — ระหว่างนี้ **หยุด auto-push**
+   * เพื่อไม่ให้เขียนทับไฟล์เสียบน Drive (ผู้ใช้ resolve เองใน Settings). null = ปกติ.
+   * ephemeral ได้ — first-load รอบใหม่ re-detect แล้ว re-block ก่อน push เสมอ.
+   */
+  blocked: { reason: string } | null;
 
   setStatus: (status: SyncStatus, errorMessage?: string | null) => void;
   setLastSynced: (iso: string) => void;
+  setBlocked: (blocked: { reason: string } | null) => void;
   reset: () => void;
 }
 
@@ -37,6 +44,7 @@ export const useSyncStore = create<SyncState>((set) => ({
   status: 'idle',
   lastSyncedAt: null,
   errorMessage: null,
+  blocked: null,
 
   setStatus: (status, errorMessage = null) =>
     set({
@@ -51,10 +59,13 @@ export const useSyncStore = create<SyncState>((set) => ({
       errorMessage: null,
     }),
 
+  setBlocked: (blocked) => set({ blocked }),
+
   reset: () =>
     set({
       status: 'idle',
       lastSyncedAt: null,
       errorMessage: null,
+      blocked: null,
     }),
 }));

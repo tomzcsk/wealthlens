@@ -40,6 +40,10 @@ const STATUS_LABEL: Record<SyncStatus, { icon: string; label: string; tone: stri
 const RESTORE_CONFIRM =
   'ยืนยันการดึงข้อมูลจาก Google Drive? ข้อมูลในเครื่องจะถูกแทนที่';
 
+const RESOLVE_CONFIRM =
+  'เขียนข้อมูลในเครื่องทับไฟล์บน Google Drive? ไฟล์เดิมบน Drive (ที่เสีย) จะถูกแทนที่ — ' +
+  'ถ้าอยากกู้ข้อมูลจากไฟล์เสีย ให้ใช้ backup รายวันก่อน';
+
 const formatTimestamp = (iso: string | null): string => {
   if (!iso) return 'ยังไม่เคยซิงค์';
   try {
@@ -53,7 +57,7 @@ const formatTimestamp = (iso: string | null): string => {
 
 export const SettingsPage = (): ReactNode => {
   const { isReady, isSignedIn, user } = useGoogleAuth();
-  const { manualSync, manualReload } = useSyncCoordinator();
+  const { manualSync, manualReload, resolveWithLocal } = useSyncCoordinator();
   const [searchParams] = useSearchParams();
   // Danger Zone is hidden by default — appears only when URL has `?danger=true`.
   // Lets Tom call it back from prod with a bookmarked URL when needed,
@@ -63,8 +67,9 @@ export const SettingsPage = (): ReactNode => {
   const status = useSyncStore((s) => s.status);
   const lastSyncedAt = useSyncStore((s) => s.lastSyncedAt);
   const errorMessage = useSyncStore((s) => s.errorMessage);
+  const blocked = useSyncStore((s) => s.blocked);
 
-  const [busy, setBusy] = useState<null | 'sync' | 'reload'>(null);
+  const [busy, setBusy] = useState<null | 'sync' | 'reload' | 'resolve'>(null);
 
   const onSync = async (): Promise<void> => {
     setBusy('sync');
@@ -80,6 +85,16 @@ export const SettingsPage = (): ReactNode => {
     setBusy('reload');
     try {
       await manualReload();
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const onResolve = async (): Promise<void> => {
+    if (!window.confirm(RESOLVE_CONFIRM)) return;
+    setBusy('resolve');
+    try {
+      await resolveWithLocal();
     } finally {
       setBusy(null);
     }
@@ -126,6 +141,29 @@ export const SettingsPage = (): ReactNode => {
           </div>
         ) : (
           <>
+            {blocked ? (
+              <div className="rounded-lg bg-expense-50 border border-expense-200 px-4 py-3 space-y-2">
+                <div className="text-sm font-semibold text-expense-ink">
+                  <span aria-hidden="true">⚠️ </span>
+                  ข้อมูลใน Google Drive เสียหาย — หยุดซิงค์ขึ้นชั่วคราว
+                </div>
+                <p className="text-xs text-ink-600 leading-relaxed">
+                  แอปใช้ข้อมูลในเครื่องต่อ และหยุดเขียนขึ้น Drive เพื่อไม่ให้ทับไฟล์เสีย
+                  {' '}· กู้ข้อมูลจากไฟล์สำรองรายวันได้ที่หัวข้อด้านล่าง ก่อนเขียนทับ
+                </p>
+                <button
+                  type="button"
+                  onClick={onResolve}
+                  disabled={busy !== null}
+                  className="inline-flex items-center gap-1.5 bg-primary hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold px-4 py-2 min-h-11 md:min-h-0 rounded-lg shadow-sm transition"
+                >
+                  {busy === 'resolve'
+                    ? 'กำลังเขียนทับ...'
+                    : 'ใช้ข้อมูลในเครื่อง เขียนทับ Google Drive'}
+                </button>
+              </div>
+            ) : null}
+
             <div className="flex flex-col gap-1 text-sm">
               <div className="flex items-center gap-2">
                 <span className="text-ink-500">สถานะ:</span>

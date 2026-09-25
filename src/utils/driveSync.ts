@@ -17,6 +17,7 @@
 
 import type { WealthLensData } from '@/types';
 import { useSyncStore } from '@/stores/syncStore';
+import { validateBackup } from '@/utils/exportImport';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -307,19 +308,58 @@ export const syncToDrive = async (
   });
 };
 
-/** Download the data file. Returns null if the file doesn't exist yet. */
+/**
+ * ผลการอ่านไฟล์หลักจาก Drive — แยก 3 กรณีให้ชัดที่ขอบระบบ:
+ *   empty   = ยังไม่มีไฟล์บน Drive (ผู้ใช้ใหม่)
+ *   ok      = valid — ผ่าน validateBackup แล้ว (normalize เหมือน import ไฟล์มือ)
+ *   invalid = มีไฟล์แต่ JSON พัง / ไม่ใช่ WealthLensData → ผู้เรียก **ห้ามเอาไปทับ**
+ *             ข้อมูลในเครื่อง (ดู useDriveSyncCoordinator) — เขียนทับของเสียมาก่อน
+ *             = ข้อมูลจริงของผู้ใช้หายเงียบ ๆ
+ */
+export type DriveLoadResult =
+  | { kind: 'empty' }
+  | { kind: 'ok'; data: WealthLensData }
+  | { kind: 'invalid'; reason: string };
+
+/**
+ * แปลงเนื้อไฟล์ (text) จาก Drive → DriveLoadResult. Pure/total: ไม่ throw, ไม่แตะ
+ * network — ผ่านประตูเดียวกับ import ไฟล์มือ (`validateBackup`) จึง strict กับแกน
+ * การเงิน (years / bankAccounts / bankTransactions) และ data ที่คืนถูก normalize แล้ว.
+ * หมายเหตุ: JSON `{}` หรืออ่านได้แต่ผิดรูป = invalid; empty สงวนไว้สำหรับ "ไม่มีไฟล์".
+ */
+export const interpretDrivePayload = (text: string): DriveLoadResult => {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    return { kind: 'invalid', reason: 'ไฟล์ไม่ใช่ JSON ที่อ่านได้' };
+  }
+  const result = validateBackup(parsed);
+  if (!result.ok) {
+    return {
+      kind: 'invalid',
+      reason: result.errors.slice(0, 3).join(' · ') || 'ข้อมูลผิดรูป',
+    };
+  }
+  return { kind: 'ok', data: result.data };
+};
+
+/**
+ * Download + validate the main data file. ดู `DriveLoadResult` — คืน empty เมื่อไม่มี
+ * ไฟล์, ok เมื่อ valid, invalid เมื่อเสีย (ผู้เรียกกันไม่ให้ทับของในเครื่อง).
+ */
 export const loadFromDrive = async (
   accessToken: string,
-): Promise<WealthLensData | null> => {
+): Promise<DriveLoadResult> => {
   const folderId = await findOrCreateFolder(accessToken);
   const fileId = await findDataFile(accessToken, folderId);
-  if (!fileId) return null;
+  if (!fileId) return { kind: 'empty' };
 
   const url = `${DRIVE_API}/files/${encodeURIComponent(fileId)}?alt=media`;
   return retryWithBackoff(async () => {
     const res = await driveFetch(url, { accessToken });
-    const json = (await res.json()) as WealthLensData;
-    return json;
+    const text = await res.text();
+    return interpretDrivePayload(text);
   });
 };
 

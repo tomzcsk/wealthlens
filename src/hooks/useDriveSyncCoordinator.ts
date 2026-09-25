@@ -84,6 +84,11 @@ export interface UseDriveSyncCoordinatorResult {
   manualSync: () => Promise<void>;
   /** Force-pull from Drive and replace local data. */
   manualReload: () => Promise<void>;
+  /**
+   * เมื่อไฟล์ Drive เสีย (blocked): เขียนข้อมูลในเครื่องทับไฟล์เสียบน Drive โดยเจตนา
+   * แล้วเลิก block. ใช้จากแถบเตือนใน Settings.
+   */
+  resolveWithLocal: () => Promise<void>;
 }
 
 const toast = (
@@ -149,18 +154,30 @@ export const useDriveSyncCoordinator = (): UseDriveSyncCoordinatorResult => {
 
     void (async () => {
       try {
-        const remote = await loadFromDrive(accessToken);
+        const result = await loadFromDrive(accessToken);
         const local = useFinanceStore.getState().data;
 
-        if (!remote) {
+        if (result.kind === 'invalid') {
+          // ไฟล์ Drive เสีย — เก็บของในเครื่อง ห้ามทับ, และหยุด auto-push เพื่อไม่ให้
+          // เขียนทับไฟล์เสียบน Drive (กู้จาก daily backup ได้). ยกเลิก write ที่ค้าง
+          // คิวไว้ด้วย. ผู้ใช้ resolve เองใน Settings ("ใช้ข้อมูลในเครื่อง เขียนทับ").
+          cancelPendingSync();
+          useSyncStore.getState().setBlocked({ reason: result.reason });
+          setStatus('error', 'ข้อมูลใน Google Drive เสียหาย — ใช้ข้อมูลในเครื่องต่อ');
+          toast('ข้อมูลใน Google Drive เสียหาย — ใช้ข้อมูลในเครื่องต่อ (ดูวิธีแก้ในตั้งค่า)', 'error');
+        } else if (result.kind === 'empty') {
           // Brand-new account on Drive — but only push if local actually
           // has content. Pushing an empty initial state would seed an
           // empty file that future syncs read back as canonical "nothing".
+          useSyncStore.getState().setBlocked(null);
           if (!isDataEmpty(local)) {
             await syncToDrive(local, accessToken);
           }
           setLastSynced(new Date().toISOString());
         } else {
+          // result.kind === 'ok' — ไฟล์ valid แล้ว (validate ผ่าน)
+          useSyncStore.getState().setBlocked(null);
+          const remote = result.data;
           // CRITICAL safety net: never overwrite remote with an empty local
           // payload, even if local's `lastUpdated` looks newer. Local
           // timestamps come from `nowIso()` at store init, not real edits —
@@ -208,6 +225,8 @@ export const useDriveSyncCoordinator = (): UseDriveSyncCoordinatorResult => {
       // Don't auto-sync until first-load has completed — otherwise we may
       // upload stale local data over a remote we haven't fetched yet.
       if (!hasInitializedRef.current) return;
+      // ไฟล์ Drive เสียอยู่ → หยุด push ไม่ให้เขียนทับ (ผู้ใช้ resolve ใน Settings).
+      if (useSyncStore.getState().blocked) return;
       debouncedSync(state.data, accessToken);
     });
 
@@ -219,7 +238,9 @@ export const useDriveSyncCoordinator = (): UseDriveSyncCoordinatorResult => {
   // -------------------------------------------------------------------------
   useEffect(() => {
     const handleOnline = (): void => {
-      const { setStatus } = useSyncStore.getState();
+      const { setStatus, blocked } = useSyncStore.getState();
+      // ไฟล์ Drive เสียอยู่ → คงสถานะเตือนไว้ ไม่ push, ไม่รีเซ็ตเป็น idle
+      if (blocked) return;
       // Bounce back to syncing if we've got a session; the next data change
       // (or pending debounced flush, if any) will resolve the status.
       if (isSignedIn && accessToken && hasInitializedRef.current) {
@@ -303,6 +324,10 @@ export const useDriveSyncCoordinator = (): UseDriveSyncCoordinatorResult => {
       toast('กรุณาเข้าสู่ระบบ Google ก่อนซิงค์', 'info');
       return;
     }
+    if (useSyncStore.getState().blocked) {
+      toast('หยุดซิงค์ขึ้นชั่วคราวเพราะไฟล์ Drive เสีย — ไปที่ตั้งค่าเพื่อเลือกเขียนทับ', 'info');
+      return;
+    }
     try {
       const data = useFinanceStore.getState().data;
       await pushNow(data, accessToken);
@@ -317,18 +342,29 @@ export const useDriveSyncCoordinator = (): UseDriveSyncCoordinatorResult => {
       toast('กรุณาเข้าสู่ระบบ Google ก่อนคืนค่า', 'info');
       return;
     }
-    const { setStatus, setLastSynced } = useSyncStore.getState();
+    const { setStatus, setLastSynced, setBlocked } = useSyncStore.getState();
     setStatus('syncing');
     try {
-      const remote = await loadFromDrive(accessToken);
-      if (!remote) {
+      const result = await loadFromDrive(accessToken);
+      if (result.kind === 'empty') {
+        setBlocked(null);
         setStatus('synced');
         toast('ยังไม่มีข้อมูลใน Google Drive', 'info');
         return;
       }
+      if (result.kind === 'invalid') {
+        // ไฟล์ Drive เสีย — เก็บของในเครื่อง หยุดทับ (เหมือน first-load)
+        cancelPendingSync();
+        setBlocked({ reason: result.reason });
+        setStatus('error', 'ข้อมูลใน Google Drive เสียหาย — ใช้ข้อมูลในเครื่องต่อ');
+        toast('ข้อมูลใน Google Drive เสียหาย — ใช้ข้อมูลในเครื่องต่อ (ดูวิธีแก้ในตั้งค่า)', 'error');
+        return;
+      }
+      // result.kind === 'ok'
+      setBlocked(null);
       // Skip the auto-sync echo that this replace would trigger.
       skipNextChangeRef.current = true;
-      useFinanceStore.getState().replaceAllData(remote);
+      useFinanceStore.getState().replaceAllData(result.data);
       setLastSynced(new Date().toISOString());
       toast('คืนค่าจาก Google Drive แล้ว', 'success');
     } catch (err) {
@@ -339,7 +375,32 @@ export const useDriveSyncCoordinator = (): UseDriveSyncCoordinatorResult => {
     }
   }, [accessToken]);
 
-  return { manualSync, manualReload };
+  /**
+   * ทางออกเมื่อไฟล์ Drive เสีย (blocked): เขียนข้อมูล "ในเครื่อง" ทับไฟล์เสียบน Drive
+   * โดยเจตนา (ข้าม guard ทั้งหมด) แล้วเคลียร์ block. เรียกจากปุ่มใน Settings เท่านั้น.
+   */
+  const resolveWithLocal = useCallback(async (): Promise<void> => {
+    if (!accessToken) {
+      toast('กรุณาเข้าสู่ระบบ Google ก่อน', 'info');
+      return;
+    }
+    const { setStatus, setLastSynced, setBlocked } = useSyncStore.getState();
+    setStatus('syncing');
+    try {
+      const data = useFinanceStore.getState().data;
+      await syncToDrive(data, accessToken);
+      setBlocked(null);
+      setLastSynced(new Date().toISOString());
+      toast('เขียนข้อมูลในเครื่องทับ Google Drive แล้ว', 'success');
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Unknown sync error';
+      setStatus('error', message);
+      toast('เขียนทับไม่สำเร็จ — ลองใหม่', 'error');
+    }
+  }, [accessToken]);
+
+  return { manualSync, manualReload, resolveWithLocal };
 };
 
 export default useDriveSyncCoordinator;
