@@ -74,3 +74,43 @@ export const pruneEmptyBalanceKeys = (
 
   return touched ? next : (accounts as BankAccount[]);
 };
+
+/**
+ * ทิ้งเซลล์ยอด/รายการที่ค่าไม่ finite (NaN / ±Infinity / null-จาก-JSON) ตอนโหลด
+ * ข้อมูลเก่า. `applyBankMovement` (F40) กันไม่ให้เขียน NaN ใหม่แล้ว — ฟังก์ชันนี้
+ * ล้างของเสียที่ค้างอยู่ก่อนหน้า เพื่อให้ยอดสะสมกลับมา finite (การ์ดเลิกโชว์ ฿NaN).
+ *
+ * ต่างจาก pruneEmptyBalanceKeys: อันนั้นลบ "0 กำพร้า" (ค่าถูกต้องแต่ไม่มีรายการ),
+ * อันนี้ลบ "ค่าเสีย" (ไม่ใช่ตัวเลขที่ใช้ได้เลย). เซลล์ 0 ที่ถูกต้องยังอยู่.
+ * คืน object เดิมเมื่อทุกอย่างสะอาดอยู่แล้ว (identity คงที่ → ไม่ re-render ฟรี).
+ */
+export const sanitizeBankLedger = (
+  accounts: readonly BankAccount[],
+  transactions: readonly BankTransaction[],
+): { accounts: BankAccount[]; transactions: BankTransaction[] } => {
+  let accountsTouched = false;
+  const nextAccounts = accounts.map((account) => {
+    const years: BankAccount['balances'] = {};
+    let touched = false;
+    for (const [year, months] of Object.entries(account.balances ?? {})) {
+      const kept: Record<string, number> = {};
+      for (const [month, amount] of Object.entries(months)) {
+        if (Number.isFinite(amount)) kept[month] = amount;
+        else touched = true;
+      }
+      if (Object.keys(kept).length > 0) years[year] = kept;
+      else if (Object.keys(months).length > 0) touched = true;
+    }
+    if (!touched) return account;
+    accountsTouched = true;
+    return { ...account, balances: years };
+  });
+
+  const cleanTx = transactions.filter((t) => Number.isFinite(t.amount));
+  const txTouched = cleanTx.length !== transactions.length;
+
+  return {
+    accounts: accountsTouched ? nextAccounts : (accounts as BankAccount[]),
+    transactions: txTouched ? cleanTx : (transactions as BankTransaction[]),
+  };
+};

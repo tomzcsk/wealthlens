@@ -26,7 +26,7 @@ import {
   migrateKeptToBankAccounts,
   planSetTotal,
 } from '@/utils/bankAccounts';
-import { pruneEmptyBalanceKeys } from '@/utils/balancePrune';
+import { pruneEmptyBalanceKeys, sanitizeBankLedger } from '@/utils/balancePrune';
 import {
   applyBankMovement,
   reconcileBankMovements,
@@ -2744,7 +2744,12 @@ export const useFinanceStore = create<FinanceState>()(
           }
           return { ...l, scheduledPayments: l.scheduledPayments ?? [] };
         });
-        const bankAccounts = data.bankAccounts ?? migrateKeptToBankAccounts(data);
+        const rawAccounts = data.bankAccounts ?? migrateKeptToBankAccounts(data);
+        // ล้างเซลล์/รายการที่ค่าไม่ finite (NaN/null) ที่ข้อมูลเก่าอาจค้างไว้ ก่อน
+        // F40 ปิดประตู — ไม่งั้นยอดสะสมพัง การ์ดโชว์ ฿NaN (ดู sanitizeBankLedger).
+        const sanitized = rawAccounts
+          ? sanitizeBankLedger(rawAccounts, data.bankTransactions ?? [])
+          : undefined;
 
         return {
           ...currentState,
@@ -2753,7 +2758,10 @@ export const useFinanceStore = create<FinanceState>()(
             ...data,
             years,
             ...(loans ? { loans } : {}),
-            ...(bankAccounts ? { bankAccounts } : {}),
+            ...(sanitized ? { bankAccounts: sanitized.accounts } : {}),
+            ...(data.bankTransactions !== undefined && sanitized
+              ? { bankTransactions: sanitized.transactions }
+              : {}),
           },
         };
       },

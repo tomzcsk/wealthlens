@@ -130,7 +130,9 @@ export const planSetTotal = (
   target: number,
 ): SetTotalPlan | null => {
   const delta = Math.round((target - accountAllTimeTotal(account)) * 100) / 100;
-  if (delta === 0) return null;
+  // delta === 0 → ยอดเท่าเดิม; ไม่ finite → ยอดสะสมของบัญชีพังอยู่ (มีเซลล์ NaN)
+  // ตั้งยอดไม่ได้จนกว่าจะซ่อม — คืน null กัน setBankTotal ลง NaN ทับซ้ำ.
+  if (delta === 0 || !Number.isFinite(delta)) return null;
   return { amount: delta, label: delta > 0 ? 'ฝากเงิน' : 'ถอนเงิน' };
 };
 

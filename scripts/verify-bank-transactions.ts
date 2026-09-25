@@ -10,6 +10,7 @@ import {
   type BankLedger,
 } from '../src/utils/bankMovements';
 import { KRUNGSRI_ACCOUNT_ID, accountAllTimeTotal } from '../src/utils/bankAccounts';
+import { sanitizeBankLedger } from '../src/utils/balancePrune';
 import type { BankAccount, MonthlyIncome } from '../src/types';
 
 let failures = 0;
@@ -57,6 +58,39 @@ const l0 = applyBankMovement(empty, {
 });
 eq('amount 0 → ไม่มีบรรทัด', l0.transactions.length, 0);
 eq('amount 0 → ยอดไม่ขยับ', bal(l0, 'a'), 0);
+
+// --- amount ไม่ finite (NaN/Infinity) → no-op: ประตูกันยอดพังเป็น ฿NaN ---
+const lNaN = applyBankMovement(empty, {
+  accountId: 'a', year: 2026, month: 7, amount: NaN,
+  label: 'เสีย', source: { type: 'manual' },
+});
+eq('NaN → ไม่มีบรรทัด', lNaN.transactions.length, 0);
+eq('NaN → ไม่เขียนเซลล์', bal(lNaN, 'a'), 0);
+eq('NaN → ยอดสะสม finite', Number.isFinite(accountAllTimeTotal(lNaN.accounts[0])), true);
+const lInf = applyBankMovement(empty, {
+  accountId: 'a', year: 2026, month: 7, amount: Infinity,
+  label: 'เสีย', source: { type: 'manual' },
+});
+eq('Infinity → ไม่มีบรรทัด', lInf.transactions.length, 0);
+
+// --- sanitizeBankLedger: ล้างเซลล์/รายการค่าเสียที่ค้างจากข้อมูลเก่า ---
+const dirtyAccts: BankAccount[] = [
+  { id: 'a', name: 'A', balances: { '2026': { '1': 2000, '9': NaN, '10': null as unknown as number, '11': 0 } } },
+];
+const dirtyTxs: BankTransaction[] = [
+  { id: 'bad', accountId: 'a', year: 2026, month: 9, amount: NaN, label: 'เสีย', source: { type: 'manual' } },
+  { id: 'ok', accountId: 'a', year: 2026, month: 1, amount: 2000, label: 'ดี', source: { type: 'manual' } },
+];
+const cleaned = sanitizeBankLedger(dirtyAccts, dirtyTxs);
+eq('sanitize → เซลล์ NaN หาย', '9' in (cleaned.accounts[0].balances['2026'] ?? {}), false);
+eq('sanitize → เซลล์ null หาย', '10' in (cleaned.accounts[0].balances['2026'] ?? {}), false);
+eq('sanitize → เซลล์ 2000 อยู่', cleaned.accounts[0].balances['2026']['1'], 2000);
+eq('sanitize → เซลล์ 0 ที่ถูกต้องอยู่', cleaned.accounts[0].balances['2026']['11'], 0);
+eq('sanitize → ยอดสะสม finite', Number.isFinite(accountAllTimeTotal(cleaned.accounts[0])), true);
+eq('sanitize → รายการ NaN หาย', cleaned.transactions.length, 1);
+// ข้อมูลสะอาดอยู่แล้ว → คืน identity เดิม (ไม่ re-render ฟรี)
+const already = sanitizeBankLedger(accounts, []);
+eq('sanitize → สะอาดอยู่แล้วคืน identity เดิม', already.accounts === accounts, true);
 
 // --- revoke: ลบบรรทัด + คืนยอด ---
 const l2 = revokeBankMovements(l1, (tx) => tx.source.type === 'manual');
@@ -266,6 +300,23 @@ const runStore = async (): Promise<void> => {
   const txBefore = txCount();
   store.getState().setBankTotal('acc-ไม่มี', 2026, 9, 999);
   eq('ตั้งยอดบัญชีไม่มี → no-op', txCount(), txBefore);
+
+  // บัญชีที่ยอดพัง (เซลล์ NaN ค้างจากข้อมูลเก่า) → ตั้งยอด no-op ไม่ลง NaN ทับซ้ำ
+  store.setState((s) => ({
+    data: {
+      ...s.data,
+      years: {},
+      bankTransactions: [],
+      bankAccounts: [{ id: 'acc-x', name: 'พัง', balances: { '2026': { '9': NaN } } }],
+    },
+  }));
+  store.getState().setBankTotal('acc-x', 2026, 9, 5000);
+  eq('ตั้งยอดบัญชียอดพัง → ไม่ลงบรรทัด (no-op)', txCount(), 0);
+  eq(
+    'ตั้งยอดบัญชียอดพัง → ไม่มีเซลล์ NaN ใหม่ในเดือนปัจจุบัน',
+    (store.getState().data.bankTransactions ?? []).every((t) => Number.isFinite(t.amount)),
+    true,
+  );
 
   // ════════════════════════════════════════════════════════════════════════
   // Task 3 — รายได้/รายจ่าย/ทอง จดรายการผ่านประตูเดียว

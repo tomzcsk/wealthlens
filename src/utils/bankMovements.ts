@@ -35,12 +35,17 @@ export interface BankMovement {
   id?: string;
 }
 
-/** เขียนยอด + จดรายการ ในคราวเดียว. amount 0 = no-op. */
+/**
+ * เขียนยอด + จดรายการ ในคราวเดียว. amount 0 = no-op.
+ * amount ที่ไม่ finite (NaN/Infinity — จาก field ที่ว่าง/คำนวณพลาด) = no-op ด้วย:
+ * นี่คือประตูเดียวที่ยอดถูกเขียน (F40) จึงเป็นที่เดียวที่การันตีได้ว่ายอดบัญชี
+ * จะ finite เสมอ — ปล่อย NaN ผ่าน = การ์ดแสดง "฿NaN" และทุกยอดสะสมพังตามทั้งเส้น.
+ */
 export const applyBankMovement = (
   ledger: BankLedger,
   movement: BankMovement,
 ): BankLedger => {
-  if (movement.amount === 0) return ledger;
+  if (!Number.isFinite(movement.amount) || movement.amount === 0) return ledger;
   const accounts = applyBankDelta(
     ledger.accounts,
     movement.accountId,
