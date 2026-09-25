@@ -154,7 +154,7 @@ export const BankAccountDetail = ({
               allTimeTotal < 0 ? 'text-expense-700' : 'text-ink-900'
             }`}
           >
-            {formatTHB(allTimeTotal, { decimals: 0 })}
+            {formatTHB(allTimeTotal)}
           </span>
           <span className="text-sm text-ink-500">
             ยอดสะสมทุกปี · ปี {year}{' '}
@@ -163,7 +163,7 @@ export const BankAccountDetail = ({
                 yearTotal < 0 ? 'text-expense-ink' : 'text-ink-600'
               }`}
             >
-              {formatTHB(yearTotal, { decimals: 0 })}
+              {formatTHB(yearTotal)}
             </span>
           </span>
         </div>

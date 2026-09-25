@@ -254,7 +254,7 @@ const HoldingCard = ({
         <Figure
           label="ต้นทุน"
           value={formatTHB(holding.totalCost)}
-          sub={`${formatTHB(pricePerBaht, { decimals: 0 })}/บาท`}
+          sub={`${formatTHB(pricePerBaht)}/บาท`}
         />
         {isSold && holding.sold && realizedPnl != null ? (
           <Figure
@@ -364,7 +364,7 @@ const HoldingGridRow = ({
       <div className="col-span-2 text-right financial-number tabular-nums text-ink-900">
         {formatTHB(holding.totalCost)}
         <div className="text-xs text-ink-400">
-          {formatTHB(pricePerBaht, { decimals: 0 })}/บาท
+          {formatTHB(pricePerBaht)}/บาท
         </div>
       </div>
       <div className="col-span-2 text-right">
@@ -467,7 +467,7 @@ export const GoldPage = (): ReactNode => {
       applyFetchedGoldPrice(result.price965, result.round);
       if (!silent) {
         pushToast({
-          message: `ดึงราคาทอง 96.5% สำเร็จ: ${formatTHB(result.price965, { decimals: 0 })}/บาท`,
+          message: `ดึงราคาทอง 96.5% สำเร็จ: ${formatTHB(result.price965)}/บาท`,
           tone: 'success',
         });
       }
@@ -573,7 +573,7 @@ export const GoldPage = (): ReactNode => {
           value={formatTHB(summary.totalInvested)}
           sub={
             summary.avgCostPerBaht > 0
-              ? `เฉลี่ย ${formatTHB(summary.avgCostPerBaht, { decimals: 0 })}/บาท`
+              ? `เฉลี่ย ${formatTHB(summary.avgCostPerBaht)}/บาท`
               : '—'
           }
         />
@@ -891,7 +891,7 @@ const GoldAssistant = ({ assistant }: GoldAssistantProps): ReactNode => {
           <span className="text-xs text-ink-400">
             MA 30 วัน:{' '}
             <span className="financial-number tabular-nums text-ink-600">
-              {formatTHB(ma30Price, { decimals: 0 })}
+              {formatTHB(ma30Price)}
             </span>{' '}
             · {recentSnapshotCount} จุด
           </span>

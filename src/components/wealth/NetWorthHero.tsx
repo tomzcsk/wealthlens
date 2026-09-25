@@ -53,13 +53,13 @@ export const NetWorthHero = ({
           <span className="text-income-700">
             สินทรัพย์{' '}
             <span className="financial-number tabular-nums font-semibold">
-              {formatTHB(totalAssets, { decimals: 0 })}
+              {formatTHB(totalAssets)}
             </span>
           </span>
           <span className="text-expense-ink">
             หนี้{' '}
             <span className="financial-number tabular-nums font-semibold">
-              {formatTHB(totalLiabilities, { decimals: 0 })}
+              {formatTHB(totalLiabilities)}
             </span>
           </span>
         </div>

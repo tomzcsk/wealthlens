@@ -23,7 +23,7 @@ import {
 } from '@/stores/selectors';
 import { useSelectedYear } from '@/hooks/useFinanceData';
 import { sumBankMonth } from '@/utils/bankAccounts';
-import { formatNumber, formatThaiMonth } from '@/utils/formatters';
+import { formatNumberAuto, formatThaiMonth } from '@/utils/formatters';
 import type { BankAccount, MonthlyIncome, WealthLensData } from '@/types';
 
 // ---------------------------------------------------------------------------
@@ -249,11 +249,11 @@ const MonthRow = ({ payload, year, onSelect }: MonthRowProps) => {
     }
     return [
       `${formatThaiMonth(summary.month, { long: true })} ${year}`,
-      `รายรับรวม: ฿${formatNumber(summary.gross)}`,
-      `รวมหัก: ฿${formatNumber(summary.totalDeductions)}`,
-      `Net.All: ฿${formatNumber(summary.netAll)}`,
-      `จ่าย: ฿${formatNumber(summary.totalExpenses)}`,
-      `เหลือ: ฿${formatNumber(summary.remaining)}`,
+      `รายรับรวม: ฿${formatNumberAuto(summary.gross)}`,
+      `รวมหัก: ฿${formatNumberAuto(summary.totalDeductions)}`,
+      `Net.All: ฿${formatNumberAuto(summary.netAll)}`,
+      `จ่าย: ฿${formatNumberAuto(summary.totalExpenses)}`,
+      `เหลือ: ฿${formatNumberAuto(summary.remaining)}`,
     ].join('\n');
   }, [isEmpty, summary, year]);
 
@@ -303,22 +303,22 @@ const MonthRow = ({ payload, year, onSelect }: MonthRowProps) => {
         {formatThaiMonth(summary.month)}
       </td>
       <td className={clsx(BODY_CELL_BASE, 'text-right', dimZero(income?.salary ?? 0))}>
-        {formatNumber(income?.salary ?? 0)}
+        {formatNumberAuto(income?.salary ?? 0)}
       </td>
       <td className={clsx(BODY_CELL_BASE, 'text-right', dimZero(income?.bonus ?? 0))}>
-        {formatNumber(income?.bonus ?? 0)}
+        {formatNumberAuto(income?.bonus ?? 0)}
       </td>
       <td className={clsx(BODY_CELL_BASE, 'text-right', dimZero(income?.commission ?? 0))}>
-        {formatNumber(income?.commission ?? 0)}
+        {formatNumberAuto(income?.commission ?? 0)}
       </td>
       <td className={clsx(BODY_CELL_BASE, 'text-right', dimZero(income?.otherIncome ?? 0))}>
-        {formatNumber(income?.otherIncome ?? 0)}
+        {formatNumberAuto(income?.otherIncome ?? 0)}
       </td>
       <td className={clsx(BODY_CELL_BASE, 'text-right', deductionsTone)}>
-        {formatNumber(summary.totalDeductions)}
+        {formatNumberAuto(summary.totalDeductions)}
       </td>
       <td className={clsx(BODY_CELL_BASE, 'text-right', cellMuted)}>
-        {formatNumber(summary.netSalary)}
+        {formatNumberAuto(summary.netSalary)}
       </td>
       <td
         className={clsx(
@@ -327,10 +327,10 @@ const MonthRow = ({ payload, year, onSelect }: MonthRowProps) => {
           isEmpty ? 'text-ink-400' : 'text-ink-900',
         )}
       >
-        {formatNumber(summary.netAll)}
+        {formatNumberAuto(summary.netAll)}
       </td>
       <td className={clsx(BODY_CELL_BASE, 'text-right', expensesTone)}>
-        {formatNumber(summary.totalExpenses)}
+        {formatNumberAuto(summary.totalExpenses)}
       </td>
       <td
         className={clsx(
@@ -340,7 +340,7 @@ const MonthRow = ({ payload, year, onSelect }: MonthRowProps) => {
         )}
         title="ลงทุน Dime เดือนนี้"
       >
-        {formatNumber(dime)}
+        {formatNumberAuto(dime)}
       </td>
       <td
         className={clsx(
@@ -350,7 +350,7 @@ const MonthRow = ({ payload, year, onSelect }: MonthRowProps) => {
         )}
         title="ออมเที่ยว เดือนนี้"
       >
-        {formatNumber(travel)}
+        {formatNumberAuto(travel)}
       </td>
       <td
         className={clsx(
@@ -360,10 +360,10 @@ const MonthRow = ({ payload, year, onSelect }: MonthRowProps) => {
         )}
         title="ยอดบัญชีธนาคาร (รวมทุกบัญชี) เดือนนี้ — ติดลบ = ถอนออก"
       >
-        {formatNumber(kept)}
+        {formatNumberAuto(kept)}
       </td>
       <td className={clsx(BODY_CELL_BASE, 'text-right font-medium', remainingTone)}>
-        {formatNumber(summary.remaining)}
+        {formatNumberAuto(summary.remaining)}
       </td>
     </tr>
   );
@@ -396,28 +396,28 @@ const TotalsRow = ({ totals }: TotalsRowProps) => {
     <tr className="border-t-2 border-ink-300 bg-[color-mix(in_srgb,rgb(var(--bg-surface))_60%,rgb(var(--bg-card)))] font-semibold">
       <td className={clsx(BODY_CELL_BASE, 'text-left text-ink-900', STICKY_COL)}>รวม</td>
       <td className={clsx(BODY_CELL_BASE, 'text-right text-ink-900')}>
-        {formatNumber(totals.salary)}
+        {formatNumberAuto(totals.salary)}
       </td>
       <td className={clsx(BODY_CELL_BASE, 'text-right text-ink-900')}>
-        {formatNumber(totals.bonus)}
+        {formatNumberAuto(totals.bonus)}
       </td>
       <td className={clsx(BODY_CELL_BASE, 'text-right text-ink-900')}>
-        {formatNumber(totals.commission)}
+        {formatNumberAuto(totals.commission)}
       </td>
       <td className={clsx(BODY_CELL_BASE, 'text-right text-ink-900')}>
-        {formatNumber(totals.otherIncome)}
+        {formatNumberAuto(totals.otherIncome)}
       </td>
       <td className={clsx(BODY_CELL_BASE, 'text-right text-ink-500')}>
-        {formatNumber(totals.totalDeductions)}
+        {formatNumberAuto(totals.totalDeductions)}
       </td>
       <td className={clsx(BODY_CELL_BASE, 'text-right text-ink-900')}>
-        {formatNumber(totals.netSalary)}
+        {formatNumberAuto(totals.netSalary)}
       </td>
       <td className={clsx(BODY_CELL_BASE, 'text-right text-ink-900 font-bold')}>
-        {formatNumber(totals.netAll)}
+        {formatNumberAuto(totals.netAll)}
       </td>
       <td className={clsx(BODY_CELL_BASE, 'text-right text-expense-ink')}>
-        {formatNumber(totals.totalExpenses)}
+        {formatNumberAuto(totals.totalExpenses)}
       </td>
       <td
         className={clsx(
@@ -426,7 +426,7 @@ const TotalsRow = ({ totals }: TotalsRowProps) => {
           totals.dime === 0 ? 'text-ink-400' : 'text-savings-ink',
         )}
       >
-        {formatNumber(totals.dime)}
+        {formatNumberAuto(totals.dime)}
       </td>
       <td
         className={clsx(
@@ -435,7 +435,7 @@ const TotalsRow = ({ totals }: TotalsRowProps) => {
           totals.travel === 0 ? 'text-ink-400' : 'text-savings-ink',
         )}
       >
-        {formatNumber(totals.travel)}
+        {formatNumberAuto(totals.travel)}
       </td>
       <td
         className={clsx(
@@ -448,10 +448,10 @@ const TotalsRow = ({ totals }: TotalsRowProps) => {
               : 'text-savings-ink',
         )}
       >
-        {formatNumber(totals.kept)}
+        {formatNumberAuto(totals.kept)}
       </td>
       <td className={clsx(BODY_CELL_BASE, 'text-right', remainingTone)}>
-        {formatNumber(totals.remaining)}
+        {formatNumberAuto(totals.remaining)}
       </td>
     </tr>
   );

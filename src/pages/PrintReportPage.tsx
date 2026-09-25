@@ -36,7 +36,7 @@ import {
 } from '@/types/expense-categories';
 import {
   THAI_MONTHS_SHORT,
-  formatNumber,
+  formatNumberAuto,
   formatTHB,
   formatThaiDate,
 } from '@/utils/formatters';
@@ -311,29 +311,29 @@ const PrintReportPage = (): ReactNode => {
                 return (
                   <tr key={row.month}>
                     <td className={BODY_CELL_LEFT}>{THAI_MONTHS_SHORT[row.month - 1]}</td>
-                    <td className={BODY_CELL}>{inc ? formatNumber(inc.salary) : '—'}</td>
-                    <td className={BODY_CELL}>{inc ? formatNumber(inc.bonus) : '—'}</td>
-                    <td className={BODY_CELL}>{inc ? formatNumber(inc.commission) : '—'}</td>
-                    <td className={BODY_CELL}>{inc ? formatNumber(inc.otherIncome) : '—'}</td>
-                    <td className={BODY_CELL}>{formatNumber(row.totalDeductions)}</td>
-                    <td className={BODY_CELL}>{formatNumber(row.netAll)}</td>
-                    <td className={BODY_CELL}>{formatNumber(row.totalExpenses)}</td>
+                    <td className={BODY_CELL}>{inc ? formatNumberAuto(inc.salary) : '—'}</td>
+                    <td className={BODY_CELL}>{inc ? formatNumberAuto(inc.bonus) : '—'}</td>
+                    <td className={BODY_CELL}>{inc ? formatNumberAuto(inc.commission) : '—'}</td>
+                    <td className={BODY_CELL}>{inc ? formatNumberAuto(inc.otherIncome) : '—'}</td>
+                    <td className={BODY_CELL}>{formatNumberAuto(row.totalDeductions)}</td>
+                    <td className={BODY_CELL}>{formatNumberAuto(row.netAll)}</td>
+                    <td className={BODY_CELL}>{formatNumberAuto(row.totalExpenses)}</td>
                     <td className={`${BODY_CELL} ${row.remaining < 0 ? 'text-expense-ink font-semibold' : ''}`}>
-                      {formatNumber(row.remaining)}
+                      {formatNumberAuto(row.remaining)}
                     </td>
                   </tr>
                 );
               })}
               <tr className="font-semibold border-t-2 border-ink-400">
                 <td className="px-2 py-1.5 text-left">รวม</td>
-                <td className={BODY_CELL}>{formatNumber(summary.salary)}</td>
-                <td className={BODY_CELL}>{formatNumber(summary.bonus)}</td>
-                <td className={BODY_CELL}>{formatNumber(summary.commission)}</td>
-                <td className={BODY_CELL}>{formatNumber(summary.otherIncome)}</td>
-                <td className={BODY_CELL}>{formatNumber(tableTotals.totalDeductions)}</td>
-                <td className={BODY_CELL}>{formatNumber(tableTotals.netAll)}</td>
-                <td className={BODY_CELL}>{formatNumber(tableTotals.totalExpenses)}</td>
-                <td className={BODY_CELL}>{formatNumber(tableTotals.remaining)}</td>
+                <td className={BODY_CELL}>{formatNumberAuto(summary.salary)}</td>
+                <td className={BODY_CELL}>{formatNumberAuto(summary.bonus)}</td>
+                <td className={BODY_CELL}>{formatNumberAuto(summary.commission)}</td>
+                <td className={BODY_CELL}>{formatNumberAuto(summary.otherIncome)}</td>
+                <td className={BODY_CELL}>{formatNumberAuto(tableTotals.totalDeductions)}</td>
+                <td className={BODY_CELL}>{formatNumberAuto(tableTotals.netAll)}</td>
+                <td className={BODY_CELL}>{formatNumberAuto(tableTotals.totalExpenses)}</td>
+                <td className={BODY_CELL}>{formatNumberAuto(tableTotals.remaining)}</td>
               </tr>
             </tbody>
           </table>

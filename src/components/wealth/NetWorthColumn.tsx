@@ -63,7 +63,7 @@ export const NetWorthColumn = ({
                 <span
                   className={`shrink-0 text-sm font-semibold financial-number tabular-nums ${amountCls}`}
                 >
-                  {formatTHB(r.amount, { decimals: 0 })}
+                  {formatTHB(r.amount)}
                 </span>
               </div>
 
@@ -73,7 +73,7 @@ export const NetWorthColumn = ({
                     <div key={d.key} className="flex justify-between text-xs">
                       <span className="text-ink-500">{d.label}</span>
                       <span className="financial-number tabular-nums text-ink-600">
-                        {formatTHB(d.amount, { decimals: 0 })}
+                        {formatTHB(d.amount)}
                       </span>
                     </div>
                   ))}
@@ -89,7 +89,7 @@ export const NetWorthColumn = ({
         <span
           className={`text-base font-bold financial-number tabular-nums ${amountCls}`}
         >
-          {formatTHB(total, { decimals: 0 })}
+          {formatTHB(total)}
         </span>
       </div>
     </section>

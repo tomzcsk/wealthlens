@@ -454,7 +454,7 @@ export const GoldForm = ({
           <div className="flex items-baseline justify-between gap-2">
             <span className="text-ink-600">ราคา/บาททอง</span>
             <span className="financial-number font-semibold text-warning-900">
-              {formatTHB(preview.pricePerBaht, { decimals: 0 })}
+              {formatTHB(preview.pricePerBaht)}
             </span>
           </div>
           {preview.markup != null && (

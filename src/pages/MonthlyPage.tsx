@@ -265,7 +265,9 @@ const SummaryStat = ({
     <div
       className={`text-2xl font-bold tabular-nums ${SUMMARY_TONE_CLASS[tone]}`}
     >
-      {formatTHB(amount)}
+      {/* hero รวมเดือน 3 ช่องเรียงบนมือถือ — บังคับเลขเต็มกันล้นช่อง (เหมือน KPI/
+          hero อื่น ๆ); สตางค์ไปโชว์ในตารางรายละเอียดด้านล่างที่มีที่พอ */}
+      {formatTHB(amount, { decimals: 0 })}
     </div>
   </div>
 );

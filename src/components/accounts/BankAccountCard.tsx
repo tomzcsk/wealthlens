@@ -83,12 +83,12 @@ export const BankAccountCard = ({
               isNegative ? 'text-expense-700' : 'text-ink-900'
             }`}
           >
-            {formatTHB(headline, { decimals: 0 })}
+            {formatTHB(headline)}
           </div>
           <div className="mt-0.5 flex items-center justify-between text-xs">
             <span className="text-ink-500">ยอดสะสมทุกปี</span>
             <span className="text-ink-400 financial-number tabular-nums">
-              ปี {year} {formatTHB(yearTotal, { decimals: 0 })}
+              ปี {year} {formatTHB(yearTotal)}
             </span>
           </div>
         </div>

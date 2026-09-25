@@ -182,7 +182,7 @@ export const BankAccountsPage = (): ReactNode => {
                     totalAll < 0 ? 'text-expense-on-fill' : 'text-white'
                   }`}
                 >
-                  {formatTHB(totalAll, { decimals: 0 })}
+                  {formatTHB(totalAll)}
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-inverse-dim">
                   <span className="rounded-full bg-inverse-fg/10 px-2.5 py-0.5 text-xs">
@@ -198,7 +198,7 @@ export const BankAccountsPage = (): ReactNode => {
                           : 'text-inverse-muted'
                       }`}
                     >
-                      {formatTHB(totalYear, { decimals: 0 })}
+                      {formatTHB(totalYear)}
                     </span>
                   </span>
                 </div>

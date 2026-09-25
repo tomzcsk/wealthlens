@@ -54,7 +54,7 @@ export const LoanCard = ({ loan, onOpen }: LoanCardProps): ReactNode => {
 
       <div>
         <div className="text-2xl font-bold financial-number tabular-nums text-ink-900">
-          {formatTHB(remaining, { decimals: 0 })}
+          {formatTHB(remaining)}
         </div>
         <div className="text-xs text-ink-500">
           เหลือต้องชำระ
@@ -75,8 +75,8 @@ export const LoanCard = ({ loan, onOpen }: LoanCardProps): ReactNode => {
             {formatPercent(progressFraction)}
           </span>
           <span className="text-ink-400 financial-number tabular-nums">
-            {formatTHB(totalPaid, { decimals: 0 })} /{' '}
-            {formatTHB(scheduleTotal, { decimals: 0 })}
+            {formatTHB(totalPaid)} /{' '}
+            {formatTHB(scheduleTotal)}
           </span>
         </div>
       </div>

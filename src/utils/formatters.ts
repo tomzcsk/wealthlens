@@ -79,13 +79,20 @@ const polishCompactSuffix = (s: string): string =>
 export interface FormatTHBOptions {
   /** Render compact form (`฿1.23M`, `฿123k`) — for chart axes. */
   compact?: boolean;
-  /** Decimal places. Defaults to 0 for cleaner KPI cards. */
+  /**
+   * Decimal places. **ละไว้ = auto**: โชว์สตางค์เฉพาะเมื่อยอดมีเศษจริง
+   * (`฿3,965` vs `฿3,965.50`) — ค่าตั้งต้นทั้งแอป. ระบุ `0` เพื่อบังคับเลขเต็ม
+   * (เลขวิ่ง KPI/hero กันกระตุกทีละเฟรมระหว่างนับ), `2` เพื่อบังคับสตางค์เสมอ
+   * (ตารางผ่อนที่ยอดต้องเรียงจุดตรงกัน).
+   */
   decimals?: 0 | 2;
 }
 
 /**
- * Format a baht amount.
+ * Format a baht amount. ละ `decimals` = auto (สตางค์เมื่อมีเศษ).
  *   formatTHB(1234567)              → "฿1,234,567"
+ *   formatTHB(1234.5)               → "฿1,234.50"   (auto)
+ *   formatTHB(1234567, {decimals:0})→ "฿1,234,567"  (บังคับเต็ม)
  *   formatTHB(1234567, {decimals:2})→ "฿1,234,567.00"
  *   formatTHB(1234567, {compact:true}) → "฿1.23M"
  *
@@ -95,7 +102,7 @@ export const formatTHB = (
   amount: number,
   opts: FormatTHBOptions = {},
 ): string => {
-  const { compact = false, decimals = 0 } = opts;
+  const { compact = false, decimals } = opts;
   const value = safeNumber(amount);
 
   if (compact) {
@@ -105,17 +112,18 @@ export const formatTHB = (
     return `${value < 0 ? '-' : ''}฿${polished}`;
   }
 
-  const fmt = decimals === 2 ? '0,0.00' : '0,0';
+  // decimals ไม่ระบุ → auto: สตางค์เฉพาะเมื่อยอดมีเศษ (value ผ่าน safeNumber แล้ว)
+  const places = decimals ?? (Number.isInteger(value) ? 0 : 2);
+  const fmt = places === 2 ? '0,0.00' : '0,0';
   // numeral handles negatives correctly: '-1,234' (no extra logic needed).
   return `฿${numeral(value).format(fmt)}`;
 };
 
 /**
- * Show satang only when the amount actually has them: `฿1,200` vs `฿1,200.50`.
- * Keeps whole baht clean while never silently rounding away a fractional part.
+ * โชว์สตางค์เฉพาะเมื่อยอดมีเศษ — ตอนนี้เป็นค่าตั้งต้นของ formatTHB อยู่แล้ว
+ * (`formatTHB(v)` เท่ากัน). คงไว้เป็นชื่อที่สื่อเจตนาชัดสำหรับผู้เรียกเดิม.
  */
-export const formatTHBAuto = (value: number): string =>
-  formatTHB(value, { decimals: Number.isInteger(value) ? 0 : 2 });
+export const formatTHBAuto = (value: number): string => formatTHB(value);
 
 export interface FormatNumberOptions {
   /** Decimal places. Defaults to 0. */
@@ -136,6 +144,15 @@ export const formatNumber = (
   const fractional = decimals > 0 ? `.${'0'.repeat(decimals)}` : '';
   return numeral(value).format(`0,0${fractional}`);
 };
+
+/**
+ * เหมือน formatNumber แต่ auto: โชว์สตางค์เฉพาะเมื่อยอดมีเศษ — คู่ขนานกับ
+ * formatTHBAuto สำหรับตัวเลขเงินที่ไม่มีสัญลักษณ์ ฿ (ตารางรายเดือน/รายงานพิมพ์).
+ */
+export const formatNumberAuto = (value: number): string =>
+  formatNumber(value, {
+    decimals: Number.isFinite(value) && !Number.isInteger(value) ? 2 : 0,
+  });
 
 // ---------------------------------------------------------------------------
 // Percent / delta

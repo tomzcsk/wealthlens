@@ -188,7 +188,7 @@ export const LoansPage = (): ReactNode => {
               <span className="font-semibold">{pendingLoan.name}</span>{' '}
               (ยอดคงเหลือ{' '}
               <span className="financial-number tabular-nums">
-                {formatTHB(getRemainingBalance(pendingLoan), { decimals: 0 })}
+                {formatTHB(getRemainingBalance(pendingLoan))}
               </span>
               ) และประวัติโปะทั้งหมด — พร้อม revert ค่าใช้จ่ายที่ลิงก์ไว้
             </p>

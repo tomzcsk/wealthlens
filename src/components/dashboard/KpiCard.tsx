@@ -96,7 +96,9 @@ const COMPACT_THRESHOLD = 10_000_000;
 
 const formatAmount = (value: number): string => {
   const compact = Math.abs(value) >= COMPACT_THRESHOLD;
-  return formatTHB(value, { compact });
+  // KPI เป็นเลขวิ่ง (AnimatedNumber): บังคับเลขเต็มเสมอ — ถ้าใช้ auto ตัว format
+  // จะโดนเรียกกับค่าเศษระหว่าง tween ทุกเฟรม → สตางค์กระพริบทีละเฟรม.
+  return compact ? formatTHB(value, { compact }) : formatTHB(value, { decimals: 0 });
 };
 
 /** Map delta sign to text color. */

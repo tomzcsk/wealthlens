@@ -79,7 +79,7 @@ export const IncomeDepositSummary = ({
                 </div>
               </div>
               <div className="text-income-ink font-semibold tabular-nums whitespace-nowrap">
-                +{formatTHB(ref.amount, { decimals: 0 })}
+                +{formatTHB(ref.amount)}
               </div>
             </div>
           ))}
@@ -87,15 +87,15 @@ export const IncomeDepositSummary = ({
           <div className="flex items-center justify-between gap-3 px-3 py-2 text-sm bg-surface">
             <div className="font-medium text-ink-700">รวมเข้าบัญชี</div>
             <div className="font-bold text-ink-900 tabular-nums whitespace-nowrap">
-              {formatTHB(total, { decimals: 0 })}
+              {formatTHB(total)}
             </div>
           </div>
         </div>
 
         {previousTotal !== null && (
           <p className="text-xs text-ink-500 tabular-nums">
-            ยอดฝากเดิม {formatTHB(previousTotal, { decimals: 0 })} → ใหม่{' '}
-            {formatTHB(total, { decimals: 0 })}
+            ยอดฝากเดิม {formatTHB(previousTotal)} → ใหม่{' '}
+            {formatTHB(total)}
           </p>
         )}
 
