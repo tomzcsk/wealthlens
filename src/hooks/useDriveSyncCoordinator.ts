@@ -310,7 +310,12 @@ export const useDriveSyncCoordinator = (): UseDriveSyncCoordinatorResult => {
   useEffect(() => {
     if (isSignedIn) return;
     cancelPendingSync();
-    useSyncStore.getState().setStatus('idle');
+    const s = useSyncStore.getState();
+    s.setStatus('idle');
+    // เคลียร์ block ตอน sign-out — เป็นสถานะของ session ที่ล็อกอินอยู่ ไม่ควรค้าง
+    // ล่องหนตอนออกจากระบบ. re-sign-in จะ re-detect: ไฟล์ยังเสีย → block ใหม่ก่อน
+    // push เสมอ (Effect A ตั้ง block ก่อน Effect B ทำงาน). ตรงกับ spec.
+    s.setBlocked(null);
     hasInitializedRef.current = false;
     skipNextChangeRef.current = false;
   }, [isSignedIn]);
