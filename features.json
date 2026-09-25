@@ -1756,6 +1756,32 @@
             "completedAt": "2026-09-25",
             "notes": "ตอบโจทย์ Tom: 'พวกยอดเงินต่างๆ แสดงเป็นจุดทศนิยมด้วย' → เลือก 'ทั้งแอป โชว์เมื่อมีเศษ' | Files แก้: src/utils/formatters.ts (formatTHB default → auto, formatTHBAuto = alias, + formatNumberAuto), src/components/dashboard/KpiCard.tsx (กัน flicker), src/pages/MonthlyPage.tsx (hero คงเลขเต็มกันล้น), + สลับ {decimals:0}→bare ที่จุดแสดงผลนิ่ง: BankAccountCard/BankAccountDetail/BankAccountsPage, NetWorthHero(static)/NetWorthColumn, LoanCard, IncomeDepositSummary, GoldForm/GoldPage, LoansPage + formatNumber→formatNumberAuto ที่ MonthlySummaryTable/PrintReportPage | Files ใหม่: scripts/verify-money-format.ts | ไม่ทำโดยตั้งใจ: ตารางผ่อนคง 2 ตำแหน่งเสมอ (ยอดต้องเรียงจุดตรง) · KPI/hero คงเลขเต็ม (เลขใหญ่ สตางค์ไม่สำคัญ + กันกระตุก)"
           }
+        },
+        {
+          "id": "F56",
+          "name": "กัน Google Drive โหลดข้อมูลเสียมาทับ (validate + block push)",
+          "description": "การดึงไฟล์หลักจาก Drive เดิม cast ตรง ๆ ไม่ validate → ไฟล์เสีย/ผิดรูปเขียนทับข้อมูลจริงในเครื่องเงียบ ๆ (ต่างจาก daily-backup restore ที่ validate อยู่แล้ว). เพิ่ม validate ที่จุดดึง + เมื่อเจอไฟล์เสียให้เก็บของในเครื่อง หยุด auto-push กันเขียนทับไฟล์เสียบน Drive และให้ผู้ใช้ resolve เองใน Settings",
+          "status": "completed",
+          "priority": "P1",
+          "phase": "phase_6",
+          "acceptanceCriteria": [
+            "loadFromDrive คืน DriveLoadResult (empty | ok | invalid) ผ่าน pure interpretDrivePayload — JSON.parse + validateBackup เดียวกับ import (strict แกนการเงิน: years/bankAccounts/bankTransactions validate ราย member). semantic: {} หรืออ่านได้แต่ผิดรูป = invalid; empty = ไม่มีไฟล์; valid-ว่าง = ok",
+            "เจอ invalid → เก็บของในเครื่อง (ไม่ replaceAllData) · cancelPendingSync · syncStore.blocked · toast · mark first-load เสร็จ (กัน coordinator ค้าง) · ไม่ push",
+            "หยุด auto-push ทุกทางตอน blocked: Effect B (subscription) / Effect C (online-retry) / manualSync — ไฟล์เสียบน Drive จึงไม่ถูกเขียนทับ",
+            "Settings: แถบเตือน + ปุ่ม 'ใช้ข้อมูลในเครื่อง เขียนทับ Google Drive' (resolveWithLocal — เขียน local ทับโดยเจตนา แล้วเลิก block) + ชี้ไป daily-backup restore",
+            "block เป็น ephemeral: เคลียร์ตอน sign-out; re-sign-in re-detect แล้ว re-block ก่อน push เสมอ (ไม่ต้องเก็บถาวร). เคลียร์ block เฉพาะหลัง valid pull/resolve สำเร็จ (ไม่เคลียร์ตอน manualReload เจอ empty ระหว่าง block)",
+            "isDataEmpty นับข้อมูลบัญชีธนาคารด้วย (แยกเป็น src/utils/dataEmpty.ts) — ผู้ใช้ที่มีแต่ข้อมูลบัญชีไม่ถูกนับว่าว่าง (กัน reconciliation ทับ/ข้ามอัปโหลด)",
+            "Verified: scripts/verify-drive-validation.ts (ใหม่, 15 เคส: interpret empty/ok/invalid + junk member + isDataEmpty รวมบัญชี) + verify-import-integrity/drive-backup ไม่ regress + typecheck + lint + color gate + verify:mobile"
+          ],
+          "estimatedHours": 5,
+          "dependencies": [
+            "F40"
+          ],
+          "checkpoint": {
+            "completed": true,
+            "completedAt": "2026-09-25",
+            "notes": "Spec: docs/superpowers/specs/2026-09-25-drive-sync-validation-design.md (ออกแบบ + implement คู่กับ Codex gpt-6-luna, review 5 รอบ) | Files ใหม่: src/utils/dataEmpty.ts, scripts/verify-drive-validation.ts | Files แก้: src/utils/driveSync.ts (interpretDrivePayload + DriveLoadResult + loadFromDrive), src/stores/syncStore.ts (blocked field), src/hooks/useDriveSyncCoordinator.ts (3-kind handling + guards + resolveWithLocal), src/pages/SettingsPage.tsx (แถบเตือน + ปุ่ม) | Codex จับได้ที่เทสต์ผมยังไม่ครอบ: manualReload เจอ empty เคลียร์ block เงียบ (P1), sign-out ปล่อย block ค้าง (P2), เลิก block ก่อน replace (P2 defense), isDataEmpty ไม่นับบัญชี (P1) — verify ทุกข้อก่อนแก้ (P1 บางข้อของ Codex ตรวจแล้วไม่จริง: handleOnline gate ด้วย hasInitialized อยู่แล้ว) | ไม่ทำโดยตั้งใจ (นอก scope, follow-up แยก): ทำ validator ส่วน optional (ทอง/หนี้/ภาษี/prefs) ให้เข้ม · conflict-merge หลายเครื่อง"
+          }
         }
       ]
     }
@@ -1845,14 +1871,14 @@
     }
   },
   "progressSummary": {
-    "totalFeatures": 62,
-    "completed": 61,
+    "totalFeatures": 63,
+    "completed": 62,
     "removed": 1,
     "inProgress": 0,
     "pending": 0,
     "overallProgress": "100%",
-    "countingNote": "62 = 61 ที่เคยมี + F55 (ตัวที่ 62). F16 (ประมาณการเดือนหน้า) ถูกถอดออกใน F50 จึงนับเป็น removed ไม่ใช่ completed → completed 61 + removed 1 = 62. รายการ F15/F16 ยังอยู่ในไฟล์โดยตั้งใจ: ประวัติต้องบอกว่ามันเคยมีแล้วถอดออก ไม่ใช่แกล้งทำเป็นไม่เคยมี. F52 (fix การ์ดทองมือถือ) เป็น bugfix commit ไม่มี entry แยกในไฟล์นี้ — ตามแบบที่ fix เล็กในอดีตไม่ได้ขึ้นทะเบียนเป็น feature (฿NaN fix ก็เป็น bugfix ไม่มี entry เช่นกัน)",
+    "countingNote": "63 = 62 ที่เคยมี + F56 (ตัวที่ 63). F16 (ประมาณการเดือนหน้า) ถูกถอดออกใน F50 จึงนับเป็น removed ไม่ใช่ completed → completed 62 + removed 1 = 63. รายการ F15/F16 ยังอยู่ในไฟล์โดยตั้งใจ: ประวัติต้องบอกว่ามันเคยมีแล้วถอดออก ไม่ใช่แกล้งทำเป็นไม่เคยมี. F52 (fix การ์ดทองมือถือ) + ฿NaN fix (F55 float dust) เป็น bugfix ไม่มี entry แยก — ตามแบบที่ fix เล็กในอดีตไม่ขึ้นทะเบียนเป็น feature",
     "currentPhase": "shipped",
-    "nextMilestone": "F55 (เลขเงินโชว์สตางค์เมื่อมีเศษ) เสร็จ — ไม่มีงานค้างในโรดแมป"
+    "nextMilestone": "F56 (กัน Drive โหลดข้อมูลเสีย) เสร็จ — งาน data-safety ตัวถัดไป: validator ส่วน optional เข้มขึ้น / conflict-merge หลายเครื่อง (ยังไม่เริ่ม)"
   }
 }
