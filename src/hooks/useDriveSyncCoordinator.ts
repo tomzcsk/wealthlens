@@ -61,23 +61,10 @@ import {
   TOKEN_EXPIRED_EVENT,
 } from '@/utils/driveSync';
 import { maybeWriteDailySnapshot } from '@/utils/driveBackup';
+import { isDataEmpty } from '@/utils/dataEmpty';
 import type { WealthLensData } from '@/types';
 
-/**
- * "Empty" data = no user-entered content anywhere. Initial state from a
- * fresh browser load. We need this to break a tie in conflict resolution:
- * never push an empty local payload over remote data, even if local has a
- * newer `lastUpdated` (the timestamp came from `nowIso()` at module load,
- * not from a real edit).
- */
-const isDataEmpty = (data: WealthLensData): boolean => {
-  for (const yr of Object.values(data.years)) {
-    if (yr.income.length > 0) return false;
-    if (yr.expenses.some((m) => m.items.length > 0)) return false;
-    if ((yr.savings ?? []).some((m) => m.items.length > 0)) return false;
-  }
-  return true;
-};
+// isDataEmpty ย้ายไป `@/utils/dataEmpty` (pure, ทดสอบได้ + รวมข้อมูลบัญชีธนาคาร).
 
 export interface UseDriveSyncCoordinatorResult {
   /** Force-push the current local snapshot to Drive immediately. */

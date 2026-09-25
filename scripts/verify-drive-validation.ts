@@ -6,6 +6,8 @@
  * (empty | ok | invalid). ทดสอบว่ามันจับไฟล์เสีย/ผิดรูปได้ และไม่ reject ของที่ valid.
  */
 import { interpretDrivePayload } from '../src/utils/driveSync';
+import { isDataEmpty } from '../src/utils/dataEmpty';
+import type { WealthLensData } from '../src/types';
 
 let failures = 0;
 const eq = (label: string, got: unknown, want: unknown): void => {
@@ -57,6 +59,27 @@ eq('bankTransactions junk → invalid', interpretDrivePayload(junkTx).kind, 'inv
 // 6. invalid มี reason เป็น string (ไว้ toast/log)
 const inv = interpretDrivePayload('{}');
 eq('invalid → มี reason string', inv.kind === 'invalid' && typeof inv.reason === 'string', true);
+
+// 7. isDataEmpty รวมข้อมูลบัญชีธนาคาร (Codex review) — บัญชีเดียวก็ไม่ถือว่าว่าง
+const emptyData = { years: {} } as unknown as WealthLensData;
+eq('ว่างจริง → empty', isDataEmpty(emptyData), true);
+const bankOnly = {
+  years: {},
+  bankAccounts: [{ id: 'a', name: 'A', balances: { '2026': { '7': 100 } } }],
+} as unknown as WealthLensData;
+eq('มีแต่ยอดบัญชี → ไม่ empty', isDataEmpty(bankOnly), false);
+const txOnly = {
+  years: {},
+  bankTransactions: [
+    { id: 't', accountId: 'a', year: 2026, month: 7, amount: 100, label: 'x', source: { type: 'manual' } },
+  ],
+} as unknown as WealthLensData;
+eq('มีแต่รายการบัญชี → ไม่ empty', isDataEmpty(txOnly), false);
+const acctNoBalance = {
+  years: {},
+  bankAccounts: [{ id: 'a', name: 'A', balances: {} }],
+} as unknown as WealthLensData;
+eq('บัญชีเปล่าไม่มียอด → ยัง empty', isDataEmpty(acctNoBalance), true);
 
 console.log(failures === 0 ? '\n✅ ALL PASS' : `\n❌ ${failures} FAILED`);
 process.exit(failures === 0 ? 0 : 1);
