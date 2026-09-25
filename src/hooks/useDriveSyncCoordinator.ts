@@ -175,8 +175,8 @@ export const useDriveSyncCoordinator = (): UseDriveSyncCoordinatorResult => {
           }
           setLastSynced(new Date().toISOString());
         } else {
-          // result.kind === 'ok' — ไฟล์ valid แล้ว (validate ผ่าน)
-          useSyncStore.getState().setBlocked(null);
+          // result.kind === 'ok' — ไฟล์ valid แล้ว (validate ผ่าน). เลิก block **หลัง**
+          // ลงมือสำเร็จในแต่ละทาง (block ยังกัน push ระหว่าง replace — Codex P2).
           const remote = result.data;
           // CRITICAL safety net: never overwrite remote with an empty local
           // payload, even if local's `lastUpdated` looks newer. Local
@@ -189,11 +189,13 @@ export const useDriveSyncCoordinator = (): UseDriveSyncCoordinatorResult => {
             // Remote is newer (or local is empty); pull it down.
             skipNextChangeRef.current = true;
             useFinanceStore.getState().replaceAllData(remote);
+            useSyncStore.getState().setBlocked(null);
             setLastSynced(new Date().toISOString());
             toast('ดึงข้อมูลจาก Google Drive แล้ว', 'info');
           } else {
             // Local is newer AND has content; push it up.
             await syncToDrive(local, accessToken);
+            useSyncStore.getState().setBlocked(null);
             setLastSynced(new Date().toISOString());
           }
         }
@@ -368,11 +370,11 @@ export const useDriveSyncCoordinator = (): UseDriveSyncCoordinatorResult => {
         toast('ข้อมูลใน Google Drive เสียหาย — ใช้ข้อมูลในเครื่องต่อ (ดูวิธีแก้ในตั้งค่า)', 'error');
         return;
       }
-      // result.kind === 'ok'
-      setBlocked(null);
-      // Skip the auto-sync echo that this replace would trigger.
+      // result.kind === 'ok' — apply remote ก่อน (block ยังกัน push ระหว่างนี้ +
+      // skipNextChangeRef กัน echo) แล้วค่อยเลิก block หลัง replace สำเร็จ (Codex P2)
       skipNextChangeRef.current = true;
       useFinanceStore.getState().replaceAllData(result.data);
+      setBlocked(null);
       setLastSynced(new Date().toISOString());
       toast('คืนค่าจาก Google Drive แล้ว', 'success');
     } catch (err) {
